@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -73,34 +74,34 @@ export default function DashboardPage() {
               <p className="text-xs text-primary/80">+20.1% from last month</p>
             </CardContent>
           </Card>
-          <Card className="bg-secondary/50 border-secondary hover:bg-secondary/80 transition-colors">
+          <Card className="bg-primary/5 border-primary/20 hover:bg-primary/10 transition-colors">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Schools</CardTitle>
-              <BookOpenCheck className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-primary">Total Schools</CardTitle>
+              <BookOpenCheck className="h-4 w-4 text-primary/80" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">4</div>
-              <p className="text-xs text-muted-foreground">+1 since last quarter</p>
+              <div className="text-2xl font-bold text-primary">4</div>
+              <p className="text-xs text-primary/80">+1 since last quarter</p>
             </CardContent>
           </Card>
-          <Card className="bg-destructive/5 border-destructive/20 hover:bg-destructive/10 transition-colors">
+          <Card className="bg-primary/5 border-primary/20 hover:bg-primary/10 transition-colors">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-destructive">Open Support Tickets</CardTitle>
-              <Ticket className="h-4 w-4 text-destructive/80" />
+              <CardTitle className="text-sm font-medium text-primary">Open Support Tickets</CardTitle>
+              <Ticket className="h-4 w-4 text-primary/80" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-destructive">12</div>
-              <p className="text-xs text-muted-foreground">+2 since yesterday</p>
+              <div className="text-2xl font-bold text-primary">12</div>
+              <p className="text-xs text-primary/80">+2 since yesterday</p>
             </CardContent>
           </Card>
-          <Card className="bg-secondary/50 border-secondary hover:bg-secondary/80 transition-colors">
+          <Card className="bg-primary/5 border-primary/20 hover:bg-primary/10 transition-colors">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pending Submissions</CardTitle>
-              <Activity className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-primary">Pending Submissions</CardTitle>
+              <Activity className="h-4 w-4 text-primary/80" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">573</div>
-              <p className="text-xs text-muted-foreground">+2 since last hour</p>
+              <div className="text-2xl font-bold text-primary">573</div>
+              <p className="text-xs text-primary/80">+2 since last hour</p>
             </CardContent>
           </Card>
         </div>
