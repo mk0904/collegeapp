@@ -1,11 +1,11 @@
-'use client'
+'use client';
 
 import {
-    Activity,
-    ArrowUpRight,
-    BookOpenCheck,
-    Ticket,
-    Users as UsersIcon,
+  Activity,
+  ArrowUpRight,
+  BookOpenCheck,
+  Ticket,
+  Users as UsersIcon,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -28,12 +28,12 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
-    ChartContainer,
-    ChartTooltip,
-    ChartTooltipContent,
-    ChartConfig,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartConfig,
 } from '@/components/ui/chart';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
 
 const chartData = [
   { month: 'January', users: 186 },
@@ -54,9 +54,16 @@ const chartConfig = {
 export default function DashboardPage() {
   return (
     <div className="flex w-full flex-col">
-      <main className="flex flex-1 flex-col gap-4 md:gap-8">
+      <main className="flex flex-1 flex-col gap-6 md:gap-8">
+        <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+            <div>
+                <h1 className="text-3xl font-bold tracking-tight font-headline">Dashboard</h1>
+                <p className="text-muted-foreground">An overview of your college ecosystem.</p>
+            </div>
+        </div>
+
         <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
-          <Card>
+          <Card className="bg-card hover:bg-card/90 transition-colors">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Users</CardTitle>
               <UsersIcon className="h-4 w-4 text-muted-foreground" />
@@ -66,11 +73,9 @@ export default function DashboardPage() {
               <p className="text-xs text-muted-foreground">+20.1% from last month</p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="bg-card hover:bg-card/90 transition-colors">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Total Schools
-              </CardTitle>
+              <CardTitle className="text-sm font-medium">Total Schools</CardTitle>
               <BookOpenCheck className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -78,7 +83,7 @@ export default function DashboardPage() {
               <p className="text-xs text-muted-foreground">+1 since last quarter</p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="bg-card hover:bg-card/90 transition-colors">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Open Support Tickets</CardTitle>
               <Ticket className="h-4 w-4 text-muted-foreground" />
@@ -88,7 +93,7 @@ export default function DashboardPage() {
               <p className="text-xs text-muted-foreground">+2 since yesterday</p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="bg-card hover:bg-card/90 transition-colors">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Pending Submissions</CardTitle>
               <Activity className="h-4 w-4 text-muted-foreground" />
@@ -99,44 +104,46 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         </div>
+
         <div>
           <h2 className="text-xl font-headline mb-4">AI-Driven Actionable Insights</h2>
           <ActionableInsights />
         </div>
+
         <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
           <Card className="xl:col-span-2">
             <CardHeader>
               <CardTitle>User Growth</CardTitle>
               <CardDescription>Monthly new users over the last 6 months.</CardDescription>
             </CardHeader>
-            <CardContent>
-                <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
-                    <BarChart accessibilityLayer data={chartData}>
-                        <CartesianGrid vertical={false} />
-                        <XAxis
-                            dataKey="month"
-                            tickLine={false}
-                            tickMargin={10}
-                            axisLine={false}
-                            tickFormatter={(value) => value.slice(0, 3)}
-                        />
-                        <YAxis />
-                        <ChartTooltip
-                            cursor={{ fill: 'hsl(var(--accent) / 0.2)' }}
-                            content={<ChartTooltipContent />}
-                        />
-                        <Bar dataKey="users" fill="var(--color-users)" radius={4} />
-                    </BarChart>
+            <CardContent className="h-[300px] w-full p-2">
+              <ResponsiveContainer width="100%" height="100%">
+                <ChartContainer config={chartConfig}>
+                  <BarChart accessibilityLayer data={chartData} margin={{ top: 20, right: 20, bottom: 5, left: 0 }}>
+                    <CartesianGrid vertical={false} />
+                    <XAxis
+                      dataKey="month"
+                      tickLine={false}
+                      tickMargin={10}
+                      axisLine={false}
+                      tickFormatter={(value) => value.slice(0, 3)}
+                    />
+                    <YAxis tickLine={false} axisLine={false} />
+                    <ChartTooltip
+                      cursor={{ fill: 'hsl(var(--accent))' }}
+                      content={<ChartTooltipContent />}
+                    />
+                    <Bar dataKey="users" fill="var(--color-users)" radius={[4, 4, 0, 0]} />
+                  </BarChart>
                 </ChartContainer>
+              </ResponsiveContainer>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center">
               <div className="grid gap-2">
                 <CardTitle>Recent Projects</CardTitle>
-                <CardDescription>
-                  Recently added or updated projects.
-                </CardDescription>
+                <CardDescription>Recently added or updated projects.</CardDescription>
               </div>
               <Button asChild size="sm" className="ml-auto gap-1">
                 <Link href="/dashboard/projects">
@@ -163,7 +170,7 @@ export default function DashboardPage() {
                     </TableCell>
                     <TableCell className="text-right"><Badge variant="outline">Ongoing</Badge></TableCell>
                   </TableRow>
-                   <TableRow>
+                  <TableRow>
                     <TableCell>
                       <div className="font-medium">Community Health Survey</div>
                       <div className="hidden text-sm text-muted-foreground md:inline">
@@ -172,7 +179,7 @@ export default function DashboardPage() {
                     </TableCell>
                     <TableCell className="text-right"><Badge variant="outline">Ongoing</Badge></TableCell>
                   </TableRow>
-                   <TableRow>
+                  <TableRow>
                     <TableCell>
                       <div className="font-medium">Eco-Friendly Campus</div>
                       <div className="hidden text-sm text-muted-foreground md:inline">
@@ -180,6 +187,15 @@ export default function DashboardPage() {
                       </div>
                     </TableCell>
                     <TableCell className="text-right"><Badge>Completed</Badge></TableCell>
+                  </TableRow>
+                   <TableRow>
+                    <TableCell>
+                      <div className="font-medium">Waste Management System</div>
+                      <div className="hidden text-sm text-muted-foreground md:inline">
+                        Dimapur Government College
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right"><Badge variant="secondary">Pending</Badge></TableCell>
                   </TableRow>
                 </TableBody>
               </Table>
