@@ -1,8 +1,11 @@
+'use client';
+
 import {
   MoreHorizontal,
   PlusCircle,
 } from 'lucide-react'
 import Link from 'next/link'
+import * as React from 'react'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -35,15 +38,40 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs'
-import { mockSchools, mockProjects } from '@/lib/mock-data'
+import { getProjects, getSchools } from '@/lib/firebase/firestore'
+import type { School, Project } from '@/lib/mock-data'
+import { Skeleton } from '@/components/ui/skeleton'
 
 export default function ProjectsPage() {
+  const [projects, setProjects] = React.useState<Project[]>([]);
+  const [schools, setSchools] = React.useState<School[]>([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    async function fetchData() {
+      try {
+        setLoading(true);
+        const [fetchedProjects, fetchedSchools] = await Promise.all([
+          getProjects(),
+          getSchools(),
+        ]);
+        setProjects(fetchedProjects);
+        setSchools(fetchedSchools);
+      } catch (error) {
+        console.error("Error fetching project data:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
+
   return (
     <Tabs defaultValue="projects">
       <div className="flex items-center">
-        <TabsList>
-          <TabsTrigger value="projects">Projects</TabsTrigger>
-          <TabsTrigger value="schools">Schools</TabsTrigger>
+        <TabsList className="gap-2">
+          <TabsTrigger value="projects" className="rounded-md">Projects</TabsTrigger>
+          <TabsTrigger value="schools" className="rounded-md">Schools</TabsTrigger>
         </TabsList>
         <div className="ml-auto flex items-center gap-2">
           <Button size="sm" variant="outline">
@@ -77,37 +105,49 @@ export default function ProjectsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {mockProjects.map((project) => (
-                  <TableRow key={project.id}>
-                    <TableCell className="font-medium">
-                      <Link href={`/dashboard/projects/${project.id}`} className="hover:underline">
-                        {project.name}
-                      </Link>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">{project.schoolName}</TableCell>
-                    <TableCell className="hidden md:table-cell">{project.submissionsCount}</TableCell>
-                    <TableCell>
-                      <Badge variant={project.status === 'Completed' ? 'default' : 'outline'}>
-                        {project.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button aria-haspopup="true" size="icon" variant="ghost">
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Toggle menu</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem>Edit</DropdownMenuItem>
-                          <DropdownMenuItem>Delete</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {loading ? (
+                  [...Array(5)].map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell><Skeleton className="h-5 w-48" /></TableCell>
+                      <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
+                      <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-12" /></TableCell>
+                      <TableCell><Skeleton className="h-6 w-20" /></TableCell>
+                      <TableCell><Skeleton className="h-8 w-8" /></TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  projects.map((project) => (
+                    <TableRow key={project.id}>
+                      <TableCell className="font-medium">
+                        <Link href={`/dashboard/projects/${project.id}`} className="hover:underline">
+                          {project.name}
+                        </Link>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">{project.schoolName}</TableCell>
+                      <TableCell className="hidden md:table-cell">{project.submissionsCount}</TableCell>
+                      <TableCell>
+                        <Badge variant={project.status === 'Completed' ? 'default' : 'outline'}>
+                          {project.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button aria-haspopup="true" size="icon" variant="ghost">
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Toggle menu</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuItem>Edit</DropdownMenuItem>
+                            <DropdownMenuItem>Delete</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </CardContent>
@@ -122,32 +162,48 @@ export default function ProjectsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-             {mockSchools.map((school) => (
-              <Card key={school.id}>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-lg">{school.name}</CardTitle>
-                   <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button aria-haspopup="true" size="icon" variant="ghost">
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Toggle menu</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem>Edit</DropdownMenuItem>
-                          <DropdownMenuItem>Delete</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">{school.location}</p>
-                </CardContent>
-                <CardFooter>
-                  <p>{school.projectsCount} projects</p>
-                </CardFooter>
-              </Card>
-            ))}
+             {loading ? (
+                [...Array(4)].map((_, i) => (
+                  <Card key={i}>
+                    <CardHeader>
+                      <Skeleton className="h-6 w-40" />
+                    </CardHeader>
+                    <CardContent>
+                      <Skeleton className="h-4 w-24" />
+                    </CardContent>
+                     <CardFooter>
+                      <Skeleton className="h-4 w-20" />
+                    </CardFooter>
+                  </Card>
+                ))
+             ) : (
+              schools.map((school) => (
+                <Card key={school.id}>
+                  <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-lg">{school.name}</CardTitle>
+                    <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button aria-haspopup="true" size="icon" variant="ghost">
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Toggle menu</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuItem>Edit</DropdownMenuItem>
+                            <DropdownMenuItem>Delete</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground">{school.location}</p>
+                  </CardContent>
+                  <CardFooter>
+                    <p>{school.projectsCount} projects</p>
+                  </CardFooter>
+                </Card>
+              ))
+            )}
           </CardContent>
         </Card>
       </TabsContent>

@@ -1,5 +1,8 @@
+'use client'
+
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import * as React from 'react';
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,12 +21,80 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { mockProjects, mockSubmissions } from "@/lib/mock-data";
+import { getProjectById, getSubmissionsByProjectId } from "@/lib/firebase/firestore";
+import type { Project, Submission } from "@/lib/mock-data";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function ProjectDetailsPage({ params }: { params: { id: string } }) {
-  const project = mockProjects.find(p => p.id === params.id);
+  const [project, setProject] = React.useState<Project | null>(null);
+  const [submissions, setSubmissions] = React.useState<Submission[]>([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    async function fetchData() {
+      try {
+        setLoading(true);
+        const [projectData, submissionsData] = await Promise.all([
+          getProjectById(params.id),
+          getSubmissionsByProjectId(params.id)
+        ]);
+        setProject(projectData);
+        setSubmissions(submissionsData);
+      } catch (error) {
+        console.error("Error fetching project details:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, [params.id]);
+
+  if (loading) {
+     return (
+      <div className="flex flex-col gap-4">
+        <Skeleton className="h-8 w-32" />
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-8 w-1/2 mb-2" />
+            <Skeleton className="h-5 w-1/3" />
+          </CardHeader>
+          <CardContent>
+             <Skeleton className="h-6 w-24" />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-7 w-40 mb-2" />
+            <Skeleton className="h-5 w-64" />
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>User</TableHead>
+                  <TableHead>Timestamp</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Approve/Reject</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {[...Array(3)].map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                    <TableCell><Skeleton className="h-6 w-20" /></TableCell>
+                    <TableCell className="text-right"><Skeleton className="h-6 w-12" /></TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (!project) {
     return (
@@ -81,7 +152,7 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
               </TableRow>
             </TableHeader>
             <TableBody>
-              {mockSubmissions.map((submission) => (
+              {submissions.map((submission) => (
                 <TableRow key={submission.id}>
                   <TableCell className="font-medium">{submission.userName}</TableCell>
                   <TableCell>{submission.timestamp}</TableCell>

@@ -35,6 +35,10 @@ import {
   ChartConfig,
 } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
+import * as React from 'react';
+import { getProjects, getSchools, getUsers, getTickets } from '@/lib/firebase/firestore';
+import type { Project } from '@/lib/mock-data';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const chartData = [
   { month: 'January', users: 186 },
@@ -53,6 +57,45 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export default function DashboardPage() {
+    const [stats, setStats] = React.useState({
+        totalUsers: 0,
+        totalSchools: 0,
+        openTickets: 0,
+        pendingSubmissions: 0,
+    });
+    const [recentProjects, setRecentProjects] = React.useState<Project[]>([]);
+    const [loading, setLoading] = React.useState(true);
+
+    React.useEffect(() => {
+        async function fetchData() {
+            try {
+                setLoading(true);
+                const [users, schools, tickets, projects] = await Promise.all([
+                    getUsers(),
+                    getSchools(),
+                    getTickets(),
+                    getProjects({ limit: 4 }),
+                ]);
+
+                setStats({
+                    totalUsers: users.length,
+                    totalSchools: schools.length,
+                    openTickets: tickets.filter(t => t.status === 'Open').length,
+                    pendingSubmissions: projects.filter(p => p.status === 'Pending').length,
+                });
+
+                setRecentProjects(projects);
+
+            } catch (error) {
+                console.error("Failed to fetch dashboard data", error);
+            } finally {
+                setLoading(false);
+            }
+        }
+        fetchData();
+    }, []);
+
+
   return (
     <div className="flex w-full flex-col">
       <main className="flex flex-1 flex-col gap-6 md:gap-8">
@@ -71,8 +114,8 @@ export default function DashboardPage() {
                 <UsersIcon className="h-4 w-4 text-primary/80" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-primary">1,500</div>
-                <p className="text-xs text-primary/80">+20.1% from last month</p>
+                {loading ? <Skeleton className="h-7 w-16" /> : <div className="text-2xl font-bold text-primary">{stats.totalUsers}</div>}
+                {loading ? <Skeleton className="h-4 w-32 mt-1" /> : <p className="text-xs text-primary/80">+20.1% from last month</p>}
               </CardContent>
             </Card>
           </Link>
@@ -83,8 +126,8 @@ export default function DashboardPage() {
                 <BookOpenCheck className="h-4 w-4 text-primary/80" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-primary">4</div>
-                <p className="text-xs text-primary/80">+1 since last quarter</p>
+                 {loading ? <Skeleton className="h-7 w-10" /> : <div className="text-2xl font-bold text-primary">{stats.totalSchools}</div>}
+                 {loading ? <Skeleton className="h-4 w-32 mt-1" /> : <p className="text-xs text-primary/80">+1 since last quarter</p>}
               </CardContent>
             </Card>
           </Link>
@@ -95,8 +138,8 @@ export default function DashboardPage() {
                 <Ticket className="h-4 w-4 text-primary/80" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-primary">12</div>
-                <p className="text-xs text-primary/80">+2 since yesterday</p>
+                 {loading ? <Skeleton className="h-7 w-12" /> : <div className="text-2xl font-bold text-primary">{stats.openTickets}</div>}
+                 {loading ? <Skeleton className="h-4 w-28 mt-1" /> : <p className="text-xs text-primary/80">+2 since yesterday</p>}
               </CardContent>
             </Card>
           </Link>
@@ -107,8 +150,8 @@ export default function DashboardPage() {
                 <Activity className="h-4 w-4 text-primary/80" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-primary">573</div>
-                <p className="text-xs text-primary/80">+2 since last hour</p>
+                {loading ? <Skeleton className="h-7 w-14" /> : <div className="text-2xl font-bold text-primary">{stats.pendingSubmissions}</div>}
+                {loading ? <Skeleton className="h-4 w-28 mt-1" /> : <p className="text-xs text-primary/80">+2 since last hour</p>}
               </CardContent>
             </Card>
           </Link>
@@ -170,42 +213,29 @@ export default function DashboardPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  <TableRow>
-                    <TableCell>
-                      <div className="font-medium">Digital Literacy Campaign</div>
-                      <div className="hidden text-sm text-muted-foreground md:inline">
-                        Kohima Science College
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right"><Badge variant="outline">Ongoing</Badge></TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell>
-                      <div className="font-medium">Community Health Survey</div>
-                      <div className="hidden text-sm text-muted-foreground md:inline">
-                        Model Christian College
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right"><Badge variant="outline">Ongoing</Badge></TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell>
-                      <div className="font-medium">Eco-Friendly Campus</div>
-                      <div className="hidden text-sm text-muted-foreground md:inline">
-                        Kohima Science College
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right"><Badge>Completed</Badge></TableCell>
-                  </TableRow>
-                   <TableRow>
-                    <TableCell>
-                      <div className="font-medium">Waste Management System</div>
-                      <div className="hidden text-sm text-muted-foreground md:inline">
-                        Dimapur Government College
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right"><Badge variant="secondary">Pending</Badge></TableCell>
-                  </TableRow>
+                   {loading ? (
+                    [...Array(4)].map((_, i) => (
+                      <TableRow key={i}>
+                        <TableCell>
+                          <Skeleton className="h-5 w-36 mb-1" />
+                          <Skeleton className="h-4 w-24" />
+                        </TableCell>
+                        <TableCell className="text-right"><Skeleton className="h-6 w-20" /></TableCell>
+                      </TableRow>
+                    ))
+                   ) : (
+                    recentProjects.map(project => (
+                      <TableRow key={project.id}>
+                        <TableCell>
+                          <div className="font-medium">{project.name}</div>
+                          <div className="hidden text-sm text-muted-foreground md:inline">
+                            {project.schoolName}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right"><Badge variant={project.status === 'Completed' ? 'default' : project.status === 'Pending' ? 'secondary' : 'outline'}>{project.status}</Badge></TableCell>
+                      </TableRow>
+                    ))
+                   )}
                 </TableBody>
               </Table>
             </CardContent>

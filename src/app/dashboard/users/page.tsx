@@ -37,20 +37,52 @@ import {
 } from '@/components/ui/table'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Switch } from '@/components/ui/switch'
-import { mockUsers, User } from '@/lib/mock-data'
+import type { User } from '@/lib/mock-data'
 import { useToast } from "@/hooks/use-toast"
+import { getUsers, updateUserStatus } from '@/lib/firebase/firestore'
+import { Skeleton } from '@/components/ui/skeleton'
 
 export default function UsersPage() {
     const { toast } = useToast()
-    const [users, setUsers] = React.useState<User[]>(mockUsers)
+    const [users, setUsers] = React.useState<User[]>([])
+    const [loading, setLoading] = React.useState(true);
 
-    const handleStatusToggle = (userId: string, currentStatus: 'Active' | 'Inactive') => {
+    React.useEffect(() => {
+      async function fetchUsers() {
+        try {
+          const fetchedUsers = await getUsers();
+          setUsers(fetchedUsers);
+        } catch (error) {
+          console.error("Error fetching users:", error);
+          toast({
+            title: "Error",
+            description: "Failed to fetch users.",
+            variant: "destructive",
+          })
+        } finally {
+          setLoading(false);
+        }
+      }
+      fetchUsers();
+    }, [toast]);
+
+    const handleStatusToggle = async (userId: string, currentStatus: 'Active' | 'Inactive') => {
         const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
-        setUsers(users.map(u => u.id === userId ? { ...u, status: newStatus } : u));
-        toast({
-            title: "User Status Updated",
-            description: `User has been set to ${newStatus}.`,
-        })
+        try {
+            await updateUserStatus(userId, newStatus);
+            setUsers(users.map(u => u.id === userId ? { ...u, status: newStatus } : u));
+            toast({
+                title: "User Status Updated",
+                description: `User has been set to ${newStatus}.`,
+            })
+        } catch (error) {
+            console.error("Error updating user status:", error);
+            toast({
+                title: "Error",
+                description: "Failed to update user status.",
+                variant: "destructive",
+            })
+        }
     }
   
   return (
@@ -119,7 +151,23 @@ export default function UsersPage() {
                 </TableRow>
             </TableHeader>
             <TableBody>
-                {users.map(user => (
+                {loading ? (
+                  [...Array(5)].map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell><Skeleton className="h-4 w-4" /></TableCell>
+                      <TableCell>
+                        <Skeleton className="h-5 w-24 mb-1" />
+                        <Skeleton className="h-4 w-32" />
+                      </TableCell>
+                      <TableCell><Skeleton className="h-6 w-20" /></TableCell>
+                      <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-16" /></TableCell>
+                      <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
+                      <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-20" /></TableCell>
+                      <TableCell><Skeleton className="h-8 w-8" /></TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  users.map(user => (
                     <TableRow key={user.id}>
                         <TableCell>
                             <Checkbox />
@@ -166,7 +214,8 @@ export default function UsersPage() {
                             </DropdownMenu>
                         </TableCell>
                     </TableRow>
-                ))}
+                  ))
+                )}
             </TableBody>
             </Table>
         </div>

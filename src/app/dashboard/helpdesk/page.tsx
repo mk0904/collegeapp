@@ -1,8 +1,11 @@
+'use client'
+
 import {
   MoreHorizontal,
   PlusCircle,
   ChevronDown,
 } from 'lucide-react'
+import * as React from 'react'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -30,9 +33,30 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { mockTickets } from '@/lib/mock-data'
+import type { Ticket } from '@/lib/mock-data'
+import { getTickets } from '@/lib/firebase/firestore'
+import { Skeleton } from '@/components/ui/skeleton'
 
 export default function HelpdeskPage() {
+  const [tickets, setTickets] = React.useState<Ticket[]>([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    async function fetchData() {
+      try {
+        setLoading(true);
+        const fetchedTickets = await getTickets();
+        setTickets(fetchedTickets);
+      } catch (error) {
+        console.error("Error fetching tickets:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
+
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center">
@@ -79,35 +103,49 @@ export default function HelpdeskPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {mockTickets.map((ticket) => (
-              <TableRow key={ticket.id}>
-                <TableCell className="font-medium">{ticket.id}</TableCell>
-                <TableCell>{ticket.subject}</TableCell>
-                <TableCell className="hidden md:table-cell">{ticket.userName}</TableCell>
-                <TableCell className="hidden md:table-cell">{ticket.issueType}</TableCell>
-                <TableCell className="hidden md:table-cell">{ticket.dateRaised}</TableCell>
-                <TableCell>
-                  <Badge variant={ticket.status === 'Closed' ? 'secondary' : ticket.status === 'Open' ? 'destructive' : 'outline'}>
-                    {ticket.status}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button aria-haspopup="true" size="icon" variant="ghost">
-                        <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Toggle menu</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuItem>View Details</DropdownMenuItem>
-                      <DropdownMenuItem>Resolve</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            ))}
+            {loading ? (
+              [...Array(4)].map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+                  <TableCell><Skeleton className="h-5 w-40" /></TableCell>
+                  <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
+                  <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-16" /></TableCell>
+                  <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
+                  <TableCell><Skeleton className="h-6 w-20" /></TableCell>
+                  <TableCell><Skeleton className="h-8 w-8" /></TableCell>
+                </TableRow>
+              ))
+            ) : (
+              tickets.map((ticket) => (
+                <TableRow key={ticket.id}>
+                  <TableCell className="font-medium">{ticket.id}</TableCell>
+                  <TableCell>{ticket.subject}</TableCell>
+                  <TableCell className="hidden md:table-cell">{ticket.userName}</TableCell>
+                  <TableCell className="hidden md:table-cell">{ticket.issueType}</TableCell>
+                  <TableCell className="hidden md:table-cell">{ticket.dateRaised}</TableCell>
+                  <TableCell>
+                    <Badge variant={ticket.status === 'Closed' ? 'secondary' : ticket.status === 'Open' ? 'destructive' : 'outline'}>
+                      {ticket.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button aria-haspopup="true" size="icon" variant="ghost">
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">Toggle menu</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuItem>View Details</DropdownMenuItem>
+                        <DropdownMenuItem>Resolve</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </CardContent>
