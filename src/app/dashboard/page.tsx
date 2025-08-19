@@ -63,34 +63,34 @@ export default function DashboardPage() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
-          <Card className="bg-card hover:bg-card/90 transition-colors">
+          <Card className="bg-primary/90 text-primary-foreground hover:bg-primary transition-colors">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-              <UsersIcon className="h-4 w-4 text-muted-foreground" />
+              <UsersIcon className="h-4 w-4 text-primary-foreground/80" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">1,500</div>
-              <p className="text-xs text-muted-foreground">+20.1% from last month</p>
+              <p className="text-xs text-primary-foreground/80">+20.1% from last month</p>
             </CardContent>
           </Card>
-          <Card className="bg-card hover:bg-card/90 transition-colors">
+          <Card className="bg-chart-3 text-primary-foreground hover:bg-chart-3/90 transition-colors">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Schools</CardTitle>
-              <BookOpenCheck className="h-4 w-4 text-muted-foreground" />
+              <BookOpenCheck className="h-4 w-4 text-primary-foreground/80" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">4</div>
-              <p className="text-xs text-muted-foreground">+1 since last quarter</p>
+              <p className="text-xs text-primary-foreground/80">+1 since last quarter</p>
             </CardContent>
           </Card>
-          <Card className="bg-card hover:bg-card/90 transition-colors">
+          <Card className="bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Open Support Tickets</CardTitle>
-              <Ticket className="h-4 w-4 text-muted-foreground" />
+              <Ticket className="h-4 w-4 text-destructive-foreground/80" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">12</div>
-              <p className="text-xs text-muted-foreground">+2 since yesterday</p>
+              <p className="text-xs text-destructive-foreground/80">+2 since yesterday</p>
             </CardContent>
           </Card>
           <Card className="bg-card hover:bg-card/90 transition-colors">
