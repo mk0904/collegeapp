@@ -53,7 +53,7 @@ export default function DashboardLayout({
   return (
     <SidebarProvider>
       <Sidebar collapsible="icon">
-        <SidebarHeader>
+        <SidebarHeader className="border-b border-sidebar-border">
           <div className="flex items-center justify-between p-2">
             <div className="group-data-[collapsible=icon]:hidden">
                 <Logo />
