@@ -43,7 +43,7 @@ export default function LoginPage() {
           <div className="flex justify-center mb-4">
             <Logo />
           </div>
-          <CardTitle className="text-2xl font-headline">Welcome to NagaAdmin</CardTitle>
+          <CardTitle className="text-2xl font-headline">Welcome to College App</CardTitle>
           <CardDescription>Enter your credentials to access the admin panel.</CardDescription>
         </CardHeader>
         <CardContent>

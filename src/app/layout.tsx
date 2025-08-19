@@ -4,8 +4,8 @@ import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
 
 export const metadata: Metadata = {
-  title: 'NagaAdmin',
-  description: 'Admin Management Platform for the Government of Nagaland',
+  title: 'College App',
+  description: 'College App for the Government of Nagaland',
 };
 
 export default function RootLayout({
