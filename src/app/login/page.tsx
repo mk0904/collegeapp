@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Logo from '@/components/logo';
@@ -37,55 +37,66 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background p-4">
-      <Card className="w-full max-w-md mx-auto">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <Logo onDarkBg={false} />
-          </div>
-          <CardTitle className="text-2xl font-headline">Welcome to College App</CardTitle>
-          <CardDescription>Enter your credentials to access the admin panel.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleLogin} className="grid gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
-              <Input 
-                id="email" 
-                type="email" 
-                placeholder="admin@example.com" 
-                required 
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <div className="grid gap-2">
-              <div className="flex items-center">
-                <Label htmlFor="password">Password</Label>
-                <Link href="#" className="ml-auto inline-block text-sm underline">
-                  Forgot your password?
-                </Link>
-              </div>
-              <Input 
-                id="password" 
-                type="password" 
-                required 
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Logging in...' : 'Login'}
-            </Button>
-          </form>
-          <div className="mt-4 text-center text-sm">
-            Don&apos;t have an account?{' '}
-            <Link href="/signup" className="underline">
-              Sign up
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
+    <div className="w-full lg:grid lg:min-h-screen lg:grid-cols-2">
+      <div className="hidden bg-sidebar lg:flex lg:flex-col items-center justify-center p-8 text-sidebar-foreground">
+        <div className="text-center">
+            <Logo onDarkBg={true} />
+            <h1 className="text-4xl font-bold mt-4">College App</h1>
+            <p className="text-lg mt-2 text-sidebar-foreground/80">Government of Nagaland</p>
+        </div>
+        <div className="absolute bottom-8 text-center text-sidebar-foreground/60 text-sm">
+            <p>&copy; {new Date().getFullYear()} Government of Nagaland. All rights reserved.</p>
+        </div>
+      </div>
+      <div className="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-background">
+        <div className="mx-auto grid w-[350px] gap-8">
+            <Card className="border-none shadow-none">
+                <CardHeader>
+                    <CardTitle className="text-3xl font-bold font-headline">Welcome Back</CardTitle>
+                    <p className="text-muted-foreground">Enter your credentials to access the admin panel.</p>
+                </CardHeader>
+                <CardContent>
+                    <form onSubmit={handleLogin} className="grid gap-4">
+                        <div className="grid gap-2">
+                        <Label htmlFor="email">Email</Label>
+                        <Input 
+                            id="email" 
+                            type="email" 
+                            placeholder="admin@example.com" 
+                            required 
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                        />
+                        </div>
+                        <div className="grid gap-2">
+                        <div className="flex items-center">
+                            <Label htmlFor="password">Password</Label>
+                            <Link href="#" className="ml-auto inline-block text-sm underline">
+                            Forgot your password?
+                            </Link>
+                        </div>
+                        <Input 
+                            id="password" 
+                            type="password" 
+                            required 
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                        />
+                        </div>
+                        <Button type="submit" className="w-full" disabled={loading}>
+                            {loading ? 'Logging in...' : 'Login'}
+                        </Button>
+                    </form>
+                    <div className="mt-6 text-center text-sm">
+                        Don&apos;t have an account?{' '}
+                        <Link href="/signup" className="underline font-semibold">
+                            Sign up
+                        </Link>
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+      </div>
     </div>
   );
 }
