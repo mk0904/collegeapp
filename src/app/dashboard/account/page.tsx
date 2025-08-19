@@ -5,18 +5,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
-import { useTheme } from '@/components/theme-provider';
 
 export default function AccountPage() {
-  const { theme, setTheme } = useTheme();
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       <div>
         <h3 className="text-lg font-medium font-headline">Account</h3>
         <p className="text-sm text-muted-foreground">
-          Manage your account settings and theme preferences.
+          Manage your account settings.
         </p>
       </div>
       <Separator />
@@ -68,30 +65,6 @@ export default function AccountPage() {
             <Input id="new-password" type="password" />
           </div>
           <Button>Update Password</Button>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle>Theme</CardTitle>
-          <CardDescription>
-            Choose your preferred interface appearance.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between">
-            <div>
-              <Label htmlFor="dark-mode" className="font-medium">Dark Mode</Label>
-              <p className="text-sm text-muted-foreground">
-                Toggle to switch to a darker interface.
-              </p>
-            </div>
-            <Switch
-              id="dark-mode"
-              checked={theme === 'dark'}
-              onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')}
-            />
-          </div>
         </CardContent>
       </Card>
     </div>
