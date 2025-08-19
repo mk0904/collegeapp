@@ -41,7 +41,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-md mx-auto">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <Logo />
+            <Logo onDarkBg={false} />
           </div>
           <CardTitle className="text-2xl font-headline">Welcome to College App</CardTitle>
           <CardDescription>Enter your credentials to access the admin panel.</CardDescription>
