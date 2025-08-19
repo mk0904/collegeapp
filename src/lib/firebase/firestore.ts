@@ -1,5 +1,5 @@
 import { collection, doc, getDoc, getDocs, getFirestore, query, where, updateDoc, limit as queryLimit } from 'firebase/firestore';
-import { app } from './firebase';
+import { app } from '../firebase';
 import type { User, School, Project, Submission, Ticket } from '../mock-data';
 
 const db = getFirestore(app);
