@@ -1,4 +1,4 @@
-import { collection, doc, getDoc, getDocs, getFirestore, query, where, updateDoc, limit as queryLimit } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, getFirestore, query, where, updateDoc, limit as queryLimit, addDoc } from 'firebase/firestore';
 import { app } from '../firebase';
 import type { User, School, Project, Submission, Ticket } from '../mock-data';
 
@@ -24,6 +24,14 @@ export async function getSchools(): Promise<School[]> {
   const schoolSnapshot = await getDocs(schoolsCol);
   const schoolList = schoolSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as School));
   return schoolList;
+}
+
+export async function addSchool(school: Omit<School, 'id' | 'projectsCount'>): Promise<void> {
+    const schoolsCol = collection(db, 'schools');
+    await addDoc(schoolsCol, {
+        ...school,
+        projectsCount: 0 // Initialize with 0 projects
+    });
 }
 
 // Projects

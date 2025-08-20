@@ -14,6 +14,8 @@ export type School = {
   name: string;
   projectsCount: number;
   location: string;
+  email: string;
+  phone: string;
 };
 
 export type Project = {
