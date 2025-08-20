@@ -77,9 +77,11 @@ export default function ProjectsPage() {
           <Button size="sm" variant="outline">
             Export
           </Button>
-          <Button size="sm">
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Add New
+          <Button size="sm" asChild>
+            <Link href="/dashboard/projects/add">
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Add Project
+            </Link>
           </Button>
         </div>
       </div>

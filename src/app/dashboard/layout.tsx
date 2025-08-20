@@ -9,7 +9,9 @@ import {
   LifeBuoy,
   UserCircle,
   Bell,
+  ChevronDown,
 } from 'lucide-react';
+import * as React from 'react';
 
 import {
   SidebarProvider,
@@ -22,6 +24,8 @@ import {
   SidebarFooter,
   SidebarTrigger,
   SidebarInset,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import {
@@ -33,14 +37,25 @@ import {
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
 import Logo from '@/components/logo';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { cn } from '@/lib/utils';
 
 const navItems = [
   { href: '/dashboard', icon: Home, label: 'Home' },
   { href: '/dashboard/users', icon: Users, label: 'Users' },
-  { href: '/dashboard/projects', icon: FolderKanban, label: 'Projects' },
-  { href: '/dashboard/helpdesk', icon: LifeBuoy, label: 'Helpdesk' },
 ];
 
+const projectsNav = {
+    icon: FolderKanban,
+    label: 'Projects',
+    subItems: [
+        { href: '/dashboard/projects', label: 'All Projects' },
+        { href: '/dashboard/projects/add', label: 'Add Project' },
+        { href: '/dashboard/schools/add', label: 'Add School' },
+    ]
+}
+
+const helpdeskNavItem = { href: '/dashboard/helpdesk', icon: LifeBuoy, label: 'Helpdesk' };
 const accountNavItem = { href: '/dashboard/account', icon: UserCircle, label: 'Account' };
 
 export default function DashboardLayout({
@@ -49,6 +64,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const [isProjectsOpen, setIsProjectsOpen] = React.useState(pathname.startsWith('/dashboard/projects') || pathname.startsWith('/dashboard/schools/add'));
 
   return (
     <SidebarProvider>
@@ -81,6 +97,50 @@ export default function DashboardLayout({
                 </SidebarMenuButton>
               </SidebarMenuItem>
             ))}
+
+            <Collapsible open={isProjectsOpen} onOpenChange={setIsProjectsOpen}>
+              <SidebarMenuItem>
+                 <CollapsibleTrigger asChild>
+                    <SidebarMenuButton
+                        className="justify-between"
+                        isActive={pathname.startsWith('/dashboard/projects') || pathname.startsWith('/dashboard/schools/add')}
+                        tooltip={{ children: projectsNav.label }}
+                    >
+                        <div className="flex items-center gap-3">
+                            <projectsNav.icon />
+                            <span>{projectsNav.label}</span>
+                        </div>
+                        <ChevronDown className={cn("h-4 w-4 transition-transform", isProjectsOpen && "rotate-180")} />
+                    </SidebarMenuButton>
+                 </CollapsibleTrigger>
+              </SidebarMenuItem>
+              <CollapsibleContent>
+                <SidebarMenuSub>
+                    {projectsNav.subItems.map(item => (
+                        <SidebarMenuItem key={item.href}>
+                            <SidebarMenuSubButton asChild isActive={pathname === item.href}>
+                                <Link href={item.href}>{item.label}</Link>
+                            </SidebarMenuSubButton>
+                        </SidebarMenuItem>
+                    ))}
+                </SidebarMenuSub>
+              </CollapsibleContent>
+            </Collapsible>
+            
+            <SidebarMenuItem>
+                <SidebarMenuButton
+                    asChild
+                    isActive={pathname.startsWith(helpdeskNavItem.href)}
+                    tooltip={{ children: helpdeskNavItem.label }}
+                >
+                    <Link href={helpdeskNavItem.href}>
+                        <helpdeskNavItem.icon />
+                        <span>{helpdeskNavItem.label}</span>
+                    </Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+
+
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
