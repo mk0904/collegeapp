@@ -64,7 +64,14 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const [isProjectsOpen, setIsProjectsOpen] = React.useState(pathname.startsWith('/dashboard/projects') || pathname.startsWith('/dashboard/schools/add'));
+  const isProjectsPath = pathname.startsWith('/dashboard/projects') || pathname.startsWith('/dashboard/schools/add');
+  const [isProjectsOpen, setIsProjectsOpen] = React.useState(isProjectsPath);
+
+  React.useEffect(() => {
+    if (isProjectsPath) {
+        setIsProjectsOpen(true);
+    }
+  }, [isProjectsPath]);
 
   return (
     <SidebarProvider>
@@ -98,12 +105,12 @@ export default function DashboardLayout({
               </SidebarMenuItem>
             ))}
 
-            <Collapsible open={isProjectsOpen} onOpenChange={setIsProjectsOpen}>
+            <Collapsible open={isProjectsOpen} onOpenChange={setIsProjectsOpen} asChild>
               <SidebarMenuItem>
                  <CollapsibleTrigger asChild>
                     <SidebarMenuButton
                         className="justify-between"
-                        isActive={pathname.startsWith('/dashboard/projects') || pathname.startsWith('/dashboard/schools/add')}
+                        isActive={isProjectsPath}
                         tooltip={{ children: projectsNav.label }}
                     >
                         <div className="flex items-center gap-3">
@@ -113,7 +120,6 @@ export default function DashboardLayout({
                         <ChevronDown className={cn("h-4 w-4 transition-transform", isProjectsOpen && "rotate-180")} />
                     </SidebarMenuButton>
                  </CollapsibleTrigger>
-              </SidebarMenuItem>
               <CollapsibleContent>
                 <SidebarMenuSub>
                     {projectsNav.subItems.map(item => (
@@ -125,6 +131,7 @@ export default function DashboardLayout({
                     ))}
                 </SidebarMenuSub>
               </CollapsibleContent>
+              </SidebarMenuItem>
             </Collapsible>
             
             <SidebarMenuItem>
