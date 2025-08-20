@@ -26,11 +26,10 @@ export async function getSchools(): Promise<School[]> {
   return schoolList;
 }
 
-export async function addSchool(school: Omit<School, 'id' | 'projectsCount'>): Promise<void> {
-    const schoolsCol = collection(db, 'schools');
-    await addDoc(schoolsCol, {
+export async function addSchool(school: Omit<School, 'id' | 'projectsCount'>) {
+    await addDoc(collection(db, 'schools'), {
         ...school,
-        projectsCount: 0 // Initialize with 0 projects
+        projectsCount: 0,
     });
 }
 
