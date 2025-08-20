@@ -1,4 +1,4 @@
-import { collection, doc, getDoc, getDocs, getFirestore, query, where, updateDoc, limit as queryLimit, addDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, getFirestore, query, where, updateDoc, limit as queryLimit, addDoc, runTransaction } from 'firebase/firestore';
 import { app } from '../firebase';
 import type { User, School, Project, Submission, Ticket } from '../mock-data';
 
@@ -52,6 +52,28 @@ export async function getProjectById(id: string): Promise<Project | null> {
     }
     return null;
 }
+
+export async function addProject(project: Omit<Project, 'id' | 'submissionsCount' | 'status'> & { description: string }) {
+    const schoolRef = doc(db, "schools", project.schoolId);
+    const projectRef = doc(collection(db, "projects"));
+
+    await runTransaction(db, async (transaction) => {
+        const schoolDoc = await transaction.get(schoolRef);
+        if (!schoolDoc.exists()) {
+            throw "School document does not exist!";
+        }
+
+        const newProjectsCount = (schoolDoc.data().projectsCount || 0) + 1;
+        transaction.update(schoolRef, { projectsCount: newProjectsCount });
+
+        transaction.set(projectRef, {
+            ...project,
+            submissionsCount: 0,
+            status: 'Ongoing',
+        });
+    });
+}
+
 
 // Submissions
 export async function getSubmissionsByProjectId(projectId: string): Promise<Submission[]> {
