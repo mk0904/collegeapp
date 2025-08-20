@@ -46,6 +46,7 @@ export default function ProjectsPage() {
   const [projects, setProjects] = React.useState<Project[]>([]);
   const [schools, setSchools] = React.useState<School[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [activeTab, setActiveTab] = React.useState('projects');
 
   React.useEffect(() => {
     async function fetchData() {
@@ -67,7 +68,7 @@ export default function ProjectsPage() {
   }, []);
 
   return (
-    <Tabs defaultValue="projects">
+    <Tabs value={activeTab} onValueChange={setActiveTab}>
       <div className="flex items-center">
         <TabsList className="gap-2">
           <TabsTrigger value="projects" className="rounded-md">Projects</TabsTrigger>
@@ -77,12 +78,21 @@ export default function ProjectsPage() {
           <Button size="sm" variant="outline">
             Export
           </Button>
-          <Button size="sm" asChild>
-            <Link href="/dashboard/projects/add">
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add Project
-            </Link>
-          </Button>
+           {activeTab === 'projects' ? (
+            <Button size="sm" asChild>
+              <Link href="/dashboard/projects/add">
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Add Project
+              </Link>
+            </Button>
+          ) : (
+            <Button size="sm" asChild>
+              <Link href="/dashboard/schools/add">
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Add School
+              </Link>
+            </Button>
+          )}
         </div>
       </div>
       <TabsContent value="projects">
