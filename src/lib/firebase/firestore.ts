@@ -2,6 +2,7 @@
 import { collection, doc, getDoc, getDocs, getFirestore, query, where, updateDoc, limit as queryLimit, addDoc, runTransaction } from 'firebase/firestore';
 import { app } from '../firebase';
 import type { User, School, Project, Submission, Ticket } from '../mock-data';
+import { mockUsers, mockSchools, mockProjects, mockSubmissions, mockTickets } from '../mock-data';
 
 const db = getFirestore(app);
 
@@ -9,8 +10,11 @@ const db = getFirestore(app);
 export async function getUsers(): Promise<User[]> {
   const usersCol = collection(db, 'users');
   const userSnapshot = await getDocs(usersCol);
-  const userList = userSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
-  return userList;
+  if (!userSnapshot.empty) {
+    const userList = userSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+    return userList;
+  }
+  return mockUsers;
 }
 
 export async function getUserById(userId: string): Promise<User | null> {
@@ -19,7 +23,7 @@ export async function getUserById(userId: string): Promise<User | null> {
     if (userSnap.exists()) {
         return { id: userSnap.id, ...userSnap.data() } as User;
     }
-    return null;
+    return mockUsers.find(u => u.id === userId) || null;
 }
 
 export async function updateUserProfile(userId: string, data: Partial<User>): Promise<void> {
@@ -37,8 +41,11 @@ export async function updateUserStatus(userId: string, status: 'Active' | 'Inact
 export async function getSchools(): Promise<School[]> {
   const schoolsCol = collection(db, 'schools');
   const schoolSnapshot = await getDocs(schoolsCol);
-  const schoolList = schoolSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as School));
-  return schoolList;
+  if (!schoolSnapshot.empty) {
+    const schoolList = schoolSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as School));
+    return schoolList;
+  }
+  return mockSchools;
 }
 
 export async function addSchool(school: Omit<School, 'id' | 'projectsCount'>) {
@@ -55,8 +62,11 @@ export async function getProjects(options: { limit?: number } = {}): Promise<Pro
       projectsQuery = query(projectsQuery, queryLimit(options.limit));
   }
   const projectSnapshot = await getDocs(projectsQuery);
-  const projectList = projectSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Project));
-  return projectList;
+  if (!projectSnapshot.empty) {
+    const projectList = projectSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Project));
+    return projectList;
+  }
+  return options.limit ? mockProjects.slice(0, options.limit) : mockProjects;
 }
 
 export async function getProjectById(id: string): Promise<Project | null> {
@@ -65,7 +75,7 @@ export async function getProjectById(id: string): Promise<Project | null> {
     if(projectSnapshot.exists()){
         return { id: projectSnapshot.id, ...projectSnapshot.data() } as Project;
     }
-    return null;
+    return mockProjects.find(p => p.id === id) || null;
 }
 
 export async function addProject(project: Omit<Project, 'id' | 'submissionsCount' | 'status'> & { description: string }) {
@@ -98,8 +108,11 @@ export async function getSubmissionsByProjectId(projectId: string): Promise<Subm
   const submissionsCol = collection(db, 'submissions');
   const q = query(submissionsCol, where('projectId', '==', projectId));
   const submissionSnapshot = await getDocs(q);
-  const submissionList = submissionSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Submission));
-  return submissionList;
+  if (!submissionSnapshot.empty) {
+    const submissionList = submissionSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Submission));
+    return submissionList;
+  }
+  return mockSubmissions.filter(s => s.projectId === projectId);
 }
 
 
@@ -107,6 +120,9 @@ export async function getSubmissionsByProjectId(projectId: string): Promise<Subm
 export async function getTickets(): Promise<Ticket[]> {
   const ticketsCol = collection(db, 'tickets');
   const ticketSnapshot = await getDocs(ticketsCol);
-  const ticketList = ticketSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ticket));
-  return ticketList;
+  if (!ticketSnapshot.empty) {
+    const ticketList = ticketSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ticket));
+    return ticketList;
+  }
+  return mockTickets;
 }

@@ -142,35 +142,41 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>User</TableHead>
-                <TableHead>Timestamp</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Approve/Reject</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {submissions.map((submission) => (
-                <TableRow key={submission.id}>
-                  <TableCell className="font-medium">{submission.userName}</TableCell>
-                  <TableCell>{submission.timestamp}</TableCell>
-                  <TableCell>
-                    <Badge variant={submission.status === 'Approved' ? 'default' : submission.status === 'Rejected' ? 'destructive' : 'secondary'}>
-                      {submission.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-2">
-                        <Label htmlFor={`approval-${submission.id}`} className="sr-only">Approval Toggle</Label>
-                        <Switch id={`approval-${submission.id}`} defaultChecked={submission.status === 'Approved'} />
-                    </div>
-                  </TableCell>
+          {submissions.length > 0 ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>User</TableHead>
+                  <TableHead>Timestamp</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Approve/Reject</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {submissions.map((submission) => (
+                  <TableRow key={submission.id}>
+                    <TableCell className="font-medium">{submission.userName}</TableCell>
+                    <TableCell>{submission.timestamp}</TableCell>
+                    <TableCell>
+                      <Badge variant={submission.status === 'Approved' ? 'default' : submission.status === 'Rejected' ? 'destructive' : 'secondary'}>
+                        {submission.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                          <Label htmlFor={`approval-${submission.id}`} className="sr-only">Approval Toggle</Label>
+                          <Switch id={`approval-${submission.id}`} defaultChecked={submission.status === 'Approved'} />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          ) : (
+            <div className="text-center text-muted-foreground py-8">
+              No submissions for this project yet.
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
