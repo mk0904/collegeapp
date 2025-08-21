@@ -57,16 +57,34 @@ export async function addSchool(school: Omit<School, 'id' | 'projectsCount'>) {
 
 // Projects
 export async function getProjects(options: { limit?: number } = {}): Promise<Project[]> {
-  let projectsQuery = query(collection(db, 'projects'));
+  const projectsCol = collection(db, 'projects');
+  let projectsQuery = query(projectsCol);
   if (options.limit) {
       projectsQuery = query(projectsQuery, queryLimit(options.limit));
   }
   const projectSnapshot = await getDocs(projectsQuery);
-  if (projectSnapshot.docs.length > 0) {
-    const projectList = projectSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Project));
-    return projectList;
+
+  // If no real projects, return mock data
+  if (projectSnapshot.empty) {
+      const projects = options.limit ? mockProjects.slice(0, options.limit) : mockProjects;
+      // Calculate submission counts for mock projects
+      projects.forEach(p => {
+          p.submissionsCount = mockSubmissions.filter(s => s.projectId === p.id).length;
+      });
+      return projects;
   }
-  return options.limit ? mockProjects.slice(0, options.limit) : mockProjects;
+
+  const projectList = projectSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Project));
+  
+  // Fetch all submissions to calculate counts
+  const submissions = await getSubmissions();
+
+  // Map submissions to projects
+  for (const project of projectList) {
+      project.submissionsCount = submissions.filter(s => s.projectId === project.id).length;
+  }
+
+  return projectList;
 }
 
 export async function getProjectById(id: string): Promise<Project | null> {

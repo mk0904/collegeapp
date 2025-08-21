@@ -68,63 +68,73 @@ export const mockSchools: School[] = [
 ];
 
 export const mockProjects: Project[] = [
-    { id: 'proj_1', name: 'Annual Science Fair', schoolId: 'sch_1', schoolName: 'Kohima Science College', submissionsCount: 12, status: 'Ongoing', description: 'A showcase of innovative science projects from students across all departments, promoting scientific temper and research.' },
-    { id: 'proj_2', name: 'Inter-College Debate Competition', schoolId: 'sch_2', schoolName: 'St. Joseph\'s College', submissionsCount: 8, status: 'Completed', description: 'An annual event fostering public speaking and critical thinking skills among students on contemporary topics.' },
-    { id: 'proj_3', name: 'Tech Fest 2024', schoolId: 'sch_1', schoolName: 'Kohima Science College', submissionsCount: 25, status: 'Ongoing', description: 'A week-long festival with coding competitions, workshops, and tech talks by industry experts.' },
-    { id: 'proj_4', name: 'Literary Fest', schoolId: 'sch_3', schoolName: 'Model Christian College', submissionsCount: 5, status: 'Pending', description: 'A celebration of literature, poetry, and storytelling, featuring guest authors and creative writing workshops.' },
-    { id: 'proj_5', name: 'Research Symposium', schoolId: 'sch_4', schoolName: 'Nagaland University', submissionsCount: 30, status: 'Completed', description: 'A platform for postgraduate students and faculty to present their latest research findings to the academic community.' },
+    { id: 'proj_1', name: 'Annual Science Fair', schoolId: 'sch_1', schoolName: 'Kohima Science College', submissionsCount: 0, status: 'Ongoing', description: 'A showcase of innovative science projects from students across all departments, promoting scientific temper and research.' },
+    { id: 'proj_2', name: 'Inter-College Debate Competition', schoolId: 'sch_2', schoolName: 'St. Joseph\'s College', submissionsCount: 0, status: 'Completed', description: 'An annual event fostering public speaking and critical thinking skills among students on contemporary topics.' },
+    { id: 'proj_3', name: 'Tech Fest 2024', schoolId: 'sch_1', schoolName: 'Kohima Science College', submissionsCount: 0, status: 'Ongoing', description: 'A week-long festival with coding competitions, workshops, and tech talks by industry experts.' },
+    { id: 'proj_4', name: 'Literary Fest', schoolId: 'sch_3', schoolName: 'Model Christian College', submissionsCount: 0, status: 'Pending', description: 'A celebration of literature, poetry, and storytelling, featuring guest authors and creative writing workshops.' },
+    { id: 'proj_5', name: 'Research Symposium', schoolId: 'sch_4', schoolName: 'Nagaland University', submissionsCount: 0, status: 'Completed', description: 'A platform for postgraduate students and faculty to present their latest research findings to the academic community.' },
 ];
 
 export const mockSubmissions: Submission[] = [
-    { 
-        id: 'sub_1', 
-        projectId: 'proj_1', 
-        userName: 'Hokishe Sema', 
-        timestamp: '2024-05-10 10:00 AM', 
+    {
+        id: 'sub_1',
+        projectId: 'proj_1',
+        userName: 'Hokishe Sema',
+        timestamp: '2024-05-10 10:00 AM',
         status: 'Approved',
         title: 'Model of a Volcanic Eruption',
         description: 'A working model demonstrating the chemical reaction between baking soda and vinegar to simulate a volcanic eruption. The model is built using paper mache and painted to resemble a real volcano.',
         images: ['https://placehold.co/600x400.png', 'https://placehold.co/600x400.png', 'https://placehold.co/600x400.png']
     },
-    { 
-        id: 'sub_2', 
-        projectId: 'proj_1', 
-        userName: 'Vizol Angami', 
-        timestamp: '2024-05-11 11:30 AM', 
+    {
+        id: 'sub_2',
+        projectId: 'proj_1',
+        userName: 'Vizol Angami',
+        timestamp: '2024-05-11 11:30 AM',
         status: 'Pending',
         title: 'Renewable Energy Water Pump',
         description: 'A prototype of a water pump powered by a small solar panel. The project aims to provide a sustainable solution for irrigation in remote areas.',
         images: ['https://placehold.co/600x400.png', 'https://placehold.co/600x400.png']
     },
-    { 
-        id: 'sub_3', 
-        projectId: 'proj_2', 
-        userName: 'John Bosco Jasokie', 
-        timestamp: '2024-04-20 02:15 PM', 
+    {
+        id: 'sub_3',
+        projectId: 'proj_2',
+        userName: 'John Bosco Jasokie',
+        timestamp: '2024-04-20 02:15 PM',
         status: 'Rejected',
         title: 'The future of AI in Nagaland',
         description: 'A presentation on the potential impact of Artificial Intelligence on the economy and society of Nagaland.',
         images: []
     },
-    { 
-        id: 'sub_4', 
-        projectId: 'proj_2', 
-        userName: 'K. L. Chishi', 
-        timestamp: '2024-04-21 09:00 AM', 
+    {
+        id: 'sub_4',
+        projectId: 'proj_2',
+        userName: 'K. L. Chishi',
+        timestamp: '2024-04-21 09:00 AM',
         status: 'Approved',
         title: 'Traditional Naga Attire and its significance',
         description: 'A research paper and presentation on the cultural importance of traditional Naga clothing and ornaments.',
         images: ['https://placehold.co/600x400.png']
     },
-    { 
-        id: 'sub_5', 
-        projectId: 'proj_1', 
-        userName: 'S. C. Jamir', 
-        timestamp: '2024-05-12 03:00 PM', 
+    {
+        id: 'sub_5',
+        projectId: 'proj_1',
+        userName: 'S. C. Jamir',
+        timestamp: '2024-05-12 03:00 PM',
         status: 'Pending',
         title: 'IoT Based Smart Home',
         description: 'A fully functional prototype of a smart home system using IoT devices to control lights, fans, and security cameras through a mobile application. The project uses a Raspberry Pi as the central hub.',
         images: ['https://placehold.co/600x400.png', 'https://placehold.co/600x400.png', 'https://placehold.co/600x400.png', 'https://placehold.co/600x400.png']
+    },
+    {
+      id: 'sub_6',
+      projectId: 'proj_1',
+      userName: 'T. N. Angami',
+      timestamp: '2024-05-13 09:00 AM',
+      status: 'Approved',
+      title: 'Biodiversity of Nagaland',
+      description: 'A detailed study of the rich biodiversity of Nagaland, with a focus on endemic species of flora and fauna. Includes photographs and samples collected during field trips.',
+      images: ['https://placehold.co/600x400.png', 'https://placehold.co/600x400.png'],
     },
 ];
 
