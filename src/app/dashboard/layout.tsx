@@ -1,7 +1,8 @@
+
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   Home,
   Users,
@@ -39,6 +40,8 @@ import {
 import Logo from '@/components/logo';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
+import { auth } from '@/lib/firebase';
+import { useToast } from '@/hooks/use-toast';
 
 const navItems = [
   { href: '/dashboard', icon: Home, label: 'Home' },
@@ -64,6 +67,8 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { toast } = useToast();
   const isProjectsPath = pathname.startsWith('/dashboard/projects') || pathname.startsWith('/dashboard/schools/add');
   const [isProjectsOpen, setIsProjectsOpen] = React.useState(isProjectsPath);
 
@@ -72,6 +77,17 @@ export default function DashboardLayout({
         setIsProjectsOpen(true);
     }
   }, [isProjectsPath]);
+
+  const handleLogout = async () => {
+    try {
+      await auth.signOut();
+      toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
+      router.push('/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+      toast({ title: 'Error', description: 'Failed to log out. Please try again.', variant: 'destructive' });
+    }
+  };
 
   return (
     <SidebarProvider>
@@ -191,7 +207,7 @@ export default function DashboardLayout({
                 <DropdownMenuItem asChild><Link href="/dashboard/account">Profile</Link></DropdownMenuItem>
                 <DropdownMenuItem>Support</DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem asChild><Link href="/login">Logout</Link></DropdownMenuItem>
+                <DropdownMenuItem onSelect={handleLogout}>Logout</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </header>
