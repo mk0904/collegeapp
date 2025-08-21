@@ -205,7 +205,7 @@ export default function DashboardLayout({
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild><Link href="/dashboard/account">Profile</Link></DropdownMenuItem>
-                <DropdownMenuItem>Support</DropdownMenuItem>
+                <DropdownMenuItem asChild><Link href="/dashboard/helpdesk">Support</Link></DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onSelect={handleLogout}>Logout</DropdownMenuItem>
               </DropdownMenuContent>
