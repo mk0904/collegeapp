@@ -1,3 +1,4 @@
+
 'use client'
 
 import * as React from "react";
@@ -30,10 +31,10 @@ export default function AccountPage() {
 
 
     React.useEffect(() => {
-        const currentUser = auth.currentUser;
-        if (currentUser) {
-            getUserById(currentUser.uid)
-                .then(userData => {
+        const unsubscribe = auth.onAuthStateChanged(async (currentUser) => {
+            if (currentUser) {
+                try {
+                    const userData = await getUserById(currentUser.uid);
                     if (userData) {
                         setUser(userData);
                         setName(userData.name);
@@ -41,15 +42,18 @@ export default function AccountPage() {
                         setPhone(userData.phone);
                         setDesignation(userData.designation || '');
                     }
-                })
-                .catch(error => {
+                } catch (error) {
                     console.error("Error fetching user data:", error);
                     toast({ title: "Error", description: "Failed to fetch profile data.", variant: "destructive" });
-                })
-                .finally(() => setLoading(false));
-        } else {
-            setLoading(false);
-        }
+                } finally {
+                    setLoading(false);
+                }
+            } else {
+                setLoading(false);
+                // Handle case where user is not logged in
+            }
+        });
+        return () => unsubscribe();
     }, [toast]);
 
     const handleProfileUpdate = async (e: React.FormEvent) => {
@@ -77,7 +81,10 @@ export default function AccountPage() {
 
         setIsUpdatingPassword(true);
         try {
-            const credential = EmailAuthProvider.credential(currentUser.email!, currentPassword);
+            if (!currentUser.email) {
+                throw new Error("User email is not available.");
+            }
+            const credential = EmailAuthProvider.credential(currentUser.email, currentPassword);
             await reauthenticateWithCredential(currentUser, credential);
             await updatePassword(currentUser, newPassword);
             toast({ title: "Success", description: "Password updated successfully. You will be logged out shortly." });
@@ -107,12 +114,24 @@ export default function AccountPage() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Skeleton className="h-10 w-full" />
-                        <Skeleton className="h-10 w-full" />
+                        <div className="space-y-2">
+                            <Skeleton className="h-4 w-12" />
+                            <Skeleton className="h-10 w-full" />
+                        </div>
+                        <div className="space-y-2">
+                            <Skeleton className="h-4 w-12" />
+                            <Skeleton className="h-10 w-full" />
+                        </div>
                       </div>
                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Skeleton className="h-10 w-full" />
-                        <Skeleton className="h-10 w-full" />
+                        <div className="space-y-2">
+                            <Skeleton className="h-4 w-24" />
+                            <Skeleton className="h-10 w-full" />
+                        </div>
+                        <div className="space-y-2">
+                            <Skeleton className="h-4 w-20" />
+                            <Skeleton className="h-10 w-full" />
+                        </div>
                       </div>
                       <Skeleton className="h-10 w-32" />
                   </CardContent>
