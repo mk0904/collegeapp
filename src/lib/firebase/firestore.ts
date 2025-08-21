@@ -115,6 +115,15 @@ export async function getSubmissionsByProjectId(projectId: string): Promise<Subm
   return mockSubmissions.filter(s => s.projectId === projectId);
 }
 
+export async function getSubmissionById(id: string): Promise<Submission | null> {
+    const submissionDoc = doc(db, 'submissions', id);
+    const submissionSnapshot = await getDoc(submissionDoc);
+    if(submissionSnapshot.exists()){
+        return { id: submissionSnapshot.id, ...submissionSnapshot.data() } as Submission;
+    }
+    return mockSubmissions.find(s => s.id === id) || null;
+}
+
 
 // Tickets
 export async function getTickets(): Promise<Ticket[]> {

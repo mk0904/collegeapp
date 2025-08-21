@@ -36,6 +36,9 @@ export type Submission = {
   userName: string;
   timestamp: string;
   status: 'Approved' | 'Rejected' | 'Pending';
+  title: string;
+  description: string;
+  images: string[];
 };
 
 export type Ticket = {
@@ -73,10 +76,46 @@ export const mockProjects: Project[] = [
 ];
 
 export const mockSubmissions: Submission[] = [
-    { id: 'sub_1', projectId: 'proj_1', userName: 'Hokishe Sema', timestamp: '2024-05-10 10:00 AM', status: 'Approved' },
-    { id: 'sub_2', projectId: 'proj_1', userName: 'Vizol Angami', timestamp: '2024-05-11 11:30 AM', status: 'Pending' },
-    { id: 'sub_3', projectId: 'proj_2', userName: 'John Bosco Jasokie', timestamp: '2024-04-20 02:15 PM', status: 'Rejected' },
-    { id: 'sub_4', projectId: 'proj_2', userName: 'K. L. Chishi', timestamp: '2024-04-21 09:00 AM', status: 'Approved' },
+    { 
+        id: 'sub_1', 
+        projectId: 'proj_1', 
+        userName: 'Hokishe Sema', 
+        timestamp: '2024-05-10 10:00 AM', 
+        status: 'Approved',
+        title: 'Model of a Volcanic Eruption',
+        description: 'A working model demonstrating the chemical reaction between baking soda and vinegar to simulate a volcanic eruption. The model is built using paper mache and painted to resemble a real volcano.',
+        images: ['https://placehold.co/600x400.png', 'https://placehold.co/600x400.png', 'https://placehold.co/600x400.png']
+    },
+    { 
+        id: 'sub_2', 
+        projectId: 'proj_1', 
+        userName: 'Vizol Angami', 
+        timestamp: '2024-05-11 11:30 AM', 
+        status: 'Pending',
+        title: 'Renewable Energy Water Pump',
+        description: 'A prototype of a water pump powered by a small solar panel. The project aims to provide a sustainable solution for irrigation in remote areas.',
+        images: ['https://placehold.co/600x400.png', 'https://placehold.co/600x400.png']
+    },
+    { 
+        id: 'sub_3', 
+        projectId: 'proj_2', 
+        userName: 'John Bosco Jasokie', 
+        timestamp: '2024-04-20 02:15 PM', 
+        status: 'Rejected',
+        title: 'The future of AI in Nagaland',
+        description: 'A presentation on the potential impact of Artificial Intelligence on the economy and society of Nagaland.',
+        images: []
+    },
+    { 
+        id: 'sub_4', 
+        projectId: 'proj_2', 
+        userName: 'K. L. Chishi', 
+        timestamp: '2024-04-21 09:00 AM', 
+        status: 'Approved',
+        title: 'Traditional Naga Attire and its significance',
+        description: 'A research paper and presentation on the cultural importance of traditional Naga clothing and ornaments.',
+        images: ['https://placehold.co/600x400.png']
+    },
 ];
 
 export const mockTickets: Ticket[] = [

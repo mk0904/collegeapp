@@ -1,7 +1,7 @@
 
 'use client'
 
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, View } from "lucide-react";
 import Link from "next/link";
 import * as React from 'react';
 
@@ -24,8 +24,6 @@ import {
 } from "@/components/ui/table";
 import { getProjectById, getSubmissionsByProjectId } from "@/lib/firebase/firestore";
 import type { Project, Submission } from "@/lib/mock-data";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function ProjectDetailsPage({ params }: { params: { id: string } }) {
@@ -83,7 +81,7 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
                   <TableHead>User</TableHead>
                   <TableHead>Timestamp</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Approve/Reject</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -92,7 +90,7 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
                     <TableCell><Skeleton className="h-5 w-24" /></TableCell>
                     <TableCell><Skeleton className="h-5 w-32" /></TableCell>
                     <TableCell><Skeleton className="h-6 w-20" /></TableCell>
-                    <TableCell className="text-right"><Skeleton className="h-6 w-12" /></TableCell>
+                    <TableCell className="text-right"><Skeleton className="h-9 w-20" /></TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -161,7 +159,7 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
                   <TableHead>User</TableHead>
                   <TableHead>Timestamp</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Approve/Reject</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -175,10 +173,12 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                          <Label htmlFor={`approval-${submission.id}`} className="sr-only">Approval Toggle</Label>
-                          <Switch id={`approval-${submission.id}`} defaultChecked={submission.status === 'Approved'} />
-                      </div>
+                      <Button asChild variant="outline" size="sm">
+                        <Link href={`/dashboard/submissions/${submission.id}`}>
+                          <View className="mr-2 h-4 w-4" />
+                          View
+                        </Link>
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
