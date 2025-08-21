@@ -35,12 +35,12 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
     async function fetchData() {
       try {
         setLoading(true);
-        const [projectData, submissionsData] = await Promise.all([
-          getProjectById(params.id),
-          getSubmissionsByProjectId(params.id)
-        ]);
+        const projectData = await getProjectById(params.id);
         setProject(projectData);
-        setSubmissions(submissionsData);
+        if (projectData) {
+          const submissionsData = await getSubmissionsByProjectId(params.id);
+          setSubmissions(submissionsData);
+        }
       } catch (error) {
         console.error("Error fetching project details:", error);
       } finally {

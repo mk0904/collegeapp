@@ -10,7 +10,7 @@ const db = getFirestore(app);
 export async function getUsers(): Promise<User[]> {
   const usersCol = collection(db, 'users');
   const userSnapshot = await getDocs(usersCol);
-  if (!userSnapshot.empty) {
+  if (userSnapshot.docs.length > 0) {
     const userList = userSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
     return userList;
   }
@@ -41,7 +41,7 @@ export async function updateUserStatus(userId: string, status: 'Active' | 'Inact
 export async function getSchools(): Promise<School[]> {
   const schoolsCol = collection(db, 'schools');
   const schoolSnapshot = await getDocs(schoolsCol);
-  if (!schoolSnapshot.empty) {
+  if (schoolSnapshot.docs.length > 0) {
     const schoolList = schoolSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as School));
     return schoolList;
   }
@@ -62,7 +62,7 @@ export async function getProjects(options: { limit?: number } = {}): Promise<Pro
       projectsQuery = query(projectsQuery, queryLimit(options.limit));
   }
   const projectSnapshot = await getDocs(projectsQuery);
-  if (!projectSnapshot.empty) {
+  if (projectSnapshot.docs.length > 0) {
     const projectList = projectSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Project));
     return projectList;
   }
@@ -104,11 +104,21 @@ export async function addProject(project: Omit<Project, 'id' | 'submissionsCount
 
 
 // Submissions
+export async function getSubmissions(): Promise<Submission[]> {
+  const submissionsCol = collection(db, 'submissions');
+  const submissionSnapshot = await getDocs(submissionsCol);
+  if (submissionSnapshot.docs.length > 0) {
+    const submissionList = submissionSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Submission));
+    return submissionList;
+  }
+  return mockSubmissions;
+}
+
 export async function getSubmissionsByProjectId(projectId: string): Promise<Submission[]> {
   const submissionsCol = collection(db, 'submissions');
   const q = query(submissionsCol, where('projectId', '==', projectId));
   const submissionSnapshot = await getDocs(q);
-  if (!submissionSnapshot.empty) {
+  if (submissionSnapshot.docs.length > 0) {
     const submissionList = submissionSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Submission));
     return submissionList;
   }
@@ -129,7 +139,7 @@ export async function getSubmissionById(id: string): Promise<Submission | null> 
 export async function getTickets(): Promise<Ticket[]> {
   const ticketsCol = collection(db, 'tickets');
   const ticketSnapshot = await getDocs(ticketsCol);
-  if (!ticketSnapshot.empty) {
+  if (ticketSnapshot.docs.length > 0) {
     const ticketList = ticketSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ticket));
     return ticketList;
   }

@@ -36,7 +36,7 @@ import {
 } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
 import * as React from 'react';
-import { getProjects, getSchools, getUsers, getTickets } from '@/lib/firebase/firestore';
+import { getProjects, getSchools, getUsers, getTickets, getSubmissions } from '@/lib/firebase/firestore';
 import type { Project } from '@/lib/mock-data';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -70,18 +70,19 @@ export default function DashboardPage() {
         async function fetchData() {
             try {
                 setLoading(true);
-                const [users, schools, tickets, projects] = await Promise.all([
+                const [users, schools, tickets, projects, submissions] = await Promise.all([
                     getUsers(),
                     getSchools(),
                     getTickets(),
                     getProjects({ limit: 4 }),
+                    getSubmissions(),
                 ]);
 
                 setStats({
                     totalUsers: users.length,
                     totalSchools: schools.length,
                     openTickets: tickets.filter(t => t.status === 'Open').length,
-                    pendingSubmissions: projects.filter(p => p.status === 'Pending').length,
+                    pendingSubmissions: submissions.filter(s => s.status === 'Pending').length,
                 });
 
                 setRecentProjects(projects);
