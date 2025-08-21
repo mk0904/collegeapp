@@ -7,6 +7,7 @@ export type User = {
   role: 'Admin' | 'Teacher' | 'Student';
   createdOn: string;
   school: string;
+  designation?: string;
 };
 
 export type School = {

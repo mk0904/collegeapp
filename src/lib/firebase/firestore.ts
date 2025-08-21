@@ -12,6 +12,20 @@ export async function getUsers(): Promise<User[]> {
   return userList;
 }
 
+export async function getUserById(userId: string): Promise<User | null> {
+    const userDocRef = doc(db, 'users', userId);
+    const userSnap = await getDoc(userDocRef);
+    if (userSnap.exists()) {
+        return { id: userSnap.id, ...userSnap.data() } as User;
+    }
+    return null;
+}
+
+export async function updateUserProfile(userId: string, data: Partial<User>): Promise<void> {
+    const userDoc = doc(db, 'users', userId);
+    await updateDoc(userDoc, data);
+}
+
 export async function updateUserStatus(userId: string, status: 'Active' | 'Inactive'): Promise<void> {
     const userDoc = doc(db, 'users', userId);
     await updateDoc(userDoc, { status });
