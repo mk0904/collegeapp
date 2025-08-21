@@ -1,3 +1,4 @@
+
 'use client'
 
 import { ArrowLeft } from "lucide-react";
@@ -61,7 +62,13 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
             <Skeleton className="h-5 w-1/3" />
           </CardHeader>
           <CardContent>
-             <Skeleton className="h-6 w-24" />
+             <div className="space-y-2">
+                <Skeleton className="h-5 w-full" />
+                <Skeleton className="h-5 w-4/5" />
+             </div>
+             <div className="mt-4">
+                <Skeleton className="h-6 w-24" />
+             </div>
           </CardContent>
         </Card>
         <Card>
@@ -108,7 +115,7 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-6">
       <div>
         <Button variant="ghost" asChild className="pl-0">
           <Link href="/dashboard/projects" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
@@ -119,18 +126,23 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
       </div>
       <Card>
         <CardHeader>
-          <CardTitle>{project.name}</CardTitle>
-          <CardDescription>
-            Part of <span className="font-semibold">{project.schoolName}</span>
-          </CardDescription>
+          <div className="flex justify-between items-start">
+            <div>
+              <CardTitle className="text-2xl font-headline">{project.name}</CardTitle>
+              <CardDescription>
+                Part of <span className="font-semibold">{project.schoolName}</span>
+              </CardDescription>
+            </div>
+             <div className="flex items-center space-x-2">
+                <span className="text-sm text-muted-foreground">Status:</span>
+                <Badge variant={project.status === 'Completed' ? 'default' : 'outline'}>
+                {project.status}
+                </Badge>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center space-x-4">
-            <span className="text-sm text-muted-foreground">Status:</span>
-            <Badge variant={project.status === 'Completed' ? 'default' : 'outline'}>
-              {project.status}
-            </Badge>
-          </div>
+          <p className="text-muted-foreground">{project.description}</p>
         </CardContent>
       </Card>
       

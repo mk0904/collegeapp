@@ -1,3 +1,4 @@
+
 export type User = {
   id: string;
   name: string;
@@ -26,6 +27,7 @@ export type Project = {
     schoolName: string;
     submissionsCount: number;
     status: 'Ongoing' | 'Completed' | 'Pending';
+    description: string;
 };
 
 export type Submission = {
@@ -63,11 +65,11 @@ export const mockSchools: School[] = [
 ];
 
 export const mockProjects: Project[] = [
-    { id: 'proj_1', name: 'Annual Science Fair', schoolId: 'sch_1', schoolName: 'Kohima Science College', submissionsCount: 12, status: 'Ongoing' },
-    { id: 'proj_2', name: 'Inter-College Debate Competition', schoolId: 'sch_2', schoolName: 'St. Joseph\'s College', submissionsCount: 8, status: 'Completed' },
-    { id: 'proj_3', name: 'Tech Fest 2024', schoolId: 'sch_1', schoolName: 'Kohima Science College', submissionsCount: 25, status: 'Ongoing' },
-    { id: 'proj_4', name: 'Literary Fest', schoolId: 'sch_3', schoolName: 'Model Christian College', submissionsCount: 5, status: 'Pending' },
-    { id: 'proj_5', name: 'Research Symposium', schoolId: 'sch_4', schoolName: 'Nagaland University', submissionsCount: 30, status: 'Completed' },
+    { id: 'proj_1', name: 'Annual Science Fair', schoolId: 'sch_1', schoolName: 'Kohima Science College', submissionsCount: 12, status: 'Ongoing', description: 'A showcase of innovative science projects from students across all departments, promoting scientific temper and research.' },
+    { id: 'proj_2', name: 'Inter-College Debate Competition', schoolId: 'sch_2', schoolName: 'St. Joseph\'s College', submissionsCount: 8, status: 'Completed', description: 'An annual event fostering public speaking and critical thinking skills among students on contemporary topics.' },
+    { id: 'proj_3', name: 'Tech Fest 2024', schoolId: 'sch_1', schoolName: 'Kohima Science College', submissionsCount: 25, status: 'Ongoing', description: 'A week-long festival with coding competitions, workshops, and tech talks by industry experts.' },
+    { id: 'proj_4', name: 'Literary Fest', schoolId: 'sch_3', schoolName: 'Model Christian College', submissionsCount: 5, status: 'Pending', description: 'A celebration of literature, poetry, and storytelling, featuring guest authors and creative writing workshops.' },
+    { id: 'proj_5', name: 'Research Symposium', schoolId: 'sch_4', schoolName: 'Nagaland University', submissionsCount: 30, status: 'Completed', description: 'A platform for postgraduate students and faculty to present their latest research findings to the academic community.' },
 ];
 
 export const mockSubmissions: Submission[] = [
