@@ -136,6 +136,16 @@ export const mockSubmissions: Submission[] = [
       description: 'A detailed study of the rich biodiversity of Nagaland, with a focus on endemic species of flora and fauna. Includes photographs and samples collected during field trips.',
       images: ['https://placehold.co/600x400.png', 'https://placehold.co/600x400.png'],
     },
+    {
+      id: 'sub_7',
+      projectId: 'proj_1',
+      userName: 'Neiphiu Rio',
+      timestamp: '2024-05-14 02:00 PM',
+      status: 'Pending',
+      title: 'AI in Agriculture',
+      description: 'A presentation on how AI can be used to improve crop yields and detect diseases in plants, with a focus on local Naga crops.',
+      images: ['https://placehold.co/600x400.png', 'https://placehold.co/600x400.png']
+    }
 ];
 
 export const mockTickets: Ticket[] = [
