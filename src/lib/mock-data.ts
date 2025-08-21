@@ -116,6 +116,16 @@ export const mockSubmissions: Submission[] = [
         description: 'A research paper and presentation on the cultural importance of traditional Naga clothing and ornaments.',
         images: ['https://placehold.co/600x400.png']
     },
+    { 
+        id: 'sub_5', 
+        projectId: 'proj_1', 
+        userName: 'S. C. Jamir', 
+        timestamp: '2024-05-12 03:00 PM', 
+        status: 'Pending',
+        title: 'IoT Based Smart Home',
+        description: 'A fully functional prototype of a smart home system using IoT devices to control lights, fans, and security cameras through a mobile application. The project uses a Raspberry Pi as the central hub.',
+        images: ['https://placehold.co/600x400.png', 'https://placehold.co/600x400.png', 'https://placehold.co/600x400.png', 'https://placehold.co/600x400.png']
+    },
 ];
 
 export const mockTickets: Ticket[] = [
