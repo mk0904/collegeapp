@@ -48,6 +48,9 @@ export default function UsersPage() {
     const [users, setUsers] = React.useState<User[]>([])
     const [loading, setLoading] = React.useState(true);
     const [isModalOpen, setIsModalOpen] = React.useState(false);
+    const [selectedUserIds, setSelectedUserIds] = React.useState<string[]>([]);
+
+    const selectedUsers = users.filter(user => selectedUserIds.includes(user.id));
 
     React.useEffect(() => {
       async function fetchUsers() {
@@ -86,10 +89,29 @@ export default function UsersPage() {
             })
         }
     }
+
+    const handleSelectAll = (checked: boolean) => {
+        if (checked) {
+            setSelectedUserIds(users.map(user => user.id));
+        } else {
+            setSelectedUserIds([]);
+        }
+    }
+
+    const handleSelectUser = (userId: string, checked: boolean) => {
+        if (checked) {
+            setSelectedUserIds(prev => [...prev, userId]);
+        } else {
+            setSelectedUserIds(prev => prev.filter(id => id !== userId));
+        }
+    }
+
+    const isAllSelected = selectedUserIds.length === users.length && users.length > 0;
+    const isIndeterminate = selectedUserIds.length > 0 && selectedUserIds.length < users.length;
   
   return (
     <>
-      <SendCircularModal isOpen={isModalOpen} onOpenChange={setIsModalOpen} />
+      <SendCircularModal isOpen={isModalOpen} onOpenChange={setIsModalOpen} selectedUsers={selectedUsers} />
       <Card>
         <CardHeader>
           <CardTitle>Users</CardTitle>
@@ -124,8 +146,8 @@ export default function UsersPage() {
                   <DropdownMenuCheckboxItem>Student</DropdownMenuCheckboxItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              <Button size="sm" variant="outline" onClick={() => setIsModalOpen(true)}>
-                Send Circular
+              <Button size="sm" variant="outline" onClick={() => setIsModalOpen(true)} disabled={selectedUserIds.length === 0}>
+                Send Circular ({selectedUserIds.length})
               </Button>
               <Button size="sm">
                 <PlusCircle className="mr-2 h-4 w-4" />
@@ -138,7 +160,13 @@ export default function UsersPage() {
               <TableHeader>
                   <TableRow>
                   <TableHead className="w-[40px]">
-                      <Checkbox />
+                      <Checkbox
+                        checked={isAllSelected}
+                        onCheckedChange={handleSelectAll}
+                        aria-label="Select all rows"
+                        // @ts-ignore
+                        indeterminate={isIndeterminate.toString()}
+                      />
                   </TableHead>
                   <TableHead className="min-w-[150px]">Name</TableHead>
                   <TableHead>Status</TableHead>
@@ -172,9 +200,13 @@ export default function UsersPage() {
                     ))
                   ) : (
                     users.map(user => (
-                      <TableRow key={user.id}>
+                      <TableRow key={user.id} data-state={selectedUserIds.includes(user.id) ? 'selected' : ''}>
                           <TableCell>
-                              <Checkbox />
+                              <Checkbox 
+                                checked={selectedUserIds.includes(user.id)}
+                                onCheckedChange={(checked) => handleSelectUser(user.id, !!checked)}
+                                aria-label={`Select row for ${user.name}`}
+                              />
                           </TableCell>
                           <TableCell className="font-medium">
                               <div>{user.name}</div>
@@ -224,6 +256,9 @@ export default function UsersPage() {
               </Table>
           </div>
           <div className="flex items-center justify-end space-x-2 py-4">
+              <div className="flex-1 text-sm text-muted-foreground">
+                {selectedUserIds.length} of {users.length} row(s) selected.
+              </div>
               <Button variant="outline" size="sm">Previous</Button>
               <Button variant="outline" size="sm">Next</Button>
           </div>

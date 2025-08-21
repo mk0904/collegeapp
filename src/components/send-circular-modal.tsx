@@ -14,15 +14,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, X, File as FileIcon, Loader2 } from 'lucide-react';
+import { Upload, X, File as FileIcon, Loader2, Users } from 'lucide-react';
 import { uploadFile } from '@/lib/firebase/storage';
+import type { User } from '@/lib/mock-data';
+import { Badge } from './ui/badge';
 
 interface SendCircularModalProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
+  selectedUsers: User[];
 }
 
-export function SendCircularModal({ isOpen, onOpenChange }: SendCircularModalProps) {
+export function SendCircularModal({ isOpen, onOpenChange, selectedUsers }: SendCircularModalProps) {
   const { toast } = useToast();
   const [title, setTitle] = React.useState('');
   const [description, setDescription] = React.useState('');
@@ -47,6 +50,12 @@ export function SendCircularModal({ isOpen, onOpenChange }: SendCircularModalPro
     setFiles([]);
     setIsSending(false);
   };
+  
+  React.useEffect(() => {
+    if(!isOpen) {
+      resetForm();
+    }
+  }, [isOpen]);
 
   const handleSendCircular = async () => {
     if (!title) {
@@ -57,14 +66,18 @@ export function SendCircularModal({ isOpen, onOpenChange }: SendCircularModalPro
       });
       return;
     }
+    
+    if (selectedUsers.length === 0) {
+      toast({
+        title: 'No users selected',
+        description: 'Please select at least one user to send the circular to.',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     setIsSending(true);
     try {
-      // In a real application, you would first upload the files to a storage service
-      // like Firebase Storage, get their URLs, and then save the circular data
-      // (title, description, file URLs) to Firestore. Then, you'd trigger the
-      // push notification.
-
       const fileUrls = await Promise.all(
         files.map(async (file) => {
           const downloadURL = await uploadFile(file, `circulars/${Date.now()}_${file.name}`);
@@ -73,14 +86,14 @@ export function SendCircularModal({ isOpen, onOpenChange }: SendCircularModalPro
       );
       
       // Placeholder for sending notification logic
-      console.log('Sending circular with:', { title, description, fileUrls });
+      console.log('Sending circular to:', selectedUsers.map(u => u.id));
+      console.log('Circular data:', { title, description, fileUrls });
 
       toast({
         title: 'Circular Sent!',
-        description: 'Your circular has been scheduled for delivery.',
+        description: `Your circular has been sent to ${selectedUsers.length} user(s).`,
       });
       
-      resetForm();
       onOpenChange(false);
     } catch (error) {
       console.error('Error sending circular:', error);
@@ -100,10 +113,18 @@ export function SendCircularModal({ isOpen, onOpenChange }: SendCircularModalPro
         <DialogHeader>
           <DialogTitle className="font-headline text-2xl">Send New Circular</DialogTitle>
           <DialogDescription>
-            Compose and send a circular to all users. It will be sent as a push notification.
+            Compose and send a circular to all selected users. It will be sent as a push notification.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-6 py-4">
+           <div className="grid gap-2">
+            <Label className="font-semibold">Recipients</Label>
+            <div className="flex items-center gap-2 p-3 rounded-md border border-input bg-background">
+                <Users className="h-5 w-5 text-muted-foreground" />
+                <span className="text-sm font-medium">{selectedUsers.length} user(s) selected</span>
+                <Badge variant="secondary" className="ml-auto">{selectedUsers.length === 1 ? selectedUsers[0].name : 'Multiple Users'}</Badge>
+            </div>
+           </div>
           <div className="grid gap-2">
             <Label htmlFor="title" className="font-semibold">
               Circular Title
@@ -163,9 +184,9 @@ export function SendCircularModal({ isOpen, onOpenChange }: SendCircularModalPro
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={handleSendCircular} disabled={isSending}>
+          <Button onClick={handleSendCircular} disabled={isSending || selectedUsers.length === 0}>
             {isSending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isSending ? 'Sending...' : 'Send Circular'}
+            {isSending ? 'Sending...' : `Send to ${selectedUsers.length} User(s)`}
           </Button>
         </DialogFooter>
       </DialogContent>
