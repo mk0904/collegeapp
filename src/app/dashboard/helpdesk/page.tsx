@@ -219,7 +219,7 @@ export default function HelpdeskPage() {
                       <TableCell><Skeleton className="h-5 w-20" /></TableCell>
                       <TableCell><Skeleton className="h-5 w-40" /></TableCell>
                       <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                      <TableCell><Skeleton className="h-5 w-16" /></TableCell>
+                      <TableCell><Skeleton className="h-6 w-20" /></TableCell>
                       <TableCell><Skeleton className="h-5 w-24" /></TableCell>
                       <TableCell><Skeleton className="h-5 w-24" /></TableCell>
                       <TableCell><Skeleton className="h-6 w-20" /></TableCell>
@@ -232,7 +232,7 @@ export default function HelpdeskPage() {
                       <TableCell className="font-medium">{ticket.id}</TableCell>
                       <TableCell>{ticket.subject}</TableCell>
                       <TableCell>{ticket.userName}</TableCell>
-                      <TableCell><Badge variant="secondary">{ticket.issueType}</Badge></TableCell>
+                      <TableCell><Badge variant={ticket.issueType === 'Support' ? 'secondary' : 'outline'}>{ticket.issueType}</Badge></TableCell>
                       <TableCell>{ticket.dateRaised}</TableCell>
                       <TableCell>{ticket.dateClosed || 'N/A'}</TableCell>
                       <TableCell>
