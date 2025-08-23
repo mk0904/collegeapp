@@ -53,7 +53,6 @@ type IssueTypeFilter = 'all' | 'Support' | 'Feedback';
 export default function HelpdeskPage() {
   const { toast } = useToast();
   const [tickets, setTickets] = React.useState<Ticket[]>([]);
-  const [users, setUsers] = React.useState<User[]>([]);
   const [loading, setLoading] = React.useState(true);
   
   const [selectedTicket, setSelectedTicket] = React.useState<Ticket | null>(null);
@@ -61,7 +60,6 @@ export default function HelpdeskPage() {
 
   // Filtering state
   const [searchTerm, setSearchTerm] = React.useState('');
-  const [userFilter, setUserFilter] = React.useState('all');
   const [statusFilter, setStatusFilter] = React.useState<StatusFilter>('all');
   const [issueTypeFilter, setIssueTypeFilter] = React.useState<IssueTypeFilter>('all');
   const [dateRaised, setDateRaised] = React.useState<Date | undefined>(undefined);
@@ -70,9 +68,8 @@ export default function HelpdeskPage() {
     async function fetchData() {
       try {
         setLoading(true);
-        const [fetchedTickets, fetchedUsers] = await Promise.all([getTickets(), getUsers()]);
+        const fetchedTickets = await getTickets();
         setTickets(fetchedTickets);
-        setUsers(fetchedUsers);
       } catch (error) {
         console.error("Error fetching data:", error);
         toast({ title: "Error", description: "Failed to fetch helpdesk data.", variant: "destructive" });
@@ -109,15 +106,14 @@ export default function HelpdeskPage() {
         ticket.id.toLowerCase().includes(searchTermLower)
         : true;
       
-      const matchesUser = userFilter !== 'all' ? ticket.userName === userFilter : true;
       const matchesStatus = statusFilter !== 'all' ? ticket.status === statusFilter : true;
       const matchesIssueType = issueTypeFilter !== 'all' ? ticket.issueType === issueTypeFilter : true;
 
       const matchesDateRaised = dateRaised ? format(new Date(ticket.dateRaised), 'yyyy-MM-dd') === format(dateRaised, 'yyyy-MM-dd') : true;
       
-      return matchesSearch && matchesUser && matchesStatus && matchesIssueType && matchesDateRaised;
+      return matchesSearch && matchesStatus && matchesIssueType && matchesDateRaised;
     });
-  }, [tickets, searchTerm, userFilter, statusFilter, issueTypeFilter, dateRaised]);
+  }, [tickets, searchTerm, statusFilter, issueTypeFilter, dateRaised]);
 
 
   return (
@@ -143,22 +139,6 @@ export default function HelpdeskPage() {
                 />
               </div>
               <div className="flex w-full sm:w-auto gap-2">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="w-full sm:w-auto">
-                      User <ChevronDown className="ml-2 h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuCheckboxItem checked={userFilter === 'all'} onCheckedChange={() => setUserFilter('all')}>All Users</DropdownMenuCheckboxItem>
-                    {users.map(user => (
-                      <DropdownMenuCheckboxItem key={user.id} checked={userFilter === user.name} onCheckedChange={() => setUserFilter(user.name)}>
-                        {user.name}
-                      </DropdownMenuCheckboxItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" className="w-full sm:w-auto">
