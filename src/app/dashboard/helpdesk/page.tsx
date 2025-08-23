@@ -1,8 +1,8 @@
+
 'use client'
 
 import {
   MoreHorizontal,
-  PlusCircle,
   ChevronDown,
 } from 'lucide-react'
 import * as React from 'react'
@@ -81,10 +81,6 @@ export default function HelpdeskPage() {
                 <DropdownMenuCheckboxItem>Closed</DropdownMenuCheckboxItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <Button size="sm">
-              <PlusCircle className="mr-2 h-4 w-4" />
-              New Ticket
-            </Button>
         </div>
       </CardHeader>
       <CardContent>
