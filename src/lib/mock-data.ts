@@ -44,10 +44,13 @@ export type Submission = {
 export type Ticket = {
     id: string;
     userName: string;
-    issueType: 'Technical' | 'Billing' | 'General';
+    userEmail: string;
+    issueType: 'Support' | 'Feedback';
     dateRaised: string;
-    status: 'Open' | 'Pending' | 'Closed';
+    dateClosed: string | null;
+    status: 'Open' | 'Pending' | 'Resolved';
     subject: string;
+    description: string;
 };
 
 // --- MOCK DATA ---
@@ -149,8 +152,48 @@ export const mockSubmissions: Submission[] = [
 ];
 
 export const mockTickets: Ticket[] = [
-    { id: 'tkt_1', userName: 'T. N. Angami', issueType: 'Technical', dateRaised: '2024-05-20', status: 'Open', subject: 'Unable to login to portal' },
-    { id: 'tkt_2', userName: 'P. Shilu Ao', issueType: 'General', dateRaised: '2024-05-19', status: 'Closed', subject: 'Question about project submission deadline' },
-    { id: 'tkt_3', userName: 'Neiphiu Rio', issueType: 'Billing', dateRaised: '2024-05-21', status: 'Pending', subject: 'Invoice query' },
-    { id: 'tkt_4', userName: 'S. C. Jamir', issueType: 'Technical', dateRaised: '2024-05-18', status: 'Open', subject: 'File upload failed' },
+    { 
+        id: 'TKT-0101', 
+        userName: 'T. N. Angami', 
+        userEmail: 'tn.angami@example.com',
+        issueType: 'Support', 
+        dateRaised: '2024-05-20', 
+        dateClosed: null,
+        status: 'Open', 
+        subject: 'Unable to login to portal',
+        description: 'I am unable to login to the portal since this morning. It keeps saying "Invalid Credentials" even though I am sure my password is correct. Please look into this matter urgently. I have tried resetting my password, but I did not receive any email.'
+    },
+    { 
+        id: 'TKT-0102', 
+        userName: 'P. Shilu Ao', 
+        userEmail: 'shilu.ao@example.com',
+        issueType: 'Feedback', 
+        dateRaised: '2024-05-19', 
+        dateClosed: '2024-05-20',
+        status: 'Resolved', 
+        subject: 'Question about project submission deadline',
+        description: 'I had a question regarding the deadline for the upcoming science fair project. The portal says it is the 25th, but the notice board in college says it is the 28th. Can you please clarify which is the correct date? It would be great if the information was consistent.'
+    },
+    { 
+        id: 'TKT-0103', 
+        userName: 'Neiphiu Rio', 
+        userEmail: 'neiphiu.rio@example.com',
+        issueType: 'Support', 
+        dateRaised: '2024-05-21', 
+        dateClosed: null,
+        status: 'Pending', 
+        subject: 'Invoice query',
+        description: 'I have not yet received the invoice for the last quarter for the services. Can you please check and send it to my registered email address? I need it for accounting purposes.'
+    },
+    { 
+        id: 'TKT-0104', 
+        userName: 'S. C. Jamir', 
+        userEmail: 'sc.jamir@example.com',
+        issueType: 'Support', 
+        dateRaised: '2024-05-18',
+        dateClosed: null,
+        status: 'Open', 
+        subject: 'File upload failed',
+        description: 'I am trying to upload the documents for my project submission, but the upload keeps failing with a generic "Upload Error". The file size is within the limit, and the format is correct. I have tried multiple times from different browsers.'
+    },
 ];

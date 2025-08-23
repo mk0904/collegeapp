@@ -163,3 +163,8 @@ export async function getTickets(): Promise<Ticket[]> {
   }
   return mockTickets;
 }
+
+export async function updateTicketStatus(ticketId: string, status: 'Resolved', resolutionDate: string): Promise<void> {
+    const ticketDoc = doc(db, 'tickets', ticketId);
+    await updateDoc(ticketDoc, { status, dateClosed: resolutionDate });
+}
