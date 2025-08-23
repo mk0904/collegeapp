@@ -67,7 +67,6 @@ export default function HelpdeskPage() {
   const [statusFilter, setStatusFilter] = React.useState<StatusFilter>('all');
   const [issueTypeFilter, setIssueTypeFilter] = React.useState<IssueTypeFilter>('all');
   const [dateRaised, setDateRaised] = React.useState<Date | undefined>(undefined);
-  const [dateClosed, setDateClosed] = React.useState<Date | undefined>(undefined);
 
   React.useEffect(() => {
     async function fetchData() {
@@ -118,11 +117,9 @@ export default function HelpdeskPage() {
 
       const matchesDateRaised = dateRaised ? format(new Date(ticket.dateRaised), 'yyyy-MM-dd') === format(dateRaised, 'yyyy-MM-dd') : true;
       
-      const matchesDateClosed = dateClosed && ticket.dateClosed ? format(new Date(ticket.dateClosed), 'yyyy-MM-dd') === format(dateClosed, 'yyyy-MM-dd') : !dateClosed;
-
-      return matchesSearch && matchesUser && matchesStatus && matchesIssueType && matchesDateRaised && matchesDateClosed;
+      return matchesSearch && matchesUser && matchesStatus && matchesIssueType && matchesDateRaised;
     });
-  }, [tickets, searchTerm, userFilter, statusFilter, issueTypeFilter, dateRaised, dateClosed]);
+  }, [tickets, searchTerm, userFilter, statusFilter, issueTypeFilter, dateRaised]);
 
 
   return (
@@ -200,18 +197,6 @@ export default function HelpdeskPage() {
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0">
                         <Calendar mode="single" selected={dateRaised} onSelect={setDateRaised} initialFocus />
-                    </PopoverContent>
-                </Popover>
-
-                 <Popover>
-                    <PopoverTrigger asChild>
-                        <Button variant="outline" className={cn("w-full sm:w-auto justify-start text-left font-normal", !dateClosed && "text-muted-foreground")}>
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {dateClosed ? format(dateClosed, "PPP") : <span>Date Closed</span>}
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                        <Calendar mode="single" selected={dateClosed} onSelect={setDateClosed} initialFocus />
                     </PopoverContent>
                 </Popover>
               </div>
