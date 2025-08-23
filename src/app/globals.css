@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    --background: 220 40% 96%;
+    --background: 228 100% 99%;
     --foreground: 240 10% 3.9%;
     --card: 0 0% 100%;
     --card-foreground: 240 10% 3.9%;
@@ -29,14 +29,15 @@
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     --radius: 0.8rem;
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 240 10% 3.9%;
-    --sidebar-primary: 177 100% 14%;
+
+    --sidebar-background: 228 100% 100% / 0.7;
+    --sidebar-foreground: hsl(var(--primary));
+    --sidebar-primary: hsl(var(--primary));
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 20% 94%;
-    --sidebar-accent-foreground: 240 10% 3.9%;
-    --sidebar-border: 220 10% 90%;
-    --sidebar-ring: 177 100% 14%;
+    --sidebar-accent: hsl(var(--primary) / 0.1);
+    --sidebar-accent-foreground: hsl(var(--primary));
+    --sidebar-border: hsl(var(--primary) / 0.1);
+    --sidebar-ring: hsl(var(--primary));
   }
   .dark {
     --background: 240 10% 3.9%;
@@ -63,7 +64,8 @@
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
-    --sidebar-background: 240 10% 3.9%;
+
+    --sidebar-background: 240 10% 3.9% / 0.7;
     --sidebar-foreground: 0 0% 98%;
     --sidebar-primary: 177 48% 82%;
     --sidebar-primary-foreground: 177 48% 12%;
@@ -81,4 +83,13 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+@layer components {
+    [data-sidebar="sidebar"] {
+        @apply backdrop-blur-lg;
+    }
+    [data-sidebar="menu-button"][data-active="true"] {
+        @apply bg-gradient-to-r from-primary to-[hsl(var(--primary)/0.8)];
+    }
 }

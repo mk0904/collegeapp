@@ -109,7 +109,7 @@ export default function DashboardPage() {
 
         <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
           <Link href="/dashboard/users">
-            <Card className="hover:bg-accent/50 transition-colors">
+            <Card className="hover:bg-card/80 transition-colors">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Users</CardTitle>
                 <UsersIcon className="h-4 w-4 text-muted-foreground" />
@@ -121,7 +121,7 @@ export default function DashboardPage() {
             </Card>
           </Link>
           <Link href="/dashboard/projects">
-            <Card className="hover:bg-accent/50 transition-colors">
+            <Card className="hover:bg-card/80 transition-colors">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Schools</CardTitle>
                 <BookOpenCheck className="h-4 w-4 text-muted-foreground" />
@@ -133,7 +133,7 @@ export default function DashboardPage() {
             </Card>
           </Link>
           <Link href="/dashboard/helpdesk">
-            <Card className="hover:bg-accent/50 transition-colors">
+            <Card className="hover:bg-card/80 transition-colors">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Open Support Tickets</CardTitle>
                 <Ticket className="h-4 w-4 text-muted-foreground" />
@@ -145,7 +145,7 @@ export default function DashboardPage() {
             </Card>
           </Link>
           <Link href="/dashboard/projects">
-            <Card className="hover:bg-accent/50 transition-colors">
+            <Card className="hover:bg-card/80 transition-colors">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Pending Submissions</CardTitle>
                 <Activity className="h-4 w-4 text-muted-foreground" />
