@@ -109,50 +109,50 @@ export default function DashboardPage() {
 
         <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
           <Link href="/dashboard/users">
-            <Card className="bg-primary/5 border-primary/20 hover:bg-primary/10 transition-colors">
+            <Card className="hover:bg-accent/50 transition-colors">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-primary">Total Users</CardTitle>
-                <UsersIcon className="h-4 w-4 text-primary/80" />
+                <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+                <UsersIcon className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                {loading ? <Skeleton className="h-7 w-16" /> : <div className="text-2xl font-bold text-primary">{stats.totalUsers}</div>}
-                {loading ? <Skeleton className="h-4 w-32 mt-1" /> : <p className="text-xs text-primary/80">+20.1% from last month</p>}
+                {loading ? <Skeleton className="h-7 w-16" /> : <div className="text-2xl font-bold">{stats.totalUsers}</div>}
+                {loading ? <Skeleton className="h-4 w-32 mt-1" /> : <p className="text-xs text-muted-foreground">+20.1% from last month</p>}
               </CardContent>
             </Card>
           </Link>
           <Link href="/dashboard/projects">
-            <Card className="bg-primary/5 border-primary/20 hover:bg-primary/10 transition-colors">
+            <Card className="hover:bg-accent/50 transition-colors">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-primary">Total Schools</CardTitle>
-                <BookOpenCheck className="h-4 w-4 text-primary/80" />
+                <CardTitle className="text-sm font-medium">Total Schools</CardTitle>
+                <BookOpenCheck className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                 {loading ? <Skeleton className="h-7 w-10" /> : <div className="text-2xl font-bold text-primary">{stats.totalSchools}</div>}
-                 {loading ? <Skeleton className="h-4 w-32 mt-1" /> : <p className="text-xs text-primary/80">+1 since last quarter</p>}
+                 {loading ? <Skeleton className="h-7 w-10" /> : <div className="text-2xl font-bold">{stats.totalSchools}</div>}
+                 {loading ? <Skeleton className="h-4 w-32 mt-1" /> : <p className="text-xs text-muted-foreground">+1 since last quarter</p>}
               </CardContent>
             </Card>
           </Link>
           <Link href="/dashboard/helpdesk">
-            <Card className="bg-primary/5 border-primary/20 hover:bg-primary/10 transition-colors">
+            <Card className="hover:bg-accent/50 transition-colors">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-primary">Open Support Tickets</CardTitle>
-                <Ticket className="h-4 w-4 text-primary/80" />
+                <CardTitle className="text-sm font-medium">Open Support Tickets</CardTitle>
+                <Ticket className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                 {loading ? <Skeleton className="h-7 w-12" /> : <div className="text-2xl font-bold text-primary">{stats.openTickets}</div>}
-                 {loading ? <Skeleton className="h-4 w-28 mt-1" /> : <p className="text-xs text-primary/80">+2 since yesterday</p>}
+                 {loading ? <Skeleton className="h-7 w-12" /> : <div className="text-2xl font-bold">{stats.openTickets}</div>}
+                 {loading ? <Skeleton className="h-4 w-28 mt-1" /> : <p className="text-xs text-muted-foreground">+2 since yesterday</p>}
               </CardContent>
             </Card>
           </Link>
           <Link href="/dashboard/projects">
-            <Card className="bg-primary/5 border-primary/20 hover:bg-primary/10 transition-colors">
+            <Card className="hover:bg-accent/50 transition-colors">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-primary">Pending Submissions</CardTitle>
-                <Activity className="h-4 w-4 text-primary/80" />
+                <CardTitle className="text-sm font-medium">Pending Submissions</CardTitle>
+                <Activity className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                {loading ? <Skeleton className="h-7 w-14" /> : <div className="text-2xl font-bold text-primary">{stats.pendingSubmissions}</div>}
-                {loading ? <Skeleton className="h-4 w-28 mt-1" /> : <p className="text-xs text-primary/80">+2 since last hour</p>}
+                {loading ? <Skeleton className="h-7 w-14" /> : <div className="text-2xl font-bold">{stats.pendingSubmissions}</div>}
+                {loading ? <Skeleton className="h-4 w-28 mt-1" /> : <p className="text-xs text-muted-foreground">+2 since last hour</p>}
               </CardContent>
             </Card>
           </Link>
