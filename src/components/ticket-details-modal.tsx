@@ -2,6 +2,7 @@
 'use client';
 
 import * as React from 'react';
+import Image from 'next/image';
 import {
   Dialog,
   DialogContent,
@@ -11,6 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from './ui/badge';
 import type { Ticket } from '@/lib/mock-data';
+import { Separator } from './ui/separator';
 
 interface TicketDetailsModalProps {
   isOpen: boolean;
@@ -23,7 +25,7 @@ export function TicketDetailsModal({ isOpen, onOpenChange, ticket }: TicketDetai
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <div className="flex justify-between items-start">
             <div>
@@ -37,29 +39,44 @@ export function TicketDetailsModal({ isOpen, onOpenChange, ticket }: TicketDetai
             </Badge>
           </div>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-                <p className="text-sm font-semibold text-right text-muted-foreground col-span-1">User</p>
-                <p className="text-sm col-span-3">{ticket.userName} ({ticket.userEmail})</p>
+        <Separator />
+        <div className="grid gap-6 py-4">
+            <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+                <div className="space-y-1">
+                    <p className="text-sm font-medium text-muted-foreground">User</p>
+                    <p className="text-sm font-semibold">{ticket.userName} ({ticket.userEmail})</p>
+                </div>
+                <div className="space-y-1">
+                    <p className="text-sm font-medium text-muted-foreground">Issue Type</p>
+                    <p className="text-sm font-semibold">{ticket.issueType}</p>
+                </div>
+                 <div className="space-y-1">
+                    <p className="text-sm font-medium text-muted-foreground">Date Raised</p>
+                    <p className="text-sm font-semibold">{ticket.dateRaised}</p>
+                </div>
+                <div className="space-y-1">
+                    <p className="text-sm font-medium text-muted-foreground">Date Closed</p>
+                    <p className="text-sm font-semibold">{ticket.dateClosed || 'Not resolved yet'}</p>
+                </div>
             </div>
-             <div className="grid grid-cols-4 items-center gap-4">
-                <p className="text-sm font-semibold text-right text-muted-foreground col-span-1">Issue Type</p>
-                <p className="text-sm col-span-3">{ticket.issueType}</p>
-            </div>
-             <div className="grid grid-cols-4 items-center gap-4">
-                <p className="text-sm font-semibold text-right text-muted-foreground col-span-1">Date Raised</p>
-                <p className="text-sm col-span-3">{ticket.dateRaised}</p>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-                <p className="text-sm font-semibold text-right text-muted-foreground col-span-1">Date Closed</p>
-                <p className="text-sm col-span-3">{ticket.dateClosed || 'Not resolved yet'}</p>
-            </div>
-             <div className="grid grid-cols-4 items-start gap-4">
-                <p className="text-sm font-semibold text-right text-muted-foreground col-span-1 pt-1">Description</p>
-                <div className="col-span-3 bg-secondary/50 p-3 rounded-md border text-sm">
+            
+            <Separator />
+
+             <div className="space-y-2">
+                <p className="text-sm font-medium text-muted-foreground">Description</p>
+                <div className="bg-secondary/50 p-4 rounded-md border text-sm">
                     <p>{ticket.description}</p>
                 </div>
             </div>
+
+            {ticket.image && (
+                 <div className="space-y-2">
+                    <p className="text-sm font-medium text-muted-foreground">Attachment</p>
+                    <div className="border rounded-md overflow-hidden">
+                        <Image src={ticket.image} alt="Ticket Attachment" width={800} height={600} className="w-full h-auto object-cover" data-ai-hint="error screenshot"/>
+                    </div>
+                </div>
+            )}
         </div>
       </DialogContent>
     </Dialog>

@@ -51,6 +51,7 @@ export type Ticket = {
     status: 'Open' | 'Pending' | 'Resolved';
     subject: string;
     description: string;
+    image?: string;
 };
 
 // --- MOCK DATA ---
@@ -194,6 +195,7 @@ export const mockTickets: Ticket[] = [
         dateClosed: null,
         status: 'Open', 
         subject: 'File upload failed',
-        description: 'I am trying to upload the documents for my project submission, but the upload keeps failing with a generic "Upload Error". The file size is within the limit, and the format is correct. I have tried multiple times from different browsers.'
+        description: 'I am trying to upload the documents for my project submission, but the upload keeps failing with a generic "Upload Error". The file size is within the limit, and the format is correct. I have tried multiple times from different browsers.',
+        image: 'https://placehold.co/600x400.png'
     },
 ];
