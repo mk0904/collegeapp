@@ -48,7 +48,7 @@ export type Ticket = {
     issueType: 'Support' | 'Feedback';
     dateRaised: string;
     dateClosed: string | null;
-    status: 'Open' | 'Pending' | 'Resolved';
+    status: 'Open' | 'Resolved';
     subject: string;
     description: string;
     image?: string;
@@ -141,14 +141,24 @@ export const mockSubmissions: Submission[] = [
       images: ['https://placehold.co/600x400.png', 'https://placehold.co/600x400.png'],
     },
     {
-      id: 'sub_7',
-      projectId: 'proj_1',
-      userName: 'Neiphiu Rio',
-      timestamp: '2024-05-14 02:00 PM',
-      status: 'Pending',
-      title: 'AI in Agriculture',
-      description: 'A presentation on how AI can be used to improve crop yields and detect diseases in plants, with a focus on local Naga crops.',
-      images: ['https://placehold.co/600x400.png', 'https://placehold.co/600x400.png']
+        id: 'sub_7',
+        projectId: 'proj_1',
+        userName: 'Neiphiu Rio',
+        timestamp: '2024-05-14 02:00 PM',
+        status: 'Pending',
+        title: 'AI in Agriculture',
+        description: 'A presentation on how AI can be used to improve crop yields and detect diseases in plants, with a focus on local Naga crops.',
+        images: ['https://placehold.co/600x400.png', 'https://placehold.co/600x400.png']
+    },
+    {
+        id: 'sub_8',
+        projectId: 'proj_1',
+        userName: 'Hokishe Sema',
+        timestamp: '2024-05-15 11:00 AM',
+        status: 'Pending',
+        title: 'Water Quality Analysis of Local Rivers',
+        description: 'A detailed analysis of water samples from three major rivers in the region, checking for pH levels, dissolved oxygen, and pollutants. The findings aim to raise awareness about water pollution.',
+        images: ['https://placehold.co/600x400.png']
     }
 ];
 
@@ -182,7 +192,7 @@ export const mockTickets: Ticket[] = [
         issueType: 'Support', 
         dateRaised: '2024-05-21', 
         dateClosed: null,
-        status: 'Pending', 
+        status: 'Open', 
         subject: 'Invoice query',
         description: 'I have not yet received the invoice for the last quarter for the services. Can you please check and send it to my registered email address? I need it for accounting purposes.'
     },

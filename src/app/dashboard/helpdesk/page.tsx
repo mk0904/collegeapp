@@ -25,8 +25,6 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import {
@@ -49,7 +47,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { TicketDetailsModal } from '@/components/ticket-details-modal'
 import { cn } from '@/lib/utils'
 
-type StatusFilter = 'all' | 'Open' | 'Pending' | 'Resolved';
+type StatusFilter = 'all' | 'Open' | 'Resolved';
 type IssueTypeFilter = 'all' | 'Support' | 'Feedback';
 
 export default function HelpdeskPage() {
@@ -170,7 +168,6 @@ export default function HelpdeskPage() {
                   <DropdownMenuContent align="end">
                     <DropdownMenuCheckboxItem checked={statusFilter === 'all'} onCheckedChange={() => setStatusFilter('all')}>All</DropdownMenuCheckboxItem>
                     <DropdownMenuCheckboxItem checked={statusFilter === 'Open'} onCheckedChange={() => setStatusFilter('Open')}>Open</DropdownMenuCheckboxItem>
-                    <DropdownMenuCheckboxItem checked={statusFilter === 'Pending'} onCheckedChange={() => setStatusFilter('Pending')}>Pending</DropdownMenuCheckboxItem>
                     <DropdownMenuCheckboxItem checked={statusFilter === 'Resolved'} onCheckedChange={() => setStatusFilter('Resolved')}>Resolved</DropdownMenuCheckboxItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -235,11 +232,11 @@ export default function HelpdeskPage() {
                       <TableCell className="font-medium">{ticket.id}</TableCell>
                       <TableCell>{ticket.subject}</TableCell>
                       <TableCell>{ticket.userName}</TableCell>
-                      <TableCell>{ticket.issueType}</TableCell>
+                      <TableCell><Badge variant="secondary">{ticket.issueType}</Badge></TableCell>
                       <TableCell>{ticket.dateRaised}</TableCell>
                       <TableCell>{ticket.dateClosed || 'N/A'}</TableCell>
                       <TableCell>
-                        <Badge variant={ticket.status === 'Resolved' ? 'default' : ticket.status === 'Open' ? 'destructive' : 'secondary'}>
+                        <Badge variant={ticket.status === 'Resolved' ? 'default' : 'destructive'}>
                           {ticket.status}
                         </Badge>
                       </TableCell>
@@ -248,11 +245,12 @@ export default function HelpdeskPage() {
                           <Button 
                             aria-haspopup="true" 
                             size="icon" 
-                            variant="ghost" 
+                            variant="ghost"
+                            className="bg-primary/10 hover:bg-primary/20"
                             onClick={(e) => { e.stopPropagation(); handleResolveTicket(ticket.id); }}
                             title="Resolve Ticket"
                           >
-                            <Check className="h-4 w-4" />
+                            <Check className="h-4 w-4 text-primary" />
                             <span className="sr-only">Resolve Ticket</span>
                           </Button>
                         )}

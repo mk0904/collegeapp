@@ -34,7 +34,7 @@ export function TicketDetailsModal({ isOpen, onOpenChange, ticket }: TicketDetai
                     Query ID: {ticket.id}
                 </DialogDescription>
             </div>
-            <Badge variant={ticket.status === 'Resolved' ? 'default' : ticket.status === 'Open' ? 'destructive' : 'secondary'}>
+            <Badge variant={ticket.status === 'Resolved' ? 'default' : 'destructive'}>
                 {ticket.status}
             </Badge>
           </div>
