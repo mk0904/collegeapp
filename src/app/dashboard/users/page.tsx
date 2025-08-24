@@ -255,11 +255,17 @@ export default function UsersPage() {
     <>
       <SendNotificationModal isOpen={isModalOpen} onOpenChange={setIsModalOpen} selectedUsers={selectedUsers} />
       <Card>
-        <CardHeader>
-          <CardTitle>Users</CardTitle>
-          <CardDescription>
-            Manage your users and view their details.
-          </CardDescription>
+        <CardHeader className="flex flex-row items-start justify-between">
+            <div>
+                <CardTitle>Users</CardTitle>
+                <CardDescription>
+                    Manage your users and view their details.
+                </CardDescription>
+            </div>
+            <Button size="sm" onClick={handleExport}>
+                <Download className="mr-2 h-4 w-4" />
+                Export
+            </Button>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row items-center gap-2 mb-4">
@@ -304,10 +310,6 @@ export default function UsersPage() {
               <Button size="sm" variant="outline" onClick={() => setIsModalOpen(true)} disabled={selectedUserIds.length === 0} className="w-full sm:w-auto">
                 <Mail className="mr-2 h-4 w-4" />
                 Send ({selectedUserIds.length})
-              </Button>
-              <Button size="sm" variant="outline" onClick={handleExport} className="w-full sm:w-auto">
-                <Download className="mr-2 h-4 w-4" />
-                Export
               </Button>
             </div>
           </div>
