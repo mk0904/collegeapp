@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, X, File as FileIcon, Loader2, Calendar as CalendarIcon, Clock, MessageSquare, Send } from 'lucide-react';
+import { Upload, X, File as FileIcon, Loader2, Calendar as CalendarIcon, MessageSquare, Send } from 'lucide-react';
 import { uploadFile } from '@/lib/firebase/storage';
 import type { User } from '@/lib/mock-data';
 import { Badge } from './ui/badge';
@@ -22,6 +22,7 @@ import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
 interface SendNotificationModalProps {
   isOpen: boolean;
@@ -117,7 +118,9 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
   const [invitationMessage, setInvitationMessage] = React.useState('');
   const [venue, setVenue] = React.useState('');
   const [eventDate, setEventDate] = React.useState<Date>();
-  const [eventTime, setEventTime] = React.useState<string>('');
+  const [eventHour, setEventHour] = React.useState<string>('');
+  const [eventMinute, setEventMinute] = React.useState<string>('');
+  const [eventPeriod, setEventPeriod] = React.useState<string>('');
   const [invitationFiles, setInvitationFiles] = React.useState<File[]>([]);
   
   const [pushTitle, setPushTitle] = React.useState('');
@@ -131,7 +134,9 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
     setInvitationMessage('');
     setVenue('');
     setEventDate(undefined);
-    setEventTime('');
+    setEventHour('');
+    setEventMinute('');
+    setEventPeriod('');
     setInvitationFiles([]);
     setPushTitle('');
     setPushMessage('');
@@ -152,6 +157,7 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
 
     let payload: any = {};
     let filesToUpload: File[] = [];
+    const eventTime = `${eventHour}:${eventMinute} ${eventPeriod}`;
 
     if (type === 'general') {
         if (!generalTitle) {
@@ -162,7 +168,7 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
         filesToUpload = generalFiles;
 
     } else if (type === 'invitation') {
-        if (!invitationMessage || !venue || !eventDate || !eventTime) {
+        if (!invitationMessage || !venue || !eventDate || !eventHour || !eventMinute || !eventPeriod) {
             toast({ title: 'All invitation fields are required', variant: 'destructive'});
             return;
         }
@@ -252,25 +258,31 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
                 <div className="space-y-4">
                     <div className="space-y-2">
                         <Textarea id="invitation-message" value={invitationMessage} onChange={e => setInvitationMessage(e.target.value)} placeholder="Heading / Message (e.g. You are invited to...)" className="min-h-24" disabled={isSending} />
-                        <p className="text-sm text-muted-foreground">Must be at least 15 characters</p>
                     </div>
                      <div className="space-y-2">
                         <Input id="venue" value={venue} onChange={e => setVenue(e.target.value)} placeholder="Venue (e.g. College Auditorium)" disabled={isSending} />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <div className="relative">
-                                <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    id="event-time"
-                                    type="time"
-                                    value={eventTime}
-                                    onChange={(e) => setEventTime(e.target.value)}
-                                    className="pl-10"
-                                    disabled={isSending}
-                                    placeholder="Event Time"
-                                />
-                            </div>
+                        <div className="grid grid-cols-3 gap-2">
+                            <Select value={eventHour} onValueChange={setEventHour} disabled={isSending}>
+                                <SelectTrigger><SelectValue placeholder="Hour" /></SelectTrigger>
+                                <SelectContent>
+                                    {Array.from({ length: 12 }, (_, i) => `${i + 1}`.padStart(2, '0')).map(hour => <SelectItem key={hour} value={hour}>{hour}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                            <Select value={eventMinute} onValueChange={setEventMinute} disabled={isSending}>
+                                <SelectTrigger><SelectValue placeholder="Min" /></SelectTrigger>
+                                <SelectContent>
+                                    {['00', '15', '30', '45'].map(min => <SelectItem key={min} value={min}>{min}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                            <Select value={eventPeriod} onValueChange={setEventPeriod} disabled={isSending}>
+                                <SelectTrigger><SelectValue placeholder="AM" /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="AM">AM</SelectItem>
+                                    <SelectItem value="PM">PM</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
                          <div className="space-y-2">
                             <Popover>
