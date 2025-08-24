@@ -25,7 +25,7 @@ export default function DashboardPage() {
         totalUsers: 0,
         totalSchools: 0,
         openTickets: 0,
-        pendingSubmissions: 0,
+        totalSubmissions: 0,
     });
     const [loading, setLoading] = React.useState(true);
 
@@ -44,7 +44,7 @@ export default function DashboardPage() {
                     totalUsers: users.length,
                     totalSchools: schools.length,
                     openTickets: tickets.filter(t => t.status === 'Open').length,
-                    pendingSubmissions: submissions.filter(s => s.status === 'Pending').length,
+                    totalSubmissions: submissions.length,
                 });
 
             } catch (error) {
@@ -75,7 +75,7 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 {loading ? <Skeleton className="h-7 w-16" /> : <div className="text-2xl font-bold">{stats.totalUsers}</div>}
-                {loading ? <Skeleton className="h-4 w-32 mt-1" /> : <p className="text-xs text-muted-foreground">+20.1% from last month</p>}
+                {loading ? <Skeleton className="h-4 w-32 mt-1" /> : <p className="text-xs text-muted-foreground">Track and manage all users</p>}
               </CardContent>
             </Card>
           </Link>
@@ -87,7 +87,7 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                  {loading ? <Skeleton className="h-7 w-10" /> : <div className="text-2xl font-bold">{stats.totalSchools}</div>}
-                 {loading ? <Skeleton className="h-4 w-32 mt-1" /> : <p className="text-xs text-muted-foreground">+1 since last quarter</p>}
+                 {loading ? <Skeleton className="h-4 w-32 mt-1" /> : <p className="text-xs text-muted-foreground">Total registered schools</p>}
               </CardContent>
             </Card>
           </Link>
@@ -99,19 +99,19 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                  {loading ? <Skeleton className="h-7 w-12" /> : <div className="text-2xl font-bold">{stats.openTickets}</div>}
-                 {loading ? <Skeleton className="h-4 w-28 mt-1" /> : <p className="text-xs text-muted-foreground">+2 since yesterday</p>}
+                 {loading ? <Skeleton className="h-4 w-28 mt-1" /> : <p className="text-xs text-muted-foreground">Resolve outstanding queries</p>}
               </CardContent>
             </Card>
           </Link>
           <Link href="/dashboard/projects">
             <Card className="hover:bg-card/80 transition-colors">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Pending Submissions</CardTitle>
+                <CardTitle className="text-sm font-medium">Total Submissions</CardTitle>
                 <Activity className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                {loading ? <Skeleton className="h-7 w-14" /> : <div className="text-2xl font-bold">{stats.pendingSubmissions}</div>}
-                {loading ? <Skeleton className="h-4 w-28 mt-1" /> : <p className="text-xs text-muted-foreground">+2 since last hour</p>}
+                {loading ? <Skeleton className="h-7 w-14" /> : <div className="text-2xl font-bold">{stats.totalSubmissions}</div>}
+                {loading ? <Skeleton className="h-4 w-28 mt-1" /> : <p className="text-xs text-muted-foreground">Across all projects</p>}
               </CardContent>
             </Card>
           </Link>
