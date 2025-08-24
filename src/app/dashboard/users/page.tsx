@@ -1,10 +1,11 @@
+
 'use client'
 
 import * as React from 'react'
 import {
   ChevronDown,
+  Mail,
   MoreHorizontal,
-  PlusCircle,
   Search,
 } from 'lucide-react'
 
@@ -41,7 +42,7 @@ import type { User } from '@/lib/mock-data'
 import { useToast } from "@/hooks/use-toast"
 import { getUsers, updateUserStatus } from '@/lib/firebase/firestore'
 import { Skeleton } from '@/components/ui/skeleton'
-import { SendCircularModal } from '@/components/send-circular-modal'
+import { SendNotificationModal } from '@/components/send-notification-modal'
 
 export default function UsersPage() {
     const { toast } = useToast()
@@ -111,7 +112,7 @@ export default function UsersPage() {
   
   return (
     <>
-      <SendCircularModal isOpen={isModalOpen} onOpenChange={setIsModalOpen} selectedUsers={selectedUsers} />
+      <SendNotificationModal isOpen={isModalOpen} onOpenChange={setIsModalOpen} selectedUsers={selectedUsers} />
       <Card>
         <CardHeader>
           <CardTitle>Users</CardTitle>
@@ -147,11 +148,8 @@ export default function UsersPage() {
                 </DropdownMenuContent>
               </DropdownMenu>
               <Button size="sm" variant="outline" onClick={() => setIsModalOpen(true)} disabled={selectedUserIds.length === 0}>
-                Send Circular ({selectedUserIds.length})
-              </Button>
-              <Button size="sm">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Add User
+                <Mail className="mr-2 h-4 w-4" />
+                Send Notification ({selectedUserIds.length})
               </Button>
             </div>
           </div>
@@ -172,10 +170,10 @@ export default function UsersPage() {
                   <TableHead>Status</TableHead>
                   <TableHead className="hidden md:table-cell">Role</TableHead>
                   <TableHead className="hidden md:table-cell">
-                      Phone
+                      School
                   </TableHead>
                   <TableHead className="hidden md:table-cell">
-                      Created on
+                      Phone
                   </TableHead>
                   <TableHead>
                       <span className="sr-only">Actions</span>
@@ -193,8 +191,8 @@ export default function UsersPage() {
                         </TableCell>
                         <TableCell><Skeleton className="h-6 w-20" /></TableCell>
                         <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-16" /></TableCell>
+                        <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
                         <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
-                        <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-20" /></TableCell>
                         <TableCell><Skeleton className="h-8 w-8" /></TableCell>
                       </TableRow>
                     ))
@@ -220,15 +218,15 @@ export default function UsersPage() {
                                       onCheckedChange={() => handleStatusToggle(user.id, user.status)}
                                       aria-label="Toggle user status"
                                   />
-                                  <Badge variant={user.status === 'Active' ? 'default' : 'secondary'}>{user.status}</Badge>
+                                  <Badge variant={user.status === 'Active' ? 'default' : 'destructive'}>{user.status}</Badge>
                               </div>
                           </TableCell>
                           <TableCell className="hidden md:table-cell">{user.role}</TableCell>
                           <TableCell className="hidden md:table-cell">
-                              {user.phone}
+                              {user.school}
                           </TableCell>
                           <TableCell className="hidden md:table-cell">
-                              {user.createdOn}
+                              {user.phone}
                           </TableCell>
                           <TableCell>
                               <DropdownMenu>
