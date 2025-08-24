@@ -73,9 +73,9 @@ export default function ProjectsPage() {
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab}>
       <div className="flex items-center mb-4">
-        <TabsList>
-          <TabsTrigger value="projects">Projects</TabsTrigger>
-          <TabsTrigger value="schools">Schools</TabsTrigger>
+        <TabsList className="bg-muted p-1 rounded-lg">
+          <TabsTrigger value="projects" className="px-3 py-1.5 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm rounded-md transition-all">Projects</TabsTrigger>
+          <TabsTrigger value="schools" className="px-3 py-1.5 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm rounded-md transition-all">Schools</TabsTrigger>
         </TabsList>
         <div className="ml-auto flex items-center gap-2">
           <Button size="sm" variant="outline">
