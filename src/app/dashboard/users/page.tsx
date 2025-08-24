@@ -172,11 +172,11 @@ export default function UsersPage() {
                   <TableHead className="hidden md:table-cell">
                       School
                   </TableHead>
+                   <TableHead className="hidden md:table-cell">
+                      District
+                  </TableHead>
                   <TableHead className="hidden md:table-cell">
                       Phone
-                  </TableHead>
-                  <TableHead>
-                      <span className="sr-only">Actions</span>
                   </TableHead>
                   </TableRow>
               </TableHeader>
@@ -193,7 +193,7 @@ export default function UsersPage() {
                         <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-16" /></TableCell>
                         <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
                         <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
-                        <TableCell><Skeleton className="h-8 w-8" /></TableCell>
+                        <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
                       </TableRow>
                     ))
                   ) : (
@@ -226,26 +226,10 @@ export default function UsersPage() {
                               {user.school}
                           </TableCell>
                           <TableCell className="hidden md:table-cell">
-                              {user.phone}
+                              {user.district}
                           </TableCell>
-                          <TableCell>
-                              <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                  <Button
-                                  aria-haspopup="true"
-                                  size="icon"
-                                  variant="ghost"
-                                  >
-                                  <MoreHorizontal className="h-4 w-4" />
-                                  <span className="sr-only">Toggle menu</span>
-                                  </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                  <DropdownMenuItem>Edit</DropdownMenuItem>
-                                  <DropdownMenuItem>Delete</DropdownMenuItem>
-                              </DropdownMenuContent>
-                              </DropdownMenu>
+                          <TableCell className="hidden md:table-cell">
+                              {user.phone}
                           </TableCell>
                       </TableRow>
                     ))

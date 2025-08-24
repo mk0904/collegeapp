@@ -8,6 +8,7 @@ export type User = {
   role: 'Admin' | 'Teacher' | 'Student';
   createdOn: string;
   school: string;
+  district: string;
   designation?: string;
 };
 
@@ -57,11 +58,11 @@ export type Ticket = {
 // --- MOCK DATA ---
 
 export const mockUsers: User[] = [
-  { id: 'usr_1', name: 'T. N. Angami', email: 'tn.angami@example.com', phone: '+91 98765 43210', status: 'Active', role: 'Admin', createdOn: '2023-01-15', school: 'Kohima Science College' },
-  { id: 'usr_2', name: 'P. Shilu Ao', email: 'shilu.ao@example.com', phone: '+91 98765 43211', status: 'Active', role: 'Teacher', createdOn: '2023-02-20', school: 'St. Joseph\'s College' },
-  { id: 'usr_3', name: 'Hokishe Sema', email: 'hokishe.sema@example.com', phone: '+91 98765 43212', status: 'Inactive', role: 'Student', createdOn: '2023-03-10', school: 'Model Christian College' },
-  { id: 'usr_4', name: 'S. C. Jamir', email: 'sc.jamir@example.com', phone: '+91 98765 43213', status: 'Active', role: 'Teacher', createdOn: '2023-04-05', school: 'Kohima Science College' },
-  { id: 'usr_5', name: 'Neiphiu Rio', email: 'neiphiu.rio@example.com', phone: '+91 98765 43214', status: 'Active', role: 'Admin', createdOn: '2023-05-21', school: 'Nagaland University' },
+  { id: 'usr_1', name: 'T. N. Angami', email: 'tn.angami@example.com', phone: '+91 98765 43210', status: 'Active', role: 'Admin', createdOn: '2023-01-15', school: 'Kohima Science College', district: 'Kohima' },
+  { id: 'usr_2', name: 'P. Shilu Ao', email: 'shilu.ao@example.com', phone: '+91 98765 43211', status: 'Active', role: 'Teacher', createdOn: '2023-02-20', school: 'St. Joseph\'s College', district: 'Kohima' },
+  { id: 'usr_3', name: 'Hokishe Sema', email: 'hokishe.sema@example.com', phone: '+91 98765 43212', status: 'Inactive', role: 'Student', createdOn: '2023-03-10', school: 'Model Christian College', district: 'Kohima' },
+  { id: 'usr_4', name: 'S. C. Jamir', email: 'sc.jamir@example.com', phone: '+91 98765 43213', status: 'Active', role: 'Teacher', createdOn: '2023-04-05', school: 'Kohima Science College', district: 'Kohima' },
+  { id: 'usr_5', name: 'Neiphiu Rio', email: 'neiphiu.rio@example.com', phone: '+91 98765 43214', status: 'Active', role: 'Admin', createdOn: '2023-05-21', school: 'Nagaland University', district: 'Zunheboto' },
 ];
 
 export const mockSchools: School[] = [
@@ -209,3 +210,4 @@ export const mockTickets: Ticket[] = [
         image: 'https://placehold.co/600x400.png'
     },
 ];
+
