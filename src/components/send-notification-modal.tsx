@@ -22,7 +22,6 @@ import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
 interface SendNotificationModalProps {
   isOpen: boolean;
@@ -304,7 +303,7 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                        <div className="flex items-center gap-2">
-                         <div className="flex items-center gap-1 rounded-md border border-input h-10 px-3 w-full">
+                         <div className="flex items-center gap-1 rounded-md border border-input h-10 px-3 w-full focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
                            <Input 
                             type="text"
                             maxLength={2}
@@ -316,7 +315,7 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
                                 }
                             }}
                             placeholder="HH"
-                            className="w-8 border-none text-center p-0 h-auto focus-visible:ring-0"
+                            className="w-8 border-none text-center p-0 h-auto focus-visible:ring-0 focus-visible:border-none"
                            />
                            <span className="text-muted-foreground">:</span>
                            <Input
