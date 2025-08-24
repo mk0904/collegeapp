@@ -36,8 +36,10 @@ import { getUsers, updateUserStatus, getSchools } from '@/lib/firebase/firestore
 import { Skeleton } from '@/components/ui/skeleton'
 import { SendNotificationModal } from '@/components/send-notification-modal'
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem } from '@/components/ui/dropdown-menu'
+import { cn } from '@/lib/utils'
 
 type SortableKeys = keyof User;
+type SortDirection = 'ascending' | 'descending';
 
 export default function UsersPage() {
     const { toast } = useToast()
@@ -53,7 +55,7 @@ export default function UsersPage() {
     const [schoolFilter, setSchoolFilter] = React.useState('all');
     const [districtFilter, setDistrictFilter] = React.useState('all');
 
-    const [sortConfig, setSortConfig] = React.useState<{ key: SortableKeys; direction: 'ascending' | 'descending' } | null>({ key: 'status', direction: 'ascending'});
+    const [sortConfig, setSortConfig] = React.useState<{ key: SortableKeys; direction: SortDirection } | null>({ key: 'status', direction: 'ascending'});
 
     const selectedUsers = users.filter(user => selectedUserIds.includes(user.id));
 
@@ -116,7 +118,7 @@ export default function UsersPage() {
     }
     
     const requestSort = (key: SortableKeys) => {
-        let direction: 'ascending' | 'descending' = 'ascending';
+        let direction: SortDirection = 'ascending';
         if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
             direction = 'descending';
         }
@@ -167,11 +169,22 @@ export default function UsersPage() {
     const isAllSelected = selectedUserIds.length === filteredUsers.length && filteredUsers.length > 0;
     const isIndeterminate = selectedUserIds.length > 0 && selectedUserIds.length < filteredUsers.length;
   
-  const getSortIcon = (key: SortableKeys) => {
-    if (!sortConfig || sortConfig.key !== key) return <div className="h-4 w-4 opacity-30" />;
-    if (sortConfig.direction === 'ascending') return <ArrowUp className="h-4 w-4" />;
-    return <ArrowDown className="h-4 w-4" />;
-  };
+  const SortableHeader = ({
+    column,
+    label,
+  }: {
+    column: SortableKeys;
+    label: string;
+    className?: string;
+  }) => (
+    <div className="flex items-center gap-1.5" onClick={() => requestSort(column)}>
+      <span>{label}</span>
+      <div className="flex flex-col">
+          <ArrowUp className={cn('h-3 w-3 text-muted-foreground/50', sortConfig?.key === column && sortConfig.direction === 'ascending' && 'text-foreground')} />
+          <ArrowDown className={cn('h-3 w-3 text-muted-foreground/50', sortConfig?.key === column && sortConfig.direction === 'descending' && 'text-foreground')} />
+      </div>
+    </div>
+  );
   
   return (
     <>
@@ -242,35 +255,23 @@ export default function UsersPage() {
                         indeterminate={isIndeterminate.toString()}
                       />
                   </TableHead>
-                  <TableHead>
-                    <Button variant="ghost" onClick={() => requestSort('name')} className="px-0 gap-2">
-                        Name {getSortIcon('name')}
-                    </Button>
+                  <TableHead className="cursor-pointer">
+                     <SortableHeader column="name" label="Name" />
                   </TableHead>
-                  <TableHead>
-                    <Button variant="ghost" onClick={() => requestSort('status')} className="px-0 gap-2">
-                        Status {getSortIcon('status')}
-                    </Button>
+                  <TableHead className="cursor-pointer">
+                     <SortableHeader column="status" label="Status" />
                   </TableHead>
-                  <TableHead className="hidden md:table-cell">
-                    <Button variant="ghost" onClick={() => requestSort('role')} className="px-0 gap-2">
-                        Role {getSortIcon('role')}
-                    </Button>
+                  <TableHead className="hidden md:table-cell cursor-pointer">
+                      <SortableHeader column="role" label="Role" />
                   </TableHead>
-                  <TableHead className="hidden md:table-cell">
-                     <Button variant="ghost" onClick={() => requestSort('school')} className="px-0 gap-2">
-                        School {getSortIcon('school')}
-                    </Button>
+                  <TableHead className="hidden md:table-cell cursor-pointer">
+                      <SortableHeader column="school" label="School" />
                   </TableHead>
-                   <TableHead className="hidden md:table-cell">
-                     <Button variant="ghost" onClick={() => requestSort('district')} className="px-0 gap-2">
-                        District {getSortIcon('district')}
-                    </Button>
+                   <TableHead className="hidden md:table-cell cursor-pointer">
+                      <SortableHeader column="district" label="District" />
                   </TableHead>
-                  <TableHead className="hidden md:table-cell">
-                     <Button variant="ghost" onClick={() => requestSort('phone')} className="px-0 gap-2">
-                        Phone {getSortIcon('phone')}
-                    </Button>
+                  <TableHead className="hidden md:table-cell cursor-pointer">
+                      <SortableHeader column="phone" label="Phone" />
                   </TableHead>
                   </TableRow>
               </TableHeader>
@@ -343,5 +344,3 @@ export default function UsersPage() {
     </>
   )
 }
-
-    
