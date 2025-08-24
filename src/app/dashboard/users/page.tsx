@@ -9,12 +9,6 @@ import {
   ArrowUp,
   ChevronDown,
   ArrowUpDown,
-  User as UserIcon,
-  Briefcase,
-  School2,
-  MapPin,
-  Phone,
-  ShieldCheck,
   Download,
 } from 'lucide-react'
 
@@ -231,13 +225,11 @@ export default function UsersPage() {
     return (
       <div className="flex items-center gap-2 cursor-pointer" onClick={() => requestSort(column)}>
         {label}
-        <div className="flex flex-col">
-           {isSorted ? (
-            isAscending ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
-          ) : (
-            <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
-          )}
-        </div>
+        {isSorted ? (
+          isAscending ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+        ) : (
+          <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+        )}
       </div>
     );
   };
@@ -255,17 +247,19 @@ export default function UsersPage() {
     <>
       <SendNotificationModal isOpen={isModalOpen} onOpenChange={setIsModalOpen} selectedUsers={selectedUsers} />
       <Card>
-        <CardHeader className="flex flex-row items-start justify-between">
-            <div>
-                <CardTitle>Users</CardTitle>
-                <CardDescription>
-                    Manage your users and view their details.
-                </CardDescription>
+        <CardHeader>
+            <div className="flex items-start justify-between">
+                <div>
+                    <CardTitle>Users</CardTitle>
+                    <CardDescription>
+                        Manage your users and view their details.
+                    </CardDescription>
+                </div>
+                <Button onClick={handleExport}>
+                    <Download className="mr-2 h-4 w-4" />
+                    Export
+                </Button>
             </div>
-            <Button size="sm" onClick={handleExport}>
-                <Download className="mr-2 h-4 w-4" />
-                Export
-            </Button>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row items-center gap-2 mb-4">
@@ -282,7 +276,7 @@ export default function UsersPage() {
              <div className="flex w-full sm:w-auto gap-2">
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="w-full sm:w-auto capitalize"><ShieldCheck className="mr-2 h-4 w-4" /> Role <ChevronDown className="ml-2 h-4 w-4" /></Button>
+                        <Button variant="outline" className="w-full sm:w-auto capitalize">Role <ChevronDown className="ml-2 h-4 w-4" /></Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                         <DropdownMenuCheckboxItem checked={roleFilter === 'all'} onCheckedChange={() => setRoleFilter('all')}>All Roles</DropdownMenuCheckboxItem>
@@ -291,7 +285,7 @@ export default function UsersPage() {
                 </DropdownMenu>
                  <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="w-full sm:w-auto"><School2 className="mr-2 h-4 w-4" />School <ChevronDown className="ml-2 h-4 w-4" /></Button>
+                        <Button variant="outline" className="w-full sm:w-auto">School <ChevronDown className="ml-2 h-4 w-4" /></Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                         <DropdownMenuCheckboxItem checked={schoolFilter === 'all'} onCheckedChange={() => setSchoolFilter('all')}>All Schools</DropdownMenuCheckboxItem>
@@ -300,7 +294,7 @@ export default function UsersPage() {
                 </DropdownMenu>
                  <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="w-full sm:w-auto"><MapPin className="mr-2 h-4 w-4" />District <ChevronDown className="ml-2 h-4 w-4" /></Button>
+                        <Button variant="outline" className="w-full sm:w-auto">District <ChevronDown className="ml-2 h-4 w-4" /></Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                         <DropdownMenuCheckboxItem checked={districtFilter === 'all'} onCheckedChange={() => setDistrictFilter('all')}>All Districts</DropdownMenuCheckboxItem>
@@ -327,22 +321,22 @@ export default function UsersPage() {
                       />
                   </TableHead>
                   <TableHead>
-                     <SortableHeader column="name" label={<div className="flex items-center gap-2"><UserIcon className="h-4 w-4" />Name</div>} />
+                     <SortableHeader column="name" label="Name" />
                   </TableHead>
                   <TableHead>
-                     <SortableHeader column="status" label={<div className="flex items-center gap-2"><ShieldCheck className="h-4 w-4" />Status</div>} />
+                     <SortableHeader column="status" label="Status" />
                   </TableHead>
                   <TableHead className="hidden md:table-cell">
-                      <SortableHeader column="role" label={<div className="flex items-center gap-2"><Briefcase className="h-4 w-4" />Role</div>} />
+                      <SortableHeader column="role" label="Role" />
                   </TableHead>
                   <TableHead className="hidden md:table-cell">
-                      <SortableHeader column="school" label={<div className="flex items-center gap-2"><School2 className="h-4 w-4" />School</div>} />
+                      <SortableHeader column="school" label="School" />
                   </TableHead>
                    <TableHead className="hidden md:table-cell">
-                      <SortableHeader column="district" label={<div className="flex items-center gap-2"><MapPin className="h-4 w-4" />District</div>} />
+                      <SortableHeader column="district" label="District" />
                   </TableHead>
                   <TableHead className="hidden md:table-cell">
-                      <SortableHeader column="phone" label={<div className="flex items-center gap-2"><Phone className="h-4 w-4" />Phone</div>} />
+                      <SortableHeader column="phone" label="Phone" />
                   </TableHead>
                   </TableRow>
               </TableHeader>
