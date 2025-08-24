@@ -6,7 +6,6 @@ import {
   BookOpenCheck,
   Ticket,
   Users as UsersIcon,
-  PieChart as PieChartIcon,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -22,7 +21,7 @@ import { getSchools, getUsers, getTickets, getProjects } from '@/lib/firebase/fi
 import { Skeleton } from '@/components/ui/skeleton';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, PieChart, Pie, Cell, Legend } from 'recharts';
 import type { School, User } from '@/lib/mock-data';
-import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { ChartConfig, ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 
 export default function DashboardPage() {
     const [stats, setStats] = React.useState({
@@ -65,16 +64,29 @@ export default function DashboardPage() {
     }, []);
 
     const userRoleData = React.useMemo(() => {
-        const roles = { Admin: 0, Teacher: 0, Student: 0 };
+        const roles: Record<string, number> = { Admin: 0, Teacher: 0, Student: 0 };
         users.forEach(user => {
             if (user.role in roles) {
                 roles[user.role]++;
             }
         });
-        return Object.entries(roles).map(([name, value]) => ({ name, value }));
+        return Object.entries(roles).map(([name, value]) => ({ name, value, fill: `var(--color-${name.toLowerCase()})` }));
     }, [users]);
     
-    const COLORS = ['#004643', '#00756f', '#00a096'];
+    const userChartConfig = {
+      admin: {
+        label: "Admin",
+        color: "hsl(var(--chart-1))",
+      },
+      teacher: {
+        label: "Teacher",
+        color: "hsl(var(--chart-2))",
+      },
+      student: {
+        label: "Student",
+        color: "hsl(var(--chart-3))",
+      },
+    } satisfies ChartConfig
 
     const projectChartConfig = {
       projects: {
@@ -143,7 +155,7 @@ export default function DashboardPage() {
           </Link>
         </div>
 
-        <div className="grid gap-4 mt-8">
+        <div className="grid gap-4 mt-8 grid-cols-1">
             <Card>
                 <CardHeader>
                     <CardTitle>Projects by School</CardTitle>
@@ -165,7 +177,7 @@ export default function DashboardPage() {
                             tickFormatter={(value) => value.slice(0, 3)}
                             />
                          <YAxis />
-                         <ChartTooltip content={<ChartTooltipContent />} />
+                         <ChartTooltipContent />
                          <Bar dataKey="projectsCount" fill="var(--color-projects)" radius={4} />
                        </BarChart>
                     </ChartContainer>
@@ -177,24 +189,24 @@ export default function DashboardPage() {
                     <CardTitle>User Role Distribution</CardTitle>
                     <CardDescription>A breakdown of users by their assigned role.</CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="flex items-center justify-center [&>div]:h-[300px]">
                     {loading ? (
                          <div className="flex aspect-video justify-center items-center">
                             <Skeleton className="w-full h-[300px]" />
                         </div>
                     ) : (
-                        <ResponsiveContainer width="100%" height={300}>
+                        <ChartContainer config={userChartConfig} className="min-h-[300px] w-full">
                             <PieChart>
+                                <ChartTooltipContent nameKey="name" />
                                 <Pie
                                     data={userRoleData}
-                                    cx="50%"
-                                    cy="50%"
-                                    labelLine={false}
-                                    outerRadius={100}
-                                    fill="#8884d8"
                                     dataKey="value"
                                     nameKey="name"
-                                    label={({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
+                                    cx="50%"
+                                    cy="50%"
+                                    outerRadius={100}
+                                    labelLine={false}
+                                     label={({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
                                         const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
                                         const x = cx + radius * Math.cos(-midAngle * (Math.PI / 180));
                                         const y = cy + radius * Math.sin(-midAngle * (Math.PI / 180));
@@ -205,14 +217,13 @@ export default function DashboardPage() {
                                         );
                                     }}
                                 >
-                                    {userRoleData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                     {userRoleData.map((entry) => (
+                                        <Cell key={entry.name} fill={entry.fill} />
                                     ))}
                                 </Pie>
-                                <Tooltip content={<ChartTooltipContent />} />
-                                <Legend />
+                                <Legend contentStyle={{ textTransform: 'capitalize' }} />
                             </PieChart>
-                        </ResponsiveContainer>
+                        </ChartContainer>
                     )}
                 </CardContent>
             </Card>
