@@ -27,6 +27,7 @@ import type { Project, Submission } from "@/lib/mock-data";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function ProjectDetailsPage({ params }: { params: { id: string } }) {
+  const { id } = params;
   const [project, setProject] = React.useState<Project | null>(null);
   const [submissions, setSubmissions] = React.useState<Submission[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -35,10 +36,10 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
     async function fetchData() {
       try {
         setLoading(true);
-        const projectData = await getProjectById(params.id);
+        const projectData = await getProjectById(id);
         setProject(projectData);
         if (projectData) {
-          const submissionsData = await getSubmissionsByProjectId(params.id);
+          const submissionsData = await getSubmissionsByProjectId(id);
           setSubmissions(submissionsData);
         }
       } catch (error) {
@@ -48,7 +49,7 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
       }
     }
     fetchData();
-  }, [params.id]);
+  }, [id]);
 
   if (loading) {
      return (
