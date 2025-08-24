@@ -15,10 +15,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, X, File as FileIcon, Loader2, Users } from 'lucide-react';
+import { Upload, X, File as FileIcon, Loader2, Users, Calendar as CalendarIcon, Clock } from 'lucide-react';
 import { uploadFile } from '@/lib/firebase/storage';
 import type { User } from '@/lib/mock-data';
 import { Badge } from './ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 
 interface SendNotificationModalProps {
   isOpen: boolean;
@@ -110,84 +111,101 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[525px]">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="font-headline text-2xl">Send New Notification</DialogTitle>
-          <DialogDescription>
-            Compose and send a notification to all selected users. It will be sent as a push notification.
-          </DialogDescription>
+          <div className="flex justify-between items-center">
+            <DialogTitle className="font-headline text-2xl">Send Notification</DialogTitle>
+            <Badge variant="outline" className="flex items-center gap-2">
+                <div className="bg-primary rounded-full w-2 h-2"></div>
+                {selectedUsers.length} Selected
+            </Badge>
+          </div>
         </DialogHeader>
-        <div className="grid gap-6 py-4">
-           <div className="grid gap-2">
-            <Label className="font-semibold">Recipients</Label>
-            <div className="flex items-center gap-2 p-3 rounded-md border border-input bg-background">
-                <Users className="h-5 w-5 text-muted-foreground" />
-                <span className="text-sm font-medium">{selectedUsers.length} user(s) selected</span>
-                <Badge variant="secondary" className="ml-auto">{selectedUsers.length === 1 ? selectedUsers[0].name : 'Multiple Users'}</Badge>
-            </div>
-           </div>
-          <div className="grid gap-2">
-            <Label htmlFor="title" className="font-semibold">
-              Notification Title
-            </Label>
-            <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Holiday Announcement" />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="description" className="font-semibold">
-              Description (Optional)
-            </Label>
-            <Textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Provide more details about the notification..."
-              className="min-h-[100px]"
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label className="font-semibold">Attachments</Label>
-            <div
-                className="relative flex flex-col items-center justify-center w-full p-6 border-2 border-dashed rounded-lg cursor-pointer border-primary/20 bg-primary/5 hover:bg-primary/10 transition-colors"
-                onClick={() => fileInputRef.current?.click()}
-            >
-                <Upload className="w-8 h-8 text-primary/60" />
-                <p className="mt-2 text-sm text-center text-muted-foreground">
-                    <span className="font-semibold text-primary">Click to upload</span> or drag and drop
-                </p>
-                <p className="text-xs text-muted-foreground">PDF, PNG, JPG, etc.</p>
-                <input
-                    ref={fileInputRef}
-                    type="file"
-                    multiple
-                    className="hidden"
-                    onChange={handleFileChange}
-                />
-            </div>
-             {files.length > 0 && (
-                <div className="mt-4 space-y-2">
-                    <h4 className="font-medium text-sm">Selected Files:</h4>
-                    <ul className="space-y-2">
-                        {files.map((file, index) => (
-                            <li key={index} className="flex items-center justify-between p-2 rounded-md bg-secondary">
-                                <div className="flex items-center gap-2">
-                                    <FileIcon className="h-5 w-5 text-muted-foreground" />
-                                    <span className="text-sm font-medium truncate max-w-xs">{file.name}</span>
-                                </div>
-                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeFile(index)}>
-                                    <X className="h-4 w-4" />
-                                </Button>
-                            </li>
-                        ))}
-                    </ul>
+        <Tabs defaultValue="general" className="w-full">
+            <TabsList className="grid w-full grid-cols-3 bg-muted/60">
+                <TabsTrigger value="general">General</TabsTrigger>
+                <TabsTrigger value="invitation">Invitation</TabsTrigger>
+                <TabsTrigger value="push">Push</TabsTrigger>
+            </TabsList>
+            <TabsContent value="general" className="py-4">
+                 <div className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="general-title">Title</Label>
+                        <Input id="general-title" placeholder="e.g. Important Update" />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="general-message">Message</Label>
+                        <Textarea id="general-message" placeholder="Type your general notification message here." className="min-h-24"/>
+                    </div>
+                     <div className="space-y-2">
+                        <Label>Attachment</Label>
+                        <div
+                            className="relative flex flex-col items-center justify-center w-full p-4 border-2 border-dashed rounded-lg cursor-pointer"
+                            onClick={() => fileInputRef.current?.click()}
+                        >
+                            <Upload className="w-6 h-6 text-muted-foreground" />
+                            <p className="mt-1 text-sm text-center text-muted-foreground">
+                                Select File (Only Image/PDF allowed)
+                            </p>
+                            <input ref={fileInputRef} type="file" className="hidden" />
+                        </div>
+                    </div>
+                 </div>
+            </TabsContent>
+            <TabsContent value="invitation" className="py-4">
+                <div className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="invitation-message">Heading / Message</Label>
+                        <Textarea id="invitation-message" placeholder="e.g. You are invited to the Annual Day celebration." className="min-h-24" />
+                        <p className="text-sm text-destructive">Must be at least 15 characters</p>
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="venue">Venue</Label>
+                        <Input id="venue" placeholder="e.g. College Auditorium" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                         <div className="space-y-2">
+                            <Label htmlFor="event-time">Event Time</Label>
+                            <Input id="event-time" placeholder="e.g. 10:00 AM" />
+                        </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="event-date">Event Date</Label>
+                            <Input id="event-date" placeholder="e.g. 2024-08-15" />
+                        </div>
+                    </div>
+                     <div className="space-y-2">
+                        <Label>Attachment</Label>
+                        <div
+                            className="relative flex flex-col items-center justify-center w-full p-4 border-2 border-dashed rounded-lg cursor-pointer"
+                            onClick={() => fileInputRef.current?.click()}
+                        >
+                            <Upload className="w-6 h-6 text-muted-foreground" />
+                            <p className="mt-1 text-sm text-center text-muted-foreground">
+                                Select File (Only Image/PDF allowed)
+                            </p>
+                            <input ref={fileInputRef} type="file" className="hidden" />
+                        </div>
+                    </div>
                 </div>
-            )}
-          </div>
-        </div>
+            </TabsContent>
+            <TabsContent value="push" className="py-4">
+                 <div className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="push-title">Push Title</Label>
+                        <Input id="push-title" placeholder="Short and catchy title" />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="push-message">Push Message</Label>
+                        <Textarea id="push-message" placeholder="Concise message for push notification (max 150 chars)." maxLength={150} className="min-h-24"/>
+                    </div>
+                 </div>
+            </TabsContent>
+        </Tabs>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={handleSendNotification} disabled={isSending || selectedUsers.length === 0}>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
+          <Button onClick={handleSendNotification} disabled={isSending}>
             {isSending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isSending ? 'Sending...' : `Send to ${selectedUsers.length} User(s)`}
+            {isSending ? 'Submitting...' : 'Submit'}
           </Button>
         </DialogFooter>
       </DialogContent>
