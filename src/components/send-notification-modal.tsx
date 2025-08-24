@@ -5,7 +5,6 @@ import * as React from 'react';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -15,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, X, File as FileIcon, Loader2, Users, Calendar as CalendarIcon, Clock } from 'lucide-react';
+import { Upload, X, File as FileIcon, Loader2, Calendar as CalendarIcon, Clock } from 'lucide-react';
 import { uploadFile } from '@/lib/firebase/storage';
 import type { User } from '@/lib/mock-data';
 import { Badge } from './ui/badge';
@@ -24,43 +23,118 @@ import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
-interface SendNotificationModalProps {
+interface SendMessageModalProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   selectedUsers: User[];
 }
 
-export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: SendNotificationModalProps) {
+const MAX_TOTAL_SIZE_MB = 10;
+const MAX_TOTAL_SIZE_BYTES = MAX_TOTAL_SIZE_MB * 1024 * 1024;
+
+const FileUploader = ({ files, onFilesChange }: { files: File[], onFilesChange: (files: File[]) => void}) => {
+    const { toast } = useToast();
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        if (event.target.files) {
+            const newFiles = Array.from(event.target.files);
+            const allFiles = [...files, ...newFiles];
+
+            const totalSize = allFiles.reduce((acc, file) => acc + file.size, 0);
+
+            if (totalSize > MAX_TOTAL_SIZE_BYTES) {
+                toast({
+                    title: 'File size limit exceeded',
+                    description: `Total file size cannot exceed ${MAX_TOTAL_SIZE_MB}MB.`,
+                    variant: 'destructive',
+                });
+                return;
+            }
+            onFilesChange(allFiles);
+        }
+    };
+
+    const removeFile = (index: number) => {
+        onFilesChange(files.filter((_, i) => i !== index));
+    };
+
+    return (
+         <div className="space-y-2">
+            <Label>Attachments</Label>
+            <div
+                className="relative flex flex-col items-center justify-center w-full p-4 border-2 border-dashed rounded-lg cursor-pointer"
+                onClick={() => fileInputRef.current?.click()}
+            >
+                <Upload className="w-6 h-6 text-muted-foreground" />
+                <p className="mt-1 text-sm text-center text-muted-foreground">
+                    Select Files (up to {MAX_TOTAL_SIZE_MB}MB)
+                </p>
+                <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    className="hidden"
+                    onChange={handleFileChange}
+                    accept="image/*,application/pdf"
+                />
+            </div>
+            {files.length > 0 && (
+                <div className="mt-2 space-y-2">
+                    <h4 className="font-medium text-xs text-muted-foreground">Selected Files:</h4>
+                    <ul className="space-y-2">
+                        {files.map((file, index) => (
+                            <li key={index} className="flex items-center justify-between p-2 text-sm rounded-md bg-muted">
+                                <div className="flex items-center gap-2 overflow-hidden">
+                                    <FileIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                    <span className="font-medium truncate">{file.name}</span>
+                                    <span className="text-muted-foreground text-xs">({(file.size / 1024).toFixed(2)} KB)</span>
+                                </div>
+                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); removeFile(index);}}>
+                                    <X className="h-4 w-4" />
+                                </Button>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+        </div>
+    );
+};
+
+
+export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: SendMessageModalProps) {
   const { toast } = useToast();
-  const [title, setTitle] = React.useState('');
-  const [description, setDescription] = React.useState('');
-  const [files, setFiles] = React.useState<File[]>([]);
   const [isSending, setIsSending] = React.useState(false);
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Form states
+  const [generalTitle, setGeneralTitle] = React.useState('');
+  const [generalMessage, setGeneralMessage] = React.useState('');
+  const [generalFiles, setGeneralFiles] = React.useState<File[]>([]);
+  
+  const [invitationMessage, setInvitationMessage] = React.useState('');
+  const [venue, setVenue] = React.useState('');
   const [eventDate, setEventDate] = React.useState<Date>();
   const [eventTime, setEventTime] = React.useState<string>('');
+  const [invitationFiles, setInvitationFiles] = React.useState<File[]>([]);
+  
+  const [pushTitle, setPushTitle] = React.useState('');
+  const [pushMessage, setPushMessage] = React.useState('');
 
-
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files) {
-      const newFiles = Array.from(event.target.files);
-      setFiles((prevFiles) => [...prevFiles, ...newFiles]);
-    }
-  };
-
-  const removeFile = (index: number) => {
-    setFiles(files.filter((_, i) => i !== index));
-  };
   
   const resetForm = () => {
-    setTitle('');
-    setDescription('');
-    setFiles([]);
-    setIsSending(false);
+    setGeneralTitle('');
+    setGeneralMessage('');
+    setGeneralFiles([]);
+    setInvitationMessage('');
+    setVenue('');
     setEventDate(undefined);
     setEventTime('');
+    setInvitationFiles([]);
+    setPushTitle('');
+    setPushMessage('');
+    setIsSending(false);
   };
   
   React.useEffect(() => {
@@ -69,23 +143,37 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
     }
   }, [isOpen]);
 
-  const handleSendNotification = async () => {
-    if (!title) {
-      toast({
-        title: 'Title is required',
-        description: 'Please provide a title for the notification.',
-        variant: 'destructive',
-      });
+  const handleSendNotification = async (type: 'general' | 'invitation' | 'push') => {
+    if (selectedUsers.length === 0) {
+      toast({ title: 'No users selected', description: 'Please select at least one user.', variant: 'destructive' });
       return;
     }
-    
-    if (selectedUsers.length === 0) {
-      toast({
-        title: 'No users selected',
-        description: 'Please select at least one user to send the notification to.',
-        variant: 'destructive',
-      });
-      return;
+
+    let payload: any = {};
+    let files: File[] = [];
+
+    if (type === 'general') {
+        if (!generalTitle) {
+            toast({ title: 'Title is required', variant: 'destructive' });
+            return;
+        }
+        payload = { type, title: generalTitle, message: generalMessage };
+        files = generalFiles;
+
+    } else if (type === 'invitation') {
+        if (!invitationMessage || !venue || !eventDate || !eventTime) {
+            toast({ title: 'All invitation fields are required', variant: 'destructive'});
+            return;
+        }
+        payload = { type, message: invitationMessage, venue, date: format(eventDate, "PPP"), time: eventTime };
+        files = invitationFiles;
+
+    } else if (type === 'push') {
+        if (!pushTitle || !pushMessage) {
+            toast({ title: 'Push title and message are required', variant: 'destructive' });
+            return;
+        }
+        payload = { type, title: pushTitle, message: pushMessage };
     }
 
     setIsSending(true);
@@ -97,13 +185,13 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
         })
       );
       
-      // Placeholder for sending notification logic
+      payload.fileUrls = fileUrls;
       console.log('Sending notification to:', selectedUsers.map(u => u.id));
-      console.log('Notification data:', { title, description, fileUrls });
+      console.log('Notification data:', payload);
 
       toast({
         title: 'Notification Sent!',
-        description: `Your notification has been sent to ${selectedUsers.length} user(s).`,
+        description: `Your ${type} notification has been sent to ${selectedUsers.length} user(s).`,
       });
       
       onOpenChange(false);
@@ -141,48 +229,45 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
                  <div className="space-y-4">
                     <div className="space-y-2">
                         <Label htmlFor="general-title">Title</Label>
-                        <Input id="general-title" placeholder="e.g. Important Update" />
+                        <Input id="general-title" value={generalTitle} onChange={e => setGeneralTitle(e.target.value)} placeholder="e.g. Important Update" />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="general-message">Message</Label>
-                        <Textarea id="general-message" placeholder="Type your general notification message here." className="min-h-24"/>
+                        <Textarea id="general-message" value={generalMessage} onChange={e => setGeneralMessage(e.target.value)} placeholder="Type your general notification message here." className="min-h-24"/>
                     </div>
-                     <div className="space-y-2">
-                        <Label>Attachment</Label>
-                        <div
-                            className="relative flex flex-col items-center justify-center w-full p-4 border-2 border-dashed rounded-lg cursor-pointer"
-                            onClick={() => fileInputRef.current?.click()}
-                        >
-                            <Upload className="w-6 h-6 text-muted-foreground" />
-                            <p className="mt-1 text-sm text-center text-muted-foreground">
-                                Select File (Only Image/PDF allowed)
-                            </p>
-                            <input ref={fileInputRef} type="file" className="hidden" />
-                        </div>
-                    </div>
+                     <FileUploader files={generalFiles} onFilesChange={setGeneralFiles} />
+                    <DialogFooter>
+                        <Button onClick={() => handleSendNotification('general')} disabled={isSending}>
+                            {isSending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Submit
+                        </Button>
+                    </DialogFooter>
                  </div>
             </TabsContent>
             <TabsContent value="invitation" className="py-4">
                 <div className="space-y-4">
                     <div className="space-y-2">
                         <Label htmlFor="invitation-message">Heading / Message</Label>
-                        <Textarea id="invitation-message" placeholder="e.g. You are invited to the Annual Day celebration." className="min-h-24" />
-                        <p className="text-sm text-destructive">Must be at least 15 characters</p>
+                        <Textarea id="invitation-message" value={invitationMessage} onChange={e => setInvitationMessage(e.target.value)} placeholder="e.g. You are invited to the Annual Day celebration." className="min-h-24" />
+                        <p className="text-sm text-muted-foreground">Must be at least 15 characters</p>
                     </div>
                      <div className="space-y-2">
                         <Label htmlFor="venue">Venue</Label>
-                        <Input id="venue" placeholder="e.g. College Auditorium" />
+                        <Input id="venue" value={venue} onChange={e => setVenue(e.target.value)} placeholder="e.g. College Auditorium" />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
-                         <div className="space-y-2">
+                        <div className="space-y-2">
                             <Label htmlFor="event-time">Event Time</Label>
-                            <Input
-                                id="event-time"
-                                type="time"
-                                value={eventTime}
-                                onChange={(e) => setEventTime(e.target.value)}
-                                className="w-full"
-                            />
+                            <div className="relative">
+                                <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    id="event-time"
+                                    type="time"
+                                    value={eventTime}
+                                    onChange={(e) => setEventTime(e.target.value)}
+                                    className="pl-10"
+                                />
+                            </div>
                         </div>
                          <div className="space-y-2">
                             <Label htmlFor="event-date">Event Date</Label>
@@ -210,42 +295,36 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
                             </Popover>
                         </div>
                     </div>
-                     <div className="space-y-2">
-                        <Label>Attachment</Label>
-                        <div
-                            className="relative flex flex-col items-center justify-center w-full p-4 border-2 border-dashed rounded-lg cursor-pointer"
-                            onClick={() => fileInputRef.current?.click()}
-                        >
-                            <Upload className="w-6 h-6 text-muted-foreground" />
-                            <p className="mt-1 text-sm text-center text-muted-foreground">
-                                Select File (Only Image/PDF allowed)
-                            </p>
-                            <input ref={fileInputRef} type="file" className="hidden" />
-                        </div>
-                    </div>
+                    <FileUploader files={invitationFiles} onFilesChange={setInvitationFiles} />
+                    <DialogFooter>
+                        <Button onClick={() => handleSendNotification('invitation')} disabled={isSending}>
+                            {isSending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Submit
+                        </Button>
+                    </DialogFooter>
                 </div>
             </TabsContent>
             <TabsContent value="push" className="py-4">
                  <div className="space-y-4">
                     <div className="space-y-2">
                         <Label htmlFor="push-title">Push Title</Label>
-                        <Input id="push-title" placeholder="Short and catchy title" />
+                        <Input id="push-title" value={pushTitle} onChange={e => setPushTitle(e.target.value)} placeholder="Short and catchy title" />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="push-message">Push Message</Label>
-                        <Textarea id="push-message" placeholder="Concise message for push notification (max 150 chars)." maxLength={150} className="min-h-24"/>
+                        <Textarea id="push-message" value={pushMessage} onChange={e => setPushMessage(e.target.value)} placeholder="Concise message for push notification (max 150 chars)." maxLength={150} className="min-h-24"/>
                     </div>
+                    <DialogFooter>
+                        <Button onClick={() => handleSendNotification('push')} disabled={isSending}>
+                            {isSending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Submit
+                        </Button>
+                    </DialogFooter>
                  </div>
             </TabsContent>
         </Tabs>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
-          <Button onClick={handleSendNotification} disabled={isSending}>
-            {isSending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isSending ? 'Submitting...' : 'Submit'}
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
+
