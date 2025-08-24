@@ -9,6 +9,12 @@ import {
   ArrowUp,
   ChevronDown,
   ArrowUpDown,
+  User as UserIcon,
+  Briefcase,
+  School2,
+  MapPin,
+  Phone,
+  ShieldCheck,
 } from 'lucide-react'
 
 import { Badge } from '@/components/ui/badge'
@@ -142,6 +148,11 @@ export default function UsersPage() {
 
                 const aValue = a[sortConfig.key] || '';
                 const bValue = b[sortConfig.key] || '';
+
+                if (typeof aValue === 'string' && typeof bValue === 'string') {
+                  return sortConfig.direction === 'ascending' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+                }
+
                 if (aValue < bValue) {
                     return sortConfig.direction === 'ascending' ? -1 : 1;
                 }
@@ -175,24 +186,33 @@ export default function UsersPage() {
     label,
   }: {
     column: SortableKeys;
-    label: string;
+    label: React.ReactNode;
   }) => {
     const isSorted = sortConfig?.key === column;
     const isAscending = sortConfig?.direction === 'ascending';
     
     return (
-      <div className="flex items-center gap-2">
-        <span>{label}</span>
-        <Button variant="ghost" size="icon" onClick={() => requestSort(column)} className="h-7 w-7">
-          {isSorted ? (
+      <div className="flex items-center gap-2 cursor-pointer" onClick={() => requestSort(column)}>
+        {label}
+        <div className="flex flex-col">
+           {isSorted ? (
             isAscending ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
           ) : (
             <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
           )}
-        </Button>
+        </div>
       </div>
     );
   };
+
+  const getRoleBadgeVariant = (role: User['role']) => {
+    switch (role) {
+      case 'Admin': return 'default';
+      case 'Teacher': return 'secondary';
+      case 'Student': return 'outline';
+      default: return 'outline';
+    }
+  }
   
   return (
     <>
@@ -264,22 +284,22 @@ export default function UsersPage() {
                       />
                   </TableHead>
                   <TableHead>
-                     <SortableHeader column="name" label="Name" />
+                     <SortableHeader column="name" label={<div className="flex items-center gap-2"><UserIcon className="h-4 w-4" />Name</div>} />
                   </TableHead>
                   <TableHead>
-                     <SortableHeader column="status" label="Status" />
+                     <SortableHeader column="status" label={<div className="flex items-center gap-2"><ShieldCheck className="h-4 w-4" />Status</div>} />
                   </TableHead>
                   <TableHead className="hidden md:table-cell">
-                      <SortableHeader column="role" label="Role" />
+                      <SortableHeader column="role" label={<div className="flex items-center gap-2"><Briefcase className="h-4 w-4" />Role</div>} />
                   </TableHead>
                   <TableHead className="hidden md:table-cell">
-                      <SortableHeader column="school" label="School" />
+                      <SortableHeader column="school" label={<div className="flex items-center gap-2"><School2 className="h-4 w-4" />School</div>} />
                   </TableHead>
                    <TableHead className="hidden md:table-cell">
-                      <SortableHeader column="district" label="District" />
+                      <SortableHeader column="district" label={<div className="flex items-center gap-2"><MapPin className="h-4 w-4" />District</div>} />
                   </TableHead>
                   <TableHead className="hidden md:table-cell">
-                      <SortableHeader column="phone" label="Phone" />
+                      <SortableHeader column="phone" label={<div className="flex items-center gap-2"><Phone className="h-4 w-4" />Phone</div>} />
                   </TableHead>
                   </TableRow>
               </TableHeader>
@@ -293,7 +313,7 @@ export default function UsersPage() {
                           <Skeleton className="h-4 w-32" />
                         </TableCell>
                         <TableCell><Skeleton className="h-6 w-20" /></TableCell>
-                        <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-16" /></TableCell>
+                        <TableCell className="hidden md:table-cell"><Skeleton className="h-6 w-20" /></TableCell>
                         <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
                         <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
                         <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
@@ -324,7 +344,9 @@ export default function UsersPage() {
                                   <Badge variant={user.status === 'Active' ? 'default' : 'destructive'}>{user.status}</Badge>
                               </div>
                           </TableCell>
-                          <TableCell className="hidden md:table-cell">{user.role}</TableCell>
+                           <TableCell className="hidden md:table-cell">
+                              <Badge variant={getRoleBadgeVariant(user.role)} className="capitalize">{user.role.toLowerCase()}</Badge>
+                           </TableCell>
                           <TableCell className="hidden md:table-cell">
                               {user.school}
                           </TableCell>
