@@ -120,7 +120,7 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
   const [eventDate, setEventDate] = React.useState<Date>();
   const [eventHour, setEventHour] = React.useState('');
   const [eventMinute, setEventMinute] = React.useState('');
-  const [eventPeriod, setEventPeriod] = React.useState('AM');
+  const [eventPeriod, setEventPeriod] = React.useState<'AM' | 'PM'>('AM');
   const [invitationFiles, setInvitationFiles] = React.useState<File[]>([]);
   
   const [pushTitle, setPushTitle] = React.useState('');
@@ -184,7 +184,7 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
             toast({ title: 'All invitation fields are required', variant: 'destructive'});
             return;
         }
-        payload = { type, title: invitationTitle, message: invitationMessage, venue, date: format(eventDate, "PPP"), time: time };
+        payload = { type, title: invitationTitle, message: invitationMessage, venue, date: format(eventDate, "PPP"), time };
         filesToUpload = invitationFiles;
 
     } else if (type === 'push') {
@@ -226,25 +226,27 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
   };
 
   const handleHourChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = parseInt(e.target.value, 10);
-    if (isNaN(value)) {
+    let value = e.target.value.replace(/[^0-9]/g, '');
+    if (value === '') {
         setEventHour('');
-        return;
+        return
     }
-    if (value < 1) value = 1;
-    if (value > 12) value = 12;
-    setEventHour(value.toString());
+    let numValue = parseInt(value, 10);
+    if (numValue < 1) numValue = 1;
+    if (numValue > 12) numValue = 12;
+    setEventHour(numValue.toString());
   }
   
   const handleMinuteChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = parseInt(e.target.value, 10);
-    if (isNaN(value)) {
+    let value = e.target.value.replace(/[^0-9]/g, '');
+     if (value === '') {
         setEventMinute('');
-        return;
+        return
     }
-    if (value < 0) value = 0;
-    if (value > 59) value = 59;
-    setEventMinute(value.toString().padStart(2, '0'));
+    let numValue = parseInt(value, 10);
+    if (numValue < 0) numValue = 0;
+    if (numValue > 59) numValue = 59;
+    setEventMinute(numValue.toString());
   }
 
 
@@ -302,9 +304,10 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                        <div className="flex items-center gap-2">
-                         <div className="flex items-center gap-1 rounded-md border border-input h-10 px-3">
+                         <div className="flex items-center gap-1 rounded-md border border-input h-10 px-3 w-full">
                            <Input 
-                            type="number"
+                            type="text"
+                            maxLength={2}
                             value={eventHour}
                             onChange={handleHourChange}
                             onBlur={(e) => {
@@ -317,7 +320,8 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
                            />
                            <span className="text-muted-foreground">:</span>
                            <Input
-                             type="number"
+                             type="text"
+                             maxLength={2}
                              value={eventMinute}
                              onChange={handleMinuteChange}
                              onBlur={(e) => {
@@ -329,15 +333,9 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
                              className="w-8 border-none text-center p-0 h-auto focus-visible:ring-0"
                            />
                          </div>
-                          <Select value={eventPeriod} onValueChange={setEventPeriod}>
-                             <SelectTrigger className="w-[80px]">
-                               <SelectValue/>
-                             </SelectTrigger>
-                             <SelectContent>
-                               <SelectItem value="AM">AM</SelectItem>
-                               <SelectItem value="PM">PM</SelectItem>
-                             </SelectContent>
-                           </Select>
+                         <Button variant="outline" className="w-[80px]" onClick={() => setEventPeriod(p => p === 'AM' ? 'PM' : 'AM')}>
+                            {eventPeriod}
+                         </Button>
                        </div>
                          <div className="space-y-2">
                             <Popover>
