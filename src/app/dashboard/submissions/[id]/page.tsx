@@ -88,12 +88,12 @@ export default function SubmissionDetailsPage({ params }: { params: { id: string
                                                 <DialogTrigger asChild>
                                                      <Card className="overflow-hidden cursor-pointer">
                                                         <CardContent className="p-0 flex aspect-video items-center justify-center">
-                                                            <Image src={img} alt={`Submission image ${index + 1}`} width={600} height={400} className="object-cover w-full h-full" data-ai-hint="science project"/>
+                                                            <Image src={img.url} alt={`Submission image ${index + 1}`} width={600} height={400} className="object-cover w-full h-full" data-ai-hint="science project"/>
                                                         </CardContent>
                                                     </Card>
                                                 </DialogTrigger>
                                                 <DialogContent className="max-w-3xl p-0">
-                                                     <Image src={img} alt={`Submission image ${index + 1}`} width={1200} height={800} className="w-full h-auto rounded-lg" data-ai-hint="science project"/>
+                                                     <Image src={img.url} alt={`Submission image ${index + 1}`} width={1200} height={800} className="w-full h-auto rounded-lg" data-ai-hint="science project"/>
                                                 </DialogContent>
                                             </Dialog>
                                         </div>
@@ -165,3 +165,5 @@ function SubmissionSkeleton() {
         </div>
     )
 }
+
+    

@@ -31,6 +31,15 @@ export type Project = {
     description: string;
 };
 
+export type CloudinaryImage = {
+    url: string;
+    publicId: string;
+    height: number;
+    width: number;
+    format: string;
+    size: number;
+}
+
 export type Submission = {
   id: string;
   projectId: string;
@@ -39,7 +48,7 @@ export type Submission = {
   status: 'Approved' | 'Rejected' | 'Pending';
   title: string;
   description: string;
-  images: string[];
+  images: CloudinaryImage[];
 };
 
 export type Ticket = {
@@ -56,6 +65,15 @@ export type Ticket = {
 };
 
 // --- MOCK DATA ---
+
+const placeholderImage = (publicId: string): CloudinaryImage => ({
+    url: 'https://placehold.co/600x400.png',
+    publicId,
+    height: 400,
+    width: 600,
+    format: 'png',
+    size: 10000
+});
 
 export const mockUsers: User[] = [
   { id: 'usr_1', name: 'T. N. Angami', email: 'tn.angami@example.com', phone: '+91 98765 43210', status: 'Active', role: 'Admin', createdOn: '2023-01-15', school: 'Kohima Science College', district: 'Kohima' },
@@ -89,7 +107,7 @@ export const mockSubmissions: Submission[] = [
         status: 'Approved',
         title: 'Model of a Volcanic Eruption',
         description: 'A working model demonstrating the chemical reaction between baking soda and vinegar to simulate a volcanic eruption. The model is built using paper mache and painted to resemble a real volcano.',
-        images: ['https://placehold.co/600x400.png', 'https://placehold.co/600x400.png', 'https://placehold.co/600x400.png']
+        images: [placeholderImage('img1'), placeholderImage('img2'), placeholderImage('img3')]
     },
     {
         id: 'sub_2',
@@ -99,7 +117,7 @@ export const mockSubmissions: Submission[] = [
         status: 'Pending',
         title: 'Renewable Energy Water Pump',
         description: 'A prototype of a water pump powered by a small solar panel. The project aims to provide a sustainable solution for irrigation in remote areas.',
-        images: ['https://placehold.co/600x400.png', 'https://placehold.co/600x400.png']
+        images: [placeholderImage('img4'), placeholderImage('img5')]
     },
     {
         id: 'sub_3',
@@ -119,7 +137,7 @@ export const mockSubmissions: Submission[] = [
         status: 'Approved',
         title: 'Traditional Naga Attire and its significance',
         description: 'A research paper and presentation on the cultural importance of traditional Naga clothing and ornaments.',
-        images: ['https://placehold.co/600x400.png']
+        images: [placeholderImage('img6')]
     },
     {
         id: 'sub_5',
@@ -129,7 +147,7 @@ export const mockSubmissions: Submission[] = [
         status: 'Pending',
         title: 'IoT Based Smart Home',
         description: 'A fully functional prototype of a smart home system using IoT devices to control lights, fans, and security cameras through a mobile application. The project uses a Raspberry Pi as the central hub.',
-        images: ['https://placehold.co/600x400.png', 'https://placehold.co/600x400.png', 'https://placehold.co/600x400.png', 'https://placehold.co/600x400.png']
+        images: [placeholderImage('img7'), placeholderImage('img8'), placeholderImage('img9'), placeholderImage('img10')]
     },
     {
       id: 'sub_6',
@@ -139,7 +157,7 @@ export const mockSubmissions: Submission[] = [
       status: 'Approved',
       title: 'Biodiversity of Nagaland',
       description: 'A detailed study of the rich biodiversity of Nagaland, with a focus on endemic species of flora and fauna. Includes photographs and samples collected during field trips.',
-      images: ['https://placehold.co/600x400.png', 'https://placehold.co/600x400.png'],
+      images: [placeholderImage('img11'), placeholderImage('img12')],
     },
     {
         id: 'sub_7',
@@ -149,7 +167,7 @@ export const mockSubmissions: Submission[] = [
         status: 'Pending',
         title: 'AI in Agriculture',
         description: 'A presentation on how AI can be used to improve crop yields and detect diseases in plants, with a focus on local Naga crops.',
-        images: ['https://placehold.co/600x400.png', 'https://placehold.co/600x400.png']
+        images: [placeholderImage('img13'), placeholderImage('img14')]
     },
     {
         id: 'sub_8',
@@ -159,7 +177,7 @@ export const mockSubmissions: Submission[] = [
         status: 'Pending',
         title: 'Water Quality Analysis of Local Rivers',
         description: 'A detailed analysis of water samples from three major rivers in the region, checking for pH levels, dissolved oxygen, and pollutants. The findings aim to raise awareness about water pollution.',
-        images: ['https://placehold.co/600x400.png']
+        images: [placeholderImage('img15')]
     }
 ];
 
@@ -211,3 +229,4 @@ export const mockTickets: Ticket[] = [
     },
 ];
 
+    
