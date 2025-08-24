@@ -19,9 +19,9 @@ import {
 import * as React from 'react';
 import { getSchools, getUsers, getTickets, getProjects } from '@/lib/firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, PieChart, Pie, Cell, Legend } from 'recharts';
+import { Bar, BarChart, XAxis, YAxis, PieChart, Pie, Cell, Legend } from 'recharts';
 import type { School, User } from '@/lib/mock-data';
-import { ChartConfig, ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
+import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 
 export default function DashboardPage() {
     const [stats, setStats] = React.useState({
@@ -155,8 +155,8 @@ export default function DashboardPage() {
           </Link>
         </div>
 
-        <div className="grid gap-4 mt-8 grid-cols-1">
-            <Card>
+        <div className="grid gap-4 mt-8 grid-cols-1 lg:grid-cols-2">
+            <Card className="lg:col-span-2">
                 <CardHeader>
                     <CardTitle>Projects by School</CardTitle>
                      <CardDescription>A look at the distribution of projects across schools.</CardDescription>
@@ -177,14 +177,14 @@ export default function DashboardPage() {
                             tickFormatter={(value) => value.slice(0, 3)}
                             />
                          <YAxis />
-                         <ChartTooltipContent />
+                         <ChartTooltip content={<ChartTooltipContent />} />
                          <Bar dataKey="projectsCount" fill="var(--color-projects)" radius={4} />
                        </BarChart>
                     </ChartContainer>
                    )}
                 </CardContent>
             </Card>
-             <Card>
+             <Card className="lg:col-span-2">
                 <CardHeader>
                     <CardTitle>User Role Distribution</CardTitle>
                     <CardDescription>A breakdown of users by their assigned role.</CardDescription>
@@ -197,7 +197,7 @@ export default function DashboardPage() {
                     ) : (
                         <ChartContainer config={userChartConfig} className="min-h-[300px] w-full">
                             <PieChart>
-                                <ChartTooltipContent nameKey="name" />
+                                <ChartTooltip content={<ChartTooltipContent nameKey="name" />} />
                                 <Pie
                                     data={userRoleData}
                                     dataKey="value"
@@ -217,8 +217,8 @@ export default function DashboardPage() {
                                         );
                                     }}
                                 >
-                                     {userRoleData.map((entry) => (
-                                        <Cell key={entry.name} fill={entry.fill} />
+                                     {userRoleData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={entry.fill} />
                                     ))}
                                 </Pie>
                                 <Legend contentStyle={{ textTransform: 'capitalize' }} />
