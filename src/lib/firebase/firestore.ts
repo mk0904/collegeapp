@@ -120,6 +120,11 @@ export async function addProject(project: Omit<Project, 'id' | 'submissionsCount
     });
 }
 
+export async function updateProjectStatus(projectId: string, status: 'Completed'): Promise<void> {
+    const projectDoc = doc(db, 'projects', projectId);
+    await updateDoc(projectDoc, { status });
+}
+
 
 // Submissions
 export async function getSubmissions(): Promise<Submission[]> {

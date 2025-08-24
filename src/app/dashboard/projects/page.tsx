@@ -7,6 +7,7 @@ import {
   FolderKanban,
   School as SchoolIcon,
   Download,
+  Check,
 } from 'lucide-react'
 import Link from 'next/link'
 import * as React from 'react'
@@ -43,12 +44,14 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs'
-import { getProjects, getSchools } from '@/lib/firebase/firestore'
+import { getProjects, getSchools, updateProjectStatus } from '@/lib/firebase/firestore'
 import type { School, Project } from '@/lib/mock-data'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useToast } from '@/hooks/use-toast'
 
 export default function ProjectsPage() {
   const searchParams = useSearchParams();
+  const { toast } = useToast();
   const [projects, setProjects] = React.useState<Project[]>([]);
   const [schools, setSchools] = React.useState<School[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -73,6 +76,17 @@ export default function ProjectsPage() {
     fetchData();
   }, []);
 
+  const handleCompleteProject = async (projectId: string) => {
+    try {
+      await updateProjectStatus(projectId, 'Completed');
+      setProjects(prev => prev.map(p => p.id === projectId ? { ...p, status: 'Completed' } : p));
+      toast({ title: "Success", description: "Project has been marked as completed."});
+    } catch (error) {
+        console.error("Error completing project:", error);
+        toast({ title: "Error", description: "Failed to update the project status.", variant: "destructive" });
+    }
+  }
+
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab}>
       <div className="flex items-center mb-4">
@@ -83,7 +97,7 @@ export default function ProjectsPage() {
           </TabsTrigger>
           <TabsTrigger value="schools" className="px-3 py-1.5 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm rounded-md transition-all flex items-center gap-2">
             <SchoolIcon className="h-4 w-4" />
-            Schools
+            Colleges
           </TabsTrigger>
         </TabsList>
         <div className="ml-auto flex items-center gap-2">
@@ -100,9 +114,9 @@ export default function ProjectsPage() {
             </Button>
           ) : (
             <Button size="sm" asChild>
-              <Link href="/dashboard/schools/add">
+              <Link href="/dashboard/colleges/add">
                 <PlusCircle className="mr-2 h-4 w-4" />
-                Add School
+                Add College
               </Link>
             </Button>
           )}
@@ -121,12 +135,10 @@ export default function ProjectsPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Project Name</TableHead>
-                  <TableHead className="hidden md:table-cell">School</TableHead>
+                  <TableHead className="hidden md:table-cell">College</TableHead>
                   <TableHead className="hidden md:table-cell">Submissions</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>
-                    <span className="sr-only">Actions</span>
-                  </TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -137,7 +149,7 @@ export default function ProjectsPage() {
                       <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
                       <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-12" /></TableCell>
                       <TableCell><Skeleton className="h-6 w-20" /></TableCell>
-                      <TableCell><Skeleton className="h-8 w-8" /></TableCell>
+                      <TableCell className="text-right"><Skeleton className="h-8 w-8" /></TableCell>
                     </TableRow>
                   ))
                 ) : (
@@ -155,20 +167,34 @@ export default function ProjectsPage() {
                           {project.status}
                         </Badge>
                       </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button aria-haspopup="true" size="icon" variant="ghost">
-                              <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">Toggle menu</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem>Edit</DropdownMenuItem>
-                            <DropdownMenuItem>Delete</DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                            {project.status === 'Ongoing' && (
+                                <Button 
+                                    size="icon" 
+                                    variant="ghost"
+                                    className="bg-primary/10 hover:bg-primary/20"
+                                    onClick={(e) => { e.stopPropagation(); handleCompleteProject(project.id); }}
+                                    title="Mark as Completed"
+                                >
+                                    <Check className="h-4 w-4 text-primary" />
+                                    <span className="sr-only">Mark as Completed</span>
+                                </Button>
+                            )}
+                            <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button aria-haspopup="true" size="icon" variant="ghost">
+                                <MoreHorizontal className="h-4 w-4" />
+                                <span className="sr-only">Toggle menu</span>
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                <DropdownMenuItem>Edit</DropdownMenuItem>
+                                <DropdownMenuItem>Delete</DropdownMenuItem>
+                            </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
@@ -181,9 +207,9 @@ export default function ProjectsPage() {
       <TabsContent value="schools">
         <Card>
           <CardHeader>
-            <CardTitle>Schools</CardTitle>
+            <CardTitle>Colleges</CardTitle>
             <CardDescription>
-              Manage registered schools.
+              Manage registered colleges.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
