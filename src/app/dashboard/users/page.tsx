@@ -131,22 +131,6 @@ export default function UsersPage() {
               />
             </div>
             <div className="flex items-center gap-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="ml-auto">
-                    Filter by Role <ChevronDown className="ml-2 h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>Filter by Role</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuCheckboxItem checked>
-                    Admin
-                  </DropdownMenuCheckboxItem>
-                  <DropdownMenuCheckboxItem>Teacher</DropdownMenuCheckboxItem>
-                  <DropdownMenuCheckboxItem>Student</DropdownMenuCheckboxItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
               <Button size="sm" variant="outline" onClick={() => setIsModalOpen(true)} disabled={selectedUserIds.length === 0}>
                 <Mail className="mr-2 h-4 w-4" />
                 Send Notification ({selectedUserIds.length})

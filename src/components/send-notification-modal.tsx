@@ -24,7 +24,7 @@ import { Calendar } from './ui/calendar';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
-interface SendMessageModalProps {
+interface SendNotificationModalProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   selectedUsers: User[];
@@ -33,7 +33,7 @@ interface SendMessageModalProps {
 const MAX_TOTAL_SIZE_MB = 10;
 const MAX_TOTAL_SIZE_BYTES = MAX_TOTAL_SIZE_MB * 1024 * 1024;
 
-const FileUploader = ({ files, onFilesChange }: { files: File[], onFilesChange: (files: File[]) => void}) => {
+const FileUploader = ({ files, onFilesChange, disabled }: { files: File[], onFilesChange: (files: File[]) => void, disabled?: boolean}) => {
     const { toast } = useToast();
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -64,8 +64,8 @@ const FileUploader = ({ files, onFilesChange }: { files: File[], onFilesChange: 
          <div className="space-y-2">
             <Label>Attachments</Label>
             <div
-                className="relative flex flex-col items-center justify-center w-full p-4 border-2 border-dashed rounded-lg cursor-pointer"
-                onClick={() => fileInputRef.current?.click()}
+                className={cn("relative flex flex-col items-center justify-center w-full p-4 border-2 border-dashed rounded-lg", !disabled && "cursor-pointer hover:bg-muted/50")}
+                onClick={() => !disabled && fileInputRef.current?.click()}
             >
                 <Upload className="w-6 h-6 text-muted-foreground" />
                 <p className="mt-1 text-sm text-center text-muted-foreground">
@@ -78,6 +78,7 @@ const FileUploader = ({ files, onFilesChange }: { files: File[], onFilesChange: 
                     className="hidden"
                     onChange={handleFileChange}
                     accept="image/*,application/pdf"
+                    disabled={disabled}
                 />
             </div>
             {files.length > 0 && (
@@ -91,9 +92,11 @@ const FileUploader = ({ files, onFilesChange }: { files: File[], onFilesChange: 
                                     <span className="font-medium truncate">{file.name}</span>
                                     <span className="text-muted-foreground text-xs">({(file.size / 1024).toFixed(2)} KB)</span>
                                 </div>
-                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); removeFile(index);}}>
-                                    <X className="h-4 w-4" />
-                                </Button>
+                                {!disabled && (
+                                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); removeFile(index);}}>
+                                        <X className="h-4 w-4" />
+                                    </Button>
+                                )}
                             </li>
                         ))}
                     </ul>
@@ -104,7 +107,7 @@ const FileUploader = ({ files, onFilesChange }: { files: File[], onFilesChange: 
 };
 
 
-export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: SendMessageModalProps) {
+export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: SendNotificationModalProps) {
   const { toast } = useToast();
   const [isSending, setIsSending] = React.useState(false);
 
@@ -150,7 +153,7 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
     }
 
     let payload: any = {};
-    let files: File[] = [];
+    let filesToUpload: File[] = [];
 
     if (type === 'general') {
         if (!generalTitle) {
@@ -158,7 +161,7 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
             return;
         }
         payload = { type, title: generalTitle, message: generalMessage };
-        files = generalFiles;
+        filesToUpload = generalFiles;
 
     } else if (type === 'invitation') {
         if (!invitationMessage || !venue || !eventDate || !eventTime) {
@@ -166,7 +169,7 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
             return;
         }
         payload = { type, message: invitationMessage, venue, date: format(eventDate, "PPP"), time: eventTime };
-        files = invitationFiles;
+        filesToUpload = invitationFiles;
 
     } else if (type === 'push') {
         if (!pushTitle || !pushMessage) {
@@ -178,12 +181,11 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
 
     setIsSending(true);
     try {
-      const fileUrls = await Promise.all(
-        files.map(async (file) => {
-          const downloadURL = await uploadFile(file, `notifications/${Date.now()}_${file.name}`);
-          return downloadURL;
-        })
-      );
+      const uploadPromises = filesToUpload.map(file => {
+          const path = `notifications/${Date.now()}_${file.name}`;
+          return uploadFile(file, path);
+      });
+      const fileUrls = await Promise.all(uploadPromises);
       
       payload.fileUrls = fileUrls;
       console.log('Sending notification to:', selectedUsers.map(u => u.id));
@@ -229,13 +231,13 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
                  <div className="space-y-4">
                     <div className="space-y-2">
                         <Label htmlFor="general-title">Title</Label>
-                        <Input id="general-title" value={generalTitle} onChange={e => setGeneralTitle(e.target.value)} placeholder="e.g. Important Update" />
+                        <Input id="general-title" value={generalTitle} onChange={e => setGeneralTitle(e.target.value)} placeholder="e.g. Important Update" disabled={isSending} />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="general-message">Message</Label>
-                        <Textarea id="general-message" value={generalMessage} onChange={e => setGeneralMessage(e.target.value)} placeholder="Type your general notification message here." className="min-h-24"/>
+                        <Textarea id="general-message" value={generalMessage} onChange={e => setGeneralMessage(e.target.value)} placeholder="Type your general notification message here." className="min-h-24" disabled={isSending}/>
                     </div>
-                     <FileUploader files={generalFiles} onFilesChange={setGeneralFiles} />
+                     <FileUploader files={generalFiles} onFilesChange={setGeneralFiles} disabled={isSending} />
                     <DialogFooter>
                         <Button onClick={() => handleSendNotification('general')} disabled={isSending}>
                             {isSending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -248,12 +250,12 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
                 <div className="space-y-4">
                     <div className="space-y-2">
                         <Label htmlFor="invitation-message">Heading / Message</Label>
-                        <Textarea id="invitation-message" value={invitationMessage} onChange={e => setInvitationMessage(e.target.value)} placeholder="e.g. You are invited to the Annual Day celebration." className="min-h-24" />
+                        <Textarea id="invitation-message" value={invitationMessage} onChange={e => setInvitationMessage(e.target.value)} placeholder="e.g. You are invited to the Annual Day celebration." className="min-h-24" disabled={isSending} />
                         <p className="text-sm text-muted-foreground">Must be at least 15 characters</p>
                     </div>
                      <div className="space-y-2">
                         <Label htmlFor="venue">Venue</Label>
-                        <Input id="venue" value={venue} onChange={e => setVenue(e.target.value)} placeholder="e.g. College Auditorium" />
+                        <Input id="venue" value={venue} onChange={e => setVenue(e.target.value)} placeholder="e.g. College Auditorium" disabled={isSending} />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
@@ -266,6 +268,7 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
                                     value={eventTime}
                                     onChange={(e) => setEventTime(e.target.value)}
                                     className="pl-10"
+                                    disabled={isSending}
                                 />
                             </div>
                         </div>
@@ -279,6 +282,7 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
                                     "w-full justify-start text-left font-normal",
                                     !eventDate && "text-muted-foreground"
                                     )}
+                                    disabled={isSending}
                                 >
                                     <CalendarIcon className="mr-2 h-4 w-4" />
                                     {eventDate ? format(eventDate, "PPP") : <span>Pick a date</span>}
@@ -295,7 +299,7 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
                             </Popover>
                         </div>
                     </div>
-                    <FileUploader files={invitationFiles} onFilesChange={setInvitationFiles} />
+                    <FileUploader files={invitationFiles} onFilesChange={setInvitationFiles} disabled={isSending}/>
                     <DialogFooter>
                         <Button onClick={() => handleSendNotification('invitation')} disabled={isSending}>
                             {isSending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -308,11 +312,11 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
                  <div className="space-y-4">
                     <div className="space-y-2">
                         <Label htmlFor="push-title">Push Title</Label>
-                        <Input id="push-title" value={pushTitle} onChange={e => setPushTitle(e.target.value)} placeholder="Short and catchy title" />
+                        <Input id="push-title" value={pushTitle} onChange={e => setPushTitle(e.target.value)} placeholder="Short and catchy title" disabled={isSending} />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="push-message">Push Message</Label>
-                        <Textarea id="push-message" value={pushMessage} onChange={e => setPushMessage(e.target.value)} placeholder="Concise message for push notification (max 150 chars)." maxLength={150} className="min-h-24"/>
+                        <Textarea id="push-message" value={pushMessage} onChange={e => setPushMessage(e.target.value)} placeholder="Concise message for push notification (max 150 chars)." maxLength={150} className="min-h-24" disabled={isSending}/>
                     </div>
                     <DialogFooter>
                         <Button onClick={() => handleSendNotification('push')} disabled={isSending}>
@@ -327,4 +331,3 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
     </Dialog>
   );
 }
-
