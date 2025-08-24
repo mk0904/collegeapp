@@ -3,7 +3,6 @@
 
 import {
   Activity,
-  ArrowUpRight,
   BookOpenCheck,
   Ticket,
   Users as UsersIcon,
@@ -18,8 +17,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import * as React from 'react';
-import { getProjects, getSchools, getUsers, getTickets, getSubmissions } from '@/lib/firebase/firestore';
-import type { Project } from '@/lib/mock-data';
+import { getSchools, getUsers, getTickets, getSubmissions } from '@/lib/firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function DashboardPage() {
@@ -60,9 +58,8 @@ export default function DashboardPage() {
 
 
   return (
-    <div className="flex w-full flex-col">
-      <main className="flex flex-1 flex-col gap-6 md:gap-8">
-        <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+    <>
+        <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-6">
             <div>
                 <h1 className="text-3xl font-bold tracking-tight font-headline">Dashboard</h1>
                 <p className="text-muted-foreground">An overview of your college ecosystem.</p>
@@ -87,7 +84,7 @@ export default function DashboardPage() {
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Schools</CardTitle>
                 <BookOpenCheck className="h-4 w-4 text-muted-foreground" />
-              </Header>
+              </CardHeader>
               <CardContent>
                  {loading ? <Skeleton className="h-7 w-10" /> : <div className="text-2xl font-bold">{stats.totalSchools}</div>}
                  {loading ? <Skeleton className="h-4 w-32 mt-1" /> : <p className="text-xs text-muted-foreground">+1 since last quarter</p>}
@@ -119,7 +116,6 @@ export default function DashboardPage() {
             </Card>
           </Link>
         </div>
-      </main>
-    </div>
+      </>
   );
 }
