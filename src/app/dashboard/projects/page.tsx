@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -6,6 +7,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import * as React from 'react'
+import { useSearchParams } from 'next/navigation'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -43,10 +45,11 @@ import type { School, Project } from '@/lib/mock-data'
 import { Skeleton } from '@/components/ui/skeleton'
 
 export default function ProjectsPage() {
+  const searchParams = useSearchParams();
   const [projects, setProjects] = React.useState<Project[]>([]);
   const [schools, setSchools] = React.useState<School[]>([]);
   const [loading, setLoading] = React.useState(true);
-  const [activeTab, setActiveTab] = React.useState('projects');
+  const [activeTab, setActiveTab] = React.useState(searchParams.get('tab') || 'projects');
 
   React.useEffect(() => {
     async function fetchData() {
