@@ -3,10 +3,10 @@
 
 import * as React from 'react'
 import {
-  ChevronDown,
   Mail,
-  MoreHorizontal,
   Search,
+  ArrowDown,
+  ArrowUp,
 } from 'lucide-react'
 
 import { Badge } from '@/components/ui/badge'
@@ -18,15 +18,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import {
   Table,
@@ -44,12 +35,16 @@ import { getUsers, updateUserStatus } from '@/lib/firebase/firestore'
 import { Skeleton } from '@/components/ui/skeleton'
 import { SendNotificationModal } from '@/components/send-notification-modal'
 
+type SortableKeys = keyof User;
+
 export default function UsersPage() {
     const { toast } = useToast()
     const [users, setUsers] = React.useState<User[]>([])
     const [loading, setLoading] = React.useState(true);
     const [isModalOpen, setIsModalOpen] = React.useState(false);
     const [selectedUserIds, setSelectedUserIds] = React.useState<string[]>([]);
+    const [searchTerm, setSearchTerm] = React.useState('');
+    const [sortConfig, setSortConfig] = React.useState<{ key: SortableKeys; direction: 'ascending' | 'descending' } | null>(null);
 
     const selectedUsers = users.filter(user => selectedUserIds.includes(user.id));
 
@@ -93,7 +88,7 @@ export default function UsersPage() {
 
     const handleSelectAll = (checked: boolean) => {
         if (checked) {
-            setSelectedUserIds(users.map(user => user.id));
+            setSelectedUserIds(filteredUsers.map(user => user.id));
         } else {
             setSelectedUserIds([]);
         }
@@ -106,9 +101,46 @@ export default function UsersPage() {
             setSelectedUserIds(prev => prev.filter(id => id !== userId));
         }
     }
+    
+    const requestSort = (key: SortableKeys) => {
+        let direction: 'ascending' | 'descending' = 'ascending';
+        if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
+            direction = 'descending';
+        }
+        setSortConfig({ key, direction });
+    };
 
-    const isAllSelected = selectedUserIds.length === users.length && users.length > 0;
-    const isIndeterminate = selectedUserIds.length > 0 && selectedUserIds.length < users.length;
+    const sortedUsers = React.useMemo(() => {
+        let sortableUsers = [...users];
+        if (sortConfig !== null) {
+            sortableUsers.sort((a, b) => {
+                const aValue = a[sortConfig.key] || '';
+                const bValue = b[sortConfig.key] || '';
+                if (aValue < bValue) {
+                    return sortConfig.direction === 'ascending' ? -1 : 1;
+                }
+                if (aValue > bValue) {
+                    return sortConfig.direction === 'ascending' ? 1 : -1;
+                }
+                return 0;
+            });
+        }
+        return sortableUsers;
+    }, [users, sortConfig]);
+
+    const filteredUsers = sortedUsers.filter(user =>
+        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    const isAllSelected = selectedUserIds.length === filteredUsers.length && filteredUsers.length > 0;
+    const isIndeterminate = selectedUserIds.length > 0 && selectedUserIds.length < filteredUsers.length;
+  
+  const getSortIcon = (key: SortableKeys) => {
+    if (!sortConfig || sortConfig.key !== key) return null;
+    if (sortConfig.direction === 'ascending') return <ArrowUp className="h-4 w-4" />;
+    return <ArrowDown className="h-4 w-4" />;
+  };
   
   return (
     <>
@@ -128,6 +160,8 @@ export default function UsersPage() {
                 type="search"
                 placeholder="Search users by name or email..."
                 className="pl-8"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
             <div className="flex items-center gap-2">
@@ -150,17 +184,35 @@ export default function UsersPage() {
                         indeterminate={isIndeterminate.toString()}
                       />
                   </TableHead>
-                  <TableHead className="min-w-[150px]">Name</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="hidden md:table-cell">Role</TableHead>
+                  <TableHead className="min-w-[150px]">
+                    <Button variant="ghost" onClick={() => requestSort('name')} className="px-0">
+                        Name {getSortIcon('name')}
+                    </Button>
+                  </TableHead>
+                  <TableHead>
+                    <Button variant="ghost" onClick={() => requestSort('status')} className="px-0">
+                        Status {getSortIcon('status')}
+                    </Button>
+                  </TableHead>
                   <TableHead className="hidden md:table-cell">
-                      School
+                    <Button variant="ghost" onClick={() => requestSort('role')} className="px-0">
+                        Role {getSortIcon('role')}
+                    </Button>
+                  </TableHead>
+                  <TableHead className="hidden md:table-cell">
+                     <Button variant="ghost" onClick={() => requestSort('school')} className="px-0">
+                        School {getSortIcon('school')}
+                    </Button>
                   </TableHead>
                    <TableHead className="hidden md:table-cell">
-                      District
+                     <Button variant="ghost" onClick={() => requestSort('district')} className="px-0">
+                        District {getSortIcon('district')}
+                    </Button>
                   </TableHead>
                   <TableHead className="hidden md:table-cell">
-                      Phone
+                     <Button variant="ghost" onClick={() => requestSort('phone')} className="px-0">
+                        Phone {getSortIcon('phone')}
+                    </Button>
                   </TableHead>
                   </TableRow>
               </TableHeader>
@@ -181,7 +233,7 @@ export default function UsersPage() {
                       </TableRow>
                     ))
                   ) : (
-                    users.map(user => (
+                    filteredUsers.map(user => (
                       <TableRow key={user.id} data-state={selectedUserIds.includes(user.id) ? 'selected' : ''}>
                           <TableCell>
                               <Checkbox 

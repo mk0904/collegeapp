@@ -11,10 +11,9 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, X, File as FileIcon, Loader2, Calendar as CalendarIcon, Clock } from 'lucide-react';
+import { Upload, X, File as FileIcon, Loader2, Calendar as CalendarIcon, Clock, MessageSquare, Send } from 'lucide-react';
 import { uploadFile } from '@/lib/firebase/storage';
 import type { User } from '@/lib/mock-data';
 import { Badge } from './ui/badge';
@@ -62,14 +61,13 @@ const FileUploader = ({ files, onFilesChange, disabled }: { files: File[], onFil
 
     return (
          <div className="space-y-2">
-            <Label>Attachments</Label>
             <div
                 className={cn("relative flex flex-col items-center justify-center w-full p-4 border-2 border-dashed rounded-lg", !disabled && "cursor-pointer hover:bg-muted/50")}
                 onClick={() => !disabled && fileInputRef.current?.click()}
             >
                 <Upload className="w-6 h-6 text-muted-foreground" />
                 <p className="mt-1 text-sm text-center text-muted-foreground">
-                    Select Files (up to {MAX_TOTAL_SIZE_MB}MB)
+                    Select Attachments (up to {MAX_TOTAL_SIZE_MB}MB)
                 </p>
                 <input
                     ref={fileInputRef}
@@ -223,19 +221,23 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
         </DialogHeader>
         <Tabs defaultValue="general" className="w-full">
             <TabsList className="grid w-full grid-cols-3 bg-muted/60">
-                <TabsTrigger value="general">General</TabsTrigger>
-                <TabsTrigger value="invitation">Invitation</TabsTrigger>
-                <TabsTrigger value="push">Push</TabsTrigger>
+                <TabsTrigger value="general" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                    <MessageSquare className="mr-2 h-4 w-4" /> General
+                </TabsTrigger>
+                <TabsTrigger value="invitation" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                    <CalendarIcon className="mr-2 h-4 w-4" /> Invitation
+                </TabsTrigger>
+                <TabsTrigger value="push" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                    <Send className="mr-2 h-4 w-4" /> Push
+                </TabsTrigger>
             </TabsList>
             <TabsContent value="general" className="py-4">
                  <div className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="general-title">Title</Label>
-                        <Input id="general-title" value={generalTitle} onChange={e => setGeneralTitle(e.target.value)} placeholder="e.g. Important Update" disabled={isSending} />
+                        <Input id="general-title" value={generalTitle} onChange={e => setGeneralTitle(e.target.value)} placeholder="Title (e.g. Important Update)" disabled={isSending} />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="general-message">Message</Label>
-                        <Textarea id="general-message" value={generalMessage} onChange={e => setGeneralMessage(e.target.value)} placeholder="Type your general notification message here." className="min-h-24" disabled={isSending}/>
+                        <Textarea id="general-message" value={generalMessage} onChange={e => setGeneralMessage(e.target.value)} placeholder="Message" className="min-h-24" disabled={isSending}/>
                     </div>
                      <FileUploader files={generalFiles} onFilesChange={setGeneralFiles} disabled={isSending} />
                     <DialogFooter>
@@ -249,17 +251,14 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
             <TabsContent value="invitation" className="py-4">
                 <div className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="invitation-message">Heading / Message</Label>
-                        <Textarea id="invitation-message" value={invitationMessage} onChange={e => setInvitationMessage(e.target.value)} placeholder="e.g. You are invited to the Annual Day celebration." className="min-h-24" disabled={isSending} />
+                        <Textarea id="invitation-message" value={invitationMessage} onChange={e => setInvitationMessage(e.target.value)} placeholder="Heading / Message (e.g. You are invited to...)" className="min-h-24" disabled={isSending} />
                         <p className="text-sm text-muted-foreground">Must be at least 15 characters</p>
                     </div>
                      <div className="space-y-2">
-                        <Label htmlFor="venue">Venue</Label>
-                        <Input id="venue" value={venue} onChange={e => setVenue(e.target.value)} placeholder="e.g. College Auditorium" disabled={isSending} />
+                        <Input id="venue" value={venue} onChange={e => setVenue(e.target.value)} placeholder="Venue (e.g. College Auditorium)" disabled={isSending} />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="event-time">Event Time</Label>
                             <div className="relative">
                                 <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                 <Input
@@ -269,11 +268,11 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
                                     onChange={(e) => setEventTime(e.target.value)}
                                     className="pl-10"
                                     disabled={isSending}
+                                    placeholder="Event Time"
                                 />
                             </div>
                         </div>
                          <div className="space-y-2">
-                            <Label htmlFor="event-date">Event Date</Label>
                             <Popover>
                                 <PopoverTrigger asChild>
                                 <Button
@@ -285,7 +284,7 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
                                     disabled={isSending}
                                 >
                                     <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {eventDate ? format(eventDate, "PPP") : <span>Pick a date</span>}
+                                    {eventDate ? format(eventDate, "PPP") : <span>Event Date</span>}
                                 </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-auto p-0">
@@ -311,12 +310,10 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
             <TabsContent value="push" className="py-4">
                  <div className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="push-title">Push Title</Label>
-                        <Input id="push-title" value={pushTitle} onChange={e => setPushTitle(e.target.value)} placeholder="Short and catchy title" disabled={isSending} />
+                        <Input id="push-title" value={pushTitle} onChange={e => setPushTitle(e.target.value)} placeholder="Push Title (short and catchy)" disabled={isSending} />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="push-message">Push Message</Label>
-                        <Textarea id="push-message" value={pushMessage} onChange={e => setPushMessage(e.target.value)} placeholder="Concise message for push notification (max 150 chars)." maxLength={150} className="min-h-24" disabled={isSending}/>
+                        <Textarea id="push-message" value={pushMessage} onChange={e => setPushMessage(e.target.value)} placeholder="Push Message (concise, max 150 chars)." maxLength={150} className="min-h-24" disabled={isSending}/>
                     </div>
                     <DialogFooter>
                         <Button onClick={() => handleSendNotification('push')} disabled={isSending}>
