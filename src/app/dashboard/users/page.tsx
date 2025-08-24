@@ -10,6 +10,9 @@ import {
   ChevronDown,
   ArrowUpDown,
   Download,
+  ShieldCheck,
+  School2,
+  MapPin,
 } from 'lucide-react'
 
 import { Badge } from '@/components/ui/badge'
@@ -276,7 +279,11 @@ export default function UsersPage() {
              <div className="flex w-full sm:w-auto gap-2">
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="w-full sm:w-auto capitalize">Role <ChevronDown className="ml-2 h-4 w-4" /></Button>
+                        <Button variant="outline" className="w-full sm:w-auto">
+                            <ShieldCheck className="mr-2 h-4 w-4" />
+                            Role
+                            <ChevronDown className="ml-auto h-4 w-4" />
+                        </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                         <DropdownMenuCheckboxItem checked={roleFilter === 'all'} onCheckedChange={() => setRoleFilter('all')}>All Roles</DropdownMenuCheckboxItem>
@@ -285,7 +292,11 @@ export default function UsersPage() {
                 </DropdownMenu>
                  <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="w-full sm:w-auto">School <ChevronDown className="ml-2 h-4 w-4" /></Button>
+                        <Button variant="outline" className="w-full sm:w-auto">
+                            <School2 className="mr-2 h-4 w-4" />
+                            School
+                            <ChevronDown className="ml-auto h-4 w-4" />
+                        </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                         <DropdownMenuCheckboxItem checked={schoolFilter === 'all'} onCheckedChange={() => setSchoolFilter('all')}>All Schools</DropdownMenuCheckboxItem>
@@ -294,11 +305,15 @@ export default function UsersPage() {
                 </DropdownMenu>
                  <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="w-full sm:w-auto">District <ChevronDown className="ml-2 h-4 w-4" /></Button>
+                        <Button variant="outline" className="w-full sm:w-auto">
+                            <MapPin className="mr-2 h-4 w-4" />
+                            District
+                            <ChevronDown className="ml-auto h-4 w-4" />
+                        </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                         <DropdownMenuCheckboxItem checked={districtFilter === 'all'} onCheckedChange={() => setDistrictFilter('all')}>All Districts</DropdownMenuCheckboxItem>
-                         {uniqueDistricts.map(district => <DropdownMenuCheckboxItem key={district} checked={districtFilter === district} onCheckedChange={() => setDistrictFilter(district)}>{district}</DropdownMenuCheckboxItem>)}
+                         {uniqueDistricts.map(district => <DropdownMenuCheckboxItem key={district} checked={districtFilter === district} onCheckedChange={() => setDistrictFilter(district)} className="capitalize">{district}</DropdownMenuCheckboxItem>)}
                     </DropdownMenuContent>
                 </DropdownMenu>
               <Button size="sm" variant="outline" onClick={() => setIsModalOpen(true)} disabled={selectedUserIds.length === 0} className="w-full sm:w-auto">
