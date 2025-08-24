@@ -105,22 +105,34 @@ const FileUploader = ({ files, onFilesChange, disabled }: { files: File[], onFil
     );
 };
 
+const generateTimeSlots = () => {
+    const slots = [];
+    for (let i = 0; i < 24; i++) {
+        for (let j = 0; j < 60; j += 30) {
+            const hour = i % 12 === 0 ? 12 : i % 12;
+            const minute = j.toString().padStart(2, '0');
+            const period = i < 12 ? 'AM' : 'PM';
+            slots.push(`${hour}:${minute} ${period}`);
+        }
+    }
+    return slots;
+};
 
 export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: SendNotificationModalProps) {
   const { toast } = useToast();
   const [isSending, setIsSending] = React.useState(false);
+  const timeSlots = React.useMemo(() => generateTimeSlots(), []);
 
   // Form states
   const [generalTitle, setGeneralTitle] = React.useState('');
   const [generalMessage, setGeneralMessage] = React.useState('');
   const [generalFiles, setGeneralFiles] = React.useState<File[]>([]);
   
+  const [invitationTitle, setInvitationTitle] = React.useState('');
   const [invitationMessage, setInvitationMessage] = React.useState('');
   const [venue, setVenue] = React.useState('');
   const [eventDate, setEventDate] = React.useState<Date>();
-  const [eventHour, setEventHour] = React.useState<string>('');
-  const [eventMinute, setEventMinute] = React.useState<string>('');
-  const [eventPeriod, setEventPeriod] = React.useState<string>('');
+  const [eventTime, setEventTime] = React.useState<string>('');
   const [invitationFiles, setInvitationFiles] = React.useState<File[]>([]);
   
   const [pushTitle, setPushTitle] = React.useState('');
@@ -131,12 +143,11 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
     setGeneralTitle('');
     setGeneralMessage('');
     setGeneralFiles([]);
+    setInvitationTitle('');
     setInvitationMessage('');
     setVenue('');
     setEventDate(undefined);
-    setEventHour('');
-    setEventMinute('');
-    setEventPeriod('');
+    setEventTime('');
     setInvitationFiles([]);
     setPushTitle('');
     setPushMessage('');
@@ -157,7 +168,6 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
 
     let payload: any = {};
     let filesToUpload: File[] = [];
-    const eventTime = `${eventHour}:${eventMinute} ${eventPeriod}`;
 
     if (type === 'general') {
         if (!generalTitle) {
@@ -168,11 +178,11 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
         filesToUpload = generalFiles;
 
     } else if (type === 'invitation') {
-        if (!invitationMessage || !venue || !eventDate || !eventHour || !eventMinute || !eventPeriod) {
+        if (!invitationTitle || !invitationMessage || !venue || !eventDate || !eventTime) {
             toast({ title: 'All invitation fields are required', variant: 'destructive'});
             return;
         }
-        payload = { type, message: invitationMessage, venue, date: format(eventDate, "PPP"), time: eventTime };
+        payload = { type, title: invitationTitle, message: invitationMessage, venue, date: format(eventDate, "PPP"), time: eventTime };
         filesToUpload = invitationFiles;
 
     } else if (type === 'push') {
@@ -257,30 +267,20 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
             <TabsContent value="invitation" className="py-4">
                 <div className="space-y-4">
                     <div className="space-y-2">
-                        <Textarea id="invitation-message" value={invitationMessage} onChange={e => setInvitationMessage(e.target.value)} placeholder="Heading / Message (e.g. You are invited to...)" className="min-h-24" disabled={isSending} />
+                        <Input id="invitation-title" value={invitationTitle} onChange={e => setInvitationTitle(e.target.value)} placeholder="Invitation Title (e.g. Tech Fest 2024 Inauguration)" disabled={isSending} />
+                    </div>
+                    <div className="space-y-2">
+                        <Textarea id="invitation-message" value={invitationMessage} onChange={e => setInvitationMessage(e.target.value)} placeholder="Message" className="min-h-24" disabled={isSending} />
                     </div>
                      <div className="space-y-2">
                         <Input id="venue" value={venue} onChange={e => setVenue(e.target.value)} placeholder="Venue (e.g. College Auditorium)" disabled={isSending} />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="grid grid-cols-3 gap-2">
-                            <Select value={eventHour} onValueChange={setEventHour} disabled={isSending}>
-                                <SelectTrigger><SelectValue placeholder="Hour" /></SelectTrigger>
+                        <div className="space-y-2">
+                            <Select value={eventTime} onValueChange={setEventTime} disabled={isSending}>
+                                <SelectTrigger><SelectValue placeholder="Select Time" /></SelectTrigger>
                                 <SelectContent>
-                                    {Array.from({ length: 12 }, (_, i) => `${i + 1}`.padStart(2, '0')).map(hour => <SelectItem key={hour} value={hour}>{hour}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
-                            <Select value={eventMinute} onValueChange={setEventMinute} disabled={isSending}>
-                                <SelectTrigger><SelectValue placeholder="Min" /></SelectTrigger>
-                                <SelectContent>
-                                    {['00', '15', '30', '45'].map(min => <SelectItem key={min} value={min}>{min}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
-                            <Select value={eventPeriod} onValueChange={setEventPeriod} disabled={isSending}>
-                                <SelectTrigger><SelectValue placeholder="AM" /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="AM">AM</SelectItem>
-                                    <SelectItem value="PM">PM</SelectItem>
+                                    {timeSlots.map(time => <SelectItem key={time} value={time}>{time}</SelectItem>)}
                                 </SelectContent>
                             </Select>
                         </div>
