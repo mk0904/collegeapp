@@ -8,6 +8,7 @@ import {
   ArrowDown,
   ArrowUp,
   ChevronDown,
+  ArrowUpDown,
 } from 'lucide-react'
 
 import { Badge } from '@/components/ui/badge'
@@ -175,16 +176,23 @@ export default function UsersPage() {
   }: {
     column: SortableKeys;
     label: string;
-    className?: string;
-  }) => (
-    <div className="flex items-center gap-1.5" onClick={() => requestSort(column)}>
-      <span>{label}</span>
-      <div className="flex flex-col">
-          <ArrowUp className={cn('h-3 w-3 text-muted-foreground/50', sortConfig?.key === column && sortConfig.direction === 'ascending' && 'text-foreground')} />
-          <ArrowDown className={cn('h-3 w-3 text-muted-foreground/50', sortConfig?.key === column && sortConfig.direction === 'descending' && 'text-foreground')} />
+  }) => {
+    const isSorted = sortConfig?.key === column;
+    const isAscending = sortConfig?.direction === 'ascending';
+    
+    return (
+      <div className="flex items-center gap-2">
+        <span>{label}</span>
+        <Button variant="ghost" size="icon" onClick={() => requestSort(column)} className="h-7 w-7">
+          {isSorted ? (
+            isAscending ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+          ) : (
+            <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+          )}
+        </Button>
       </div>
-    </div>
-  );
+    );
+  };
   
   return (
     <>
@@ -255,22 +263,22 @@ export default function UsersPage() {
                         indeterminate={isIndeterminate.toString()}
                       />
                   </TableHead>
-                  <TableHead className="cursor-pointer">
+                  <TableHead>
                      <SortableHeader column="name" label="Name" />
                   </TableHead>
-                  <TableHead className="cursor-pointer">
+                  <TableHead>
                      <SortableHeader column="status" label="Status" />
                   </TableHead>
-                  <TableHead className="hidden md:table-cell cursor-pointer">
+                  <TableHead className="hidden md:table-cell">
                       <SortableHeader column="role" label="Role" />
                   </TableHead>
-                  <TableHead className="hidden md:table-cell cursor-pointer">
+                  <TableHead className="hidden md:table-cell">
                       <SortableHeader column="school" label="School" />
                   </TableHead>
-                   <TableHead className="hidden md:table-cell cursor-pointer">
+                   <TableHead className="hidden md:table-cell">
                       <SortableHeader column="district" label="District" />
                   </TableHead>
-                  <TableHead className="hidden md:table-cell cursor-pointer">
+                  <TableHead className="hidden md:table-cell">
                       <SortableHeader column="phone" label="Phone" />
                   </TableHead>
                   </TableRow>
@@ -344,3 +352,5 @@ export default function UsersPage() {
     </>
   )
 }
+
+    
