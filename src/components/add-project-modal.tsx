@@ -2,9 +2,15 @@
 'use client'
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter
+} from '@/components/ui/dialog';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -13,9 +19,15 @@ import { useToast } from "@/hooks/use-toast";
 import { addProject, getColleges } from "@/lib/firebase/firestore";
 import type { College } from "@/lib/mock-data";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Loader2 } from "lucide-react";
 
-export default function AddProjectPage() {
-    const router = useRouter();
+interface AddProjectModalProps {
+  isOpen: boolean;
+  onOpenChange: (isOpen: boolean) => void;
+  onProjectAdded: () => void;
+}
+
+export function AddProjectModal({ isOpen, onOpenChange, onProjectAdded }: AddProjectModalProps) {
     const { toast } = useToast();
 
     const [colleges, setColleges] = React.useState<College[]>([]);
@@ -25,9 +37,16 @@ export default function AddProjectPage() {
     const [collegeId, setCollegeId] = React.useState('');
     const [description, setDescription] = React.useState('');
     const [loading, setLoading] = React.useState(false);
+    
+    const resetForm = () => {
+        setName('');
+        setCollegeId('');
+        setDescription('');
+    }
 
     React.useEffect(() => {
         async function fetchColleges() {
+            if (!isOpen) return;
             try {
                 setLoadingColleges(true);
                 const fetchedColleges = await getColleges();
@@ -44,7 +63,7 @@ export default function AddProjectPage() {
             }
         }
         fetchColleges();
-    }, [toast]);
+    }, [isOpen, toast]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -76,7 +95,9 @@ export default function AddProjectPage() {
                 title: "Success!",
                 description: "Project has been added successfully."
             });
-            router.push('/dashboard/projects');
+            onProjectAdded();
+            onOpenChange(false);
+            resetForm();
         } catch (error) {
             console.error("Error adding project:", error);
             toast({
@@ -90,43 +111,47 @@ export default function AddProjectPage() {
     }
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
-      <Card>
-        <CardHeader>
-          <CardTitle>Add a New Project</CardTitle>
-          <CardDescription>Fill out the form below to create a new project.</CardDescription>
-        </CardHeader>
-        <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                    <Label htmlFor="name">Project Name</Label>
-                    <Input id="name" placeholder="e.g. Annual Science Fair" value={name} onChange={e => setName(e.target.value)} required />
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="college">College</Label>
-                    {loadingColleges ? (
-                        <Skeleton className="h-10 w-full" />
-                    ) : (
-                        <Select onValueChange={setCollegeId} value={collegeId} required>
-                            <SelectTrigger id="college">
-                                <SelectValue placeholder="Select a college" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {colleges.map(college => (
-                                    <SelectItem key={college.id} value={college.id}>{college.name}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    )}
-                </div>
-                <div className="space-y-2">
-                        <Label htmlFor="description">Description</Label>
-                        <Textarea id="description" placeholder="Provide a brief description of the project." value={description} onChange={e => setDescription(e.target.value)} required />
-                </div>
-                <Button type="submit" disabled={loading || loadingColleges}>{loading ? 'Creating...' : 'Create Project'}</Button>
-            </form>
-        </CardContent>
-      </Card>
-    </div>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Add a New Project</DialogTitle>
+          <DialogDescription>Fill out the form below to create a new project.</DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4 py-4">
+            <div className="space-y-2">
+                <Label htmlFor="name">Project Name</Label>
+                <Input id="name" placeholder="e.g. Annual Science Fair" value={name} onChange={e => setName(e.target.value)} required />
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="college">College</Label>
+                {loadingColleges ? (
+                    <Skeleton className="h-10 w-full" />
+                ) : (
+                    <Select onValueChange={setCollegeId} value={collegeId} required>
+                        <SelectTrigger id="college">
+                            <SelectValue placeholder="Select a college" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {colleges.map(college => (
+                                <SelectItem key={college.id} value={college.id}>{college.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                )}
+            </div>
+            <div className="space-y-2">
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea id="description" placeholder="Provide a brief description of the project." value={description} onChange={e => setDescription(e.target.value)} required />
+            </div>
+            <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>Cancel</Button>
+                <Button type="submit" disabled={loading || loadingColleges}>
+                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {loading ? 'Creating...' : 'Create Project'}
+                </Button>
+            </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   )
 }

@@ -19,6 +19,8 @@ export type College = {
   location: string;
   email: string;
   phone: string;
+  latitude?: number;
+  longitude?: number;
 };
 
 export type Project = {
@@ -84,10 +86,10 @@ export const mockUsers: User[] = [
 ];
 
 export const mockColleges: College[] = [
-    { id: 'sch_1', name: 'Kohima Science College', projectsCount: 2, location: 'Jotsoma, Kohima', email: 'contact@ksc.ac.in', phone: '0370-2231022' },
-    { id: 'sch_2', name: 'St. Joseph\'s College', projectsCount: 1, location: 'Jakhama, Kohima', email: 'info@sjc.ac.in', phone: '0370-2232145'},
-    { id: 'sch_3', name: 'Model Christian College', projectsCount: 3, location: 'Kohima', email: 'principal@mcc.ac.in', phone: '0370-2290344' },
-    { id: 'sch_4', name: 'Nagaland University', projectsCount: 5, location: 'Lumami', email: 'registrar@nagalanduniversity.ac.in', phone: '0386-2245089' },
+    { id: 'sch_1', name: 'Kohima Science College', projectsCount: 2, location: 'Jotsoma, Kohima', email: 'contact@ksc.ac.in', phone: '0370-2231022', latitude: 25.6751, longitude: 94.1027 },
+    { id: 'sch_2', name: 'St. Joseph\'s College', projectsCount: 1, location: 'Jakhama, Kohima', email: 'info@sjc.ac.in', phone: '0370-2232145', latitude: 25.601, longitude: 94.119 },
+    { id: 'sch_3', name: 'Model Christian College', projectsCount: 3, location: 'Kohima', email: 'principal@mcc.ac.in', phone: '0370-2290344', latitude: 25.6669, longitude: 94.1186 },
+    { id: 'sch_4', name: 'Nagaland University', projectsCount: 5, location: 'Lumami', email: 'registrar@nagalanduniversity.ac.in', phone: '0386-2245089', latitude: 26.248, longitude: 94.432 },
 ];
 
 export const mockProjects: Project[] = [

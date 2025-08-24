@@ -52,11 +52,7 @@ const navItems = [
 const projectsNav = {
     icon: FolderKanban,
     label: 'Projects',
-    subItems: [
-        { href: '/dashboard/projects', label: 'All Projects' },
-        { href: '/dashboard/projects/add', label: 'Add Project' },
-        { href: '/dashboard/colleges/add', label: 'Add College' },
-    ]
+    href: '/dashboard/projects',
 }
 
 const helpdeskNavItem = { href: '/dashboard/helpdesk', icon: LifeBuoy, label: 'Helpdesk' };
@@ -70,14 +66,6 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const router = useRouter();
   const { toast } = useToast();
-  const isProjectsPath = pathname.startsWith('/dashboard/projects') || pathname.startsWith('/dashboard/colleges/add');
-  const [isProjectsOpen, setIsProjectsOpen] = React.useState(isProjectsPath);
-
-  React.useEffect(() => {
-    if (isProjectsPath) {
-        setIsProjectsOpen(true);
-    }
-  }, [isProjectsPath]);
 
   const handleLogout = async () => {
     try {
@@ -124,35 +112,19 @@ export default function DashboardLayout({
                 ))}
 
                 <SidebarSeparator />
-
-                <Collapsible open={isProjectsOpen} onOpenChange={setIsProjectsOpen} asChild>
+                
                 <SidebarMenuItem>
-                    <CollapsibleTrigger asChild>
-                        <SidebarMenuButton
-                            className="justify-between"
-                            isActive={isProjectsPath}
-                            tooltip={{ children: projectsNav.label }}
-                        >
-                            <div className="flex items-center gap-3">
-                                <projectsNav.icon />
-                                <span>{projectsNav.label}</span>
-                            </div>
-                            <ChevronDown className={cn("h-4 w-4 transition-transform", isProjectsOpen && "rotate-180")} />
-                        </SidebarMenuButton>
-                    </CollapsibleTrigger>
-                <CollapsibleContent>
-                    <SidebarMenuSub>
-                        {projectsNav.subItems.map(item => (
-                            <SidebarMenuItem key={item.href}>
-                                <SidebarMenuSubButton asChild isActive={pathname === item.href}>
-                                    <Link href={item.href}>{item.label}</Link>
-                                </SidebarMenuSubButton>
-                            </SidebarMenuItem>
-                        ))}
-                    </SidebarMenuSub>
-                </CollapsibleContent>
+                    <SidebarMenuButton
+                        asChild
+                        isActive={pathname.startsWith(projectsNav.href)}
+                        tooltip={{ children: projectsNav.label }}
+                    >
+                        <Link href={projectsNav.href}>
+                            <projectsNav.icon />
+                            <span>{projectsNav.label}</span>
+                        </Link>
+                    </SidebarMenuButton>
                 </SidebarMenuItem>
-                </Collapsible>
                 
                 <SidebarMenuItem>
                     <SidebarMenuButton
