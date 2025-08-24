@@ -40,9 +40,7 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
   const [isSending, setIsSending] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [eventDate, setEventDate] = React.useState<Date>();
-  const [eventHour, setEventHour] = React.useState<string>();
-  const [eventMinute, setEventMinute] = React.useState<string>();
-  const [eventPeriod, setEventPeriod] = React.useState<string>();
+  const [eventTime, setEventTime] = React.useState<string>('');
 
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -62,9 +60,7 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
     setFiles([]);
     setIsSending(false);
     setEventDate(undefined);
-    setEventHour(undefined);
-    setEventMinute(undefined);
-    setEventPeriod(undefined);
+    setEventTime('');
   };
   
   React.useEffect(() => {
@@ -180,33 +176,13 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
                     <div className="grid grid-cols-2 gap-4">
                          <div className="space-y-2">
                             <Label htmlFor="event-time">Event Time</Label>
-                            <div className="grid grid-cols-3 gap-2">
-                                <Select value={eventHour} onValueChange={setEventHour}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Hour" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {Array.from({ length: 12 }, (_, i) => i + 1).map(hour => <SelectItem key={hour} value={String(hour).padStart(2, '0')}>{String(hour).padStart(2, '0')}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
-                                 <Select value={eventMinute} onValueChange={setEventMinute}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Min" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {['00', '15', '30', '45'].map(min => <SelectItem key={min} value={min}>{min}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
-                                 <Select value={eventPeriod} onValueChange={setEventPeriod}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="AM/PM" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="AM">AM</SelectItem>
-                                        <SelectItem value="PM">PM</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
+                            <Input
+                                id="event-time"
+                                type="time"
+                                value={eventTime}
+                                onChange={(e) => setEventTime(e.target.value)}
+                                className="w-full"
+                            />
                         </div>
                          <div className="space-y-2">
                             <Label htmlFor="event-date">Event Date</Label>
