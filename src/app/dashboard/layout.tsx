@@ -55,7 +55,7 @@ const projectsNav = {
     subItems: [
         { href: '/dashboard/projects', label: 'All Projects' },
         { href: '/dashboard/projects/add', label: 'Add Project' },
-        { href: '/dashboard/schools/add', label: 'Add School' },
+        { href: '/dashboard/colleges/add', label: 'Add College' },
     ]
 }
 
@@ -70,7 +70,7 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const router = useRouter();
   const { toast } = useToast();
-  const isProjectsPath = pathname.startsWith('/dashboard/projects') || pathname.startsWith('/dashboard/schools/add');
+  const isProjectsPath = pathname.startsWith('/dashboard/projects') || pathname.startsWith('/dashboard/colleges/add');
   const [isProjectsOpen, setIsProjectsOpen] = React.useState(isProjectsPath);
 
   React.useEffect(() => {

@@ -17,39 +17,39 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import * as React from 'react';
-import { getSchools, getUsers, getTickets, getProjects } from '@/lib/firebase/firestore';
+import { getColleges, getUsers, getTickets, getProjects } from '@/lib/firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Bar, BarChart, XAxis, YAxis, PieChart, Pie, Cell, Legend } from 'recharts';
-import type { School, User } from '@/lib/mock-data';
+import type { College, User } from '@/lib/mock-data';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 
 export default function DashboardPage() {
     const [stats, setStats] = React.useState({
         totalUsers: 0,
-        totalSchools: 0,
+        totalColleges: 0,
         openTickets: 0,
         totalProjects: 0,
     });
     const [loading, setLoading] = React.useState(true);
-    const [schools, setSchools] = React.useState<School[]>([]);
+    const [colleges, setColleges] = React.useState<College[]>([]);
     const [users, setUsers] = React.useState<User[]>([]);
 
     React.useEffect(() => {
         async function fetchData() {
             try {
                 setLoading(true);
-                const [fetchedUsers, fetchedSchools, tickets, projects] = await Promise.all([
+                const [fetchedUsers, fetchedColleges, tickets, projects] = await Promise.all([
                     getUsers(),
-                    getSchools(),
+                    getColleges(),
                     getTickets(),
                     getProjects(),
                 ]);
 
                 setUsers(fetchedUsers);
-                setSchools(fetchedSchools);
+                setColleges(fetchedColleges);
                 setStats({
                     totalUsers: fetchedUsers.length,
-                    totalSchools: fetchedSchools.length,
+                    totalColleges: fetchedColleges.length,
                     openTickets: tickets.filter(t => t.status === 'Open').length,
                     totalProjects: projects.length,
                 });
@@ -117,15 +117,15 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
           </Link>
-          <Link href="/dashboard/projects?tab=schools">
+          <Link href="/dashboard/projects?tab=colleges">
             <Card className="hover:bg-card/80 transition-colors">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Schools</CardTitle>
+                <CardTitle className="text-sm font-medium">Total Colleges</CardTitle>
                 <BookOpenCheck className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                 {loading ? <Skeleton className="h-7 w-10" /> : <div className="text-2xl font-bold">{stats.totalSchools}</div>}
-                 {loading ? <Skeleton className="h-4 w-32 mt-1" /> : <p className="text-xs text-muted-foreground">Total registered schools</p>}
+                 {loading ? <Skeleton className="h-7 w-10" /> : <div className="text-2xl font-bold">{stats.totalColleges}</div>}
+                 {loading ? <Skeleton className="h-4 w-32 mt-1" /> : <p className="text-xs text-muted-foreground">Total registered colleges</p>}
               </CardContent>
             </Card>
           </Link>
@@ -149,7 +149,7 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 {loading ? <Skeleton className="h-7 w-14" /> : <div className="text-2xl font-bold">{stats.totalProjects}</div>}
-                {loading ? <Skeleton className="h-4 w-28 mt-1" /> : <p className="text-xs text-muted-foreground">Across all schools</p>}
+                {loading ? <Skeleton className="h-4 w-28 mt-1" /> : <p className="text-xs text-muted-foreground">Across all colleges</p>}
               </CardContent>
             </Card>
           </Link>
@@ -158,8 +158,8 @@ export default function DashboardPage() {
         <div className="grid gap-4 mt-8 grid-cols-1 lg:grid-cols-2">
             <Card className="lg:col-span-2">
                 <CardHeader>
-                    <CardTitle>Projects by School</CardTitle>
-                     <CardDescription>A look at the distribution of projects across schools.</CardDescription>
+                    <CardTitle>Projects by College</CardTitle>
+                     <CardDescription>A look at the distribution of projects across colleges.</CardDescription>
                 </CardHeader>
                 <CardContent className="pl-2">
                    {loading ? (
@@ -168,7 +168,7 @@ export default function DashboardPage() {
                     </div>
                    ) : (
                     <ChartContainer config={projectChartConfig} className="min-h-[300px] w-full">
-                       <BarChart accessibilityLayer data={schools} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                       <BarChart accessibilityLayer data={colleges} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                          <XAxis
                             dataKey="name"
                             tickLine={false}

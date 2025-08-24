@@ -5,9 +5,11 @@ import {
   MoreHorizontal,
   PlusCircle,
   FolderKanban,
-  School as SchoolIcon,
+  School2,
   Download,
   Check,
+  Search,
+  ChevronDown,
 } from 'lucide-react'
 import Link from 'next/link'
 import * as React from 'react'
@@ -29,7 +31,9 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
+  DropdownMenuCheckboxItem,
 } from '@/components/ui/dropdown-menu'
+import { Input } from '@/components/ui/input'
 import {
   Table,
   TableBody,
@@ -44,29 +48,36 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs'
-import { getProjects, getSchools, updateProjectStatus } from '@/lib/firebase/firestore'
-import type { School, Project } from '@/lib/mock-data'
+import { getProjects, getColleges, updateProjectStatus } from '@/lib/firebase/firestore'
+import type { College, Project } from '@/lib/mock-data'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/hooks/use-toast'
+
+type ProjectStatus = 'Ongoing' | 'Completed' | 'Pending';
 
 export default function ProjectsPage() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const [projects, setProjects] = React.useState<Project[]>([]);
-  const [schools, setSchools] = React.useState<School[]>([]);
+  const [colleges, setColleges] = React.useState<College[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [activeTab, setActiveTab] = React.useState(searchParams.get('tab') || 'projects');
+
+  // Filtering state
+  const [searchTerm, setSearchTerm] = React.useState('');
+  const [statusFilter, setStatusFilter] = React.useState<ProjectStatus | 'all'>('all');
+  const [collegeFilter, setCollegeFilter] = React.useState('all');
 
   React.useEffect(() => {
     async function fetchData() {
       try {
         setLoading(true);
-        const [fetchedProjects, fetchedSchools] = await Promise.all([
+        const [fetchedProjects, fetchedColleges] = await Promise.all([
           getProjects(),
-          getSchools(),
+          getColleges(),
         ]);
         setProjects(fetchedProjects);
-        setSchools(fetchedSchools);
+        setColleges(fetchedColleges);
       } catch (error) {
         console.error("Error fetching project data:", error);
       } finally {
@@ -87,6 +98,16 @@ export default function ProjectsPage() {
     }
   }
 
+  const filteredProjects = React.useMemo(() => {
+    return projects.filter(project => {
+      const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
+      const matchesCollege = collegeFilter === 'all' || project.collegeName === collegeFilter;
+
+      return matchesSearch && matchesStatus && matchesCollege;
+    });
+  }, [projects, searchTerm, statusFilter, collegeFilter]);
+
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab}>
       <div className="flex items-center mb-4">
@@ -95,8 +116,8 @@ export default function ProjectsPage() {
             <FolderKanban className="h-4 w-4" />
             Projects
           </TabsTrigger>
-          <TabsTrigger value="schools" className="px-3 py-1.5 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm rounded-md transition-all flex items-center gap-2">
-            <SchoolIcon className="h-4 w-4" />
+          <TabsTrigger value="colleges" className="px-3 py-1.5 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm rounded-md transition-all flex items-center gap-2">
+            <School2 className="h-4 w-4" />
             Colleges
           </TabsTrigger>
         </TabsList>
@@ -131,6 +152,49 @@ export default function ProjectsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            <div className="flex flex-col sm:flex-row items-center gap-2 mb-4">
+                <div className="relative flex-1 w-full">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="search"
+                    placeholder="Search projects by name..."
+                    className="pl-8 w-full"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+                <div className="flex w-full sm:w-auto gap-2">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" className="w-full sm:w-auto">
+                        Status <ChevronDown className="ml-2 h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuCheckboxItem checked={statusFilter === 'all'} onCheckedChange={() => setStatusFilter('all')}>All</DropdownMenuCheckboxItem>
+                      <DropdownMenuCheckboxItem checked={statusFilter === 'Ongoing'} onCheckedChange={() => setStatusFilter('Ongoing')}>Ongoing</DropdownMenuCheckboxItem>
+                      <DropdownMenuCheckboxItem checked={statusFilter === 'Completed'} onCheckedChange={() => setStatusFilter('Completed')}>Completed</DropdownMenuCheckboxItem>
+                      <DropdownMenuCheckboxItem checked={statusFilter === 'Pending'} onCheckedChange={() => setStatusFilter('Pending')}>Pending</DropdownMenuCheckboxItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" className="w-full sm:w-auto">
+                        College <ChevronDown className="ml-2 h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuCheckboxItem checked={collegeFilter === 'all'} onCheckedChange={() => setCollegeFilter('all')}>All Colleges</DropdownMenuCheckboxItem>
+                      {colleges.map(college => (
+                        <DropdownMenuCheckboxItem key={college.id} checked={collegeFilter === college.name} onCheckedChange={() => setCollegeFilter(college.name)}>
+                          {college.name}
+                        </DropdownMenuCheckboxItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </div>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -153,14 +217,14 @@ export default function ProjectsPage() {
                     </TableRow>
                   ))
                 ) : (
-                  projects.map((project) => (
+                  filteredProjects.map((project) => (
                     <TableRow key={project.id}>
                       <TableCell className="font-medium">
                         <Link href={`/dashboard/projects/${project.id}`} className="hover:underline">
                           {project.name}
                         </Link>
                       </TableCell>
-                      <TableCell className="hidden md:table-cell">{project.schoolName}</TableCell>
+                      <TableCell className="hidden md:table-cell">{project.collegeName}</TableCell>
                       <TableCell className="hidden md:table-cell">{project.submissionsCount}</TableCell>
                       <TableCell>
                         <Badge variant={project.status === 'Completed' ? 'default' : 'outline'}>
@@ -201,10 +265,15 @@ export default function ProjectsPage() {
                 )}
               </TableBody>
             </Table>
+             {filteredProjects.length === 0 && !loading && (
+              <div className="text-center py-12 text-muted-foreground">
+                No projects found.
+              </div>
+            )}
           </CardContent>
         </Card>
       </TabsContent>
-      <TabsContent value="schools">
+      <TabsContent value="colleges">
         <Card>
           <CardHeader>
             <CardTitle>Colleges</CardTitle>
@@ -228,10 +297,10 @@ export default function ProjectsPage() {
                   </Card>
                 ))
              ) : (
-              schools.map((school) => (
-                <Card key={school.id}>
+              colleges.map((college) => (
+                <Card key={college.id}>
                   <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-lg">{school.name}</CardTitle>
+                    <CardTitle className="text-lg">{college.name}</CardTitle>
                     <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button aria-haspopup="true" size="icon" variant="ghost">
@@ -247,10 +316,10 @@ export default function ProjectsPage() {
                         </DropdownMenu>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-sm text-muted-foreground">{school.location}</p>
+                    <p className="text-sm text-muted-foreground">{college.location}</p>
                   </CardContent>
                   <CardFooter>
-                    <p>{school.projectsCount} projects</p>
+                    <p>{college.projectsCount} projects</p>
                   </CardFooter>
                 </Card>
               ))

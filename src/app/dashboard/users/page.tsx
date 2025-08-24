@@ -35,9 +35,9 @@ import {
 } from '@/components/ui/table'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Switch } from '@/components/ui/switch'
-import type { User, School } from '@/lib/mock-data'
+import type { User, College } from '@/lib/mock-data'
 import { useToast } from "@/hooks/use-toast"
-import { getUsers, updateUserStatus, getSchools } from '@/lib/firebase/firestore'
+import { getUsers, updateUserStatus, getColleges } from '@/lib/firebase/firestore'
 import { Skeleton } from '@/components/ui/skeleton'
 import { SendNotificationModal } from '@/components/send-notification-modal'
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem } from '@/components/ui/dropdown-menu'
@@ -49,7 +49,7 @@ type SortDirection = 'ascending' | 'descending';
 export default function UsersPage() {
     const { toast } = useToast()
     const [users, setUsers] = React.useState<User[]>([])
-    const [schools, setSchools] = React.useState<School[]>([]);
+    const [colleges, setColleges] = React.useState<College[]>([]);
     const [loading, setLoading] = React.useState(true);
     const [isModalOpen, setIsModalOpen] = React.useState(false);
     const [selectedUserIds, setSelectedUserIds] = React.useState<string[]>([]);
@@ -57,7 +57,7 @@ export default function UsersPage() {
     // Filtering states
     const [searchTerm, setSearchTerm] = React.useState('');
     const [roleFilter, setRoleFilter] = React.useState('all');
-    const [schoolFilter, setSchoolFilter] = React.useState('all');
+    const [collegeFilter, setCollegeFilter] = React.useState('all');
     const [districtFilter, setDistrictFilter] = React.useState('all');
 
     const [sortConfig, setSortConfig] = React.useState<{ key: SortableKeys; direction: SortDirection } | null>({ key: 'status', direction: 'ascending'});
@@ -67,17 +67,17 @@ export default function UsersPage() {
     React.useEffect(() => {
       async function fetchData() {
         try {
-          const [fetchedUsers, fetchedSchools] = await Promise.all([
+          const [fetchedUsers, fetchedColleges] = await Promise.all([
             getUsers(),
-            getSchools(),
+            getColleges(),
           ]);
           setUsers(fetchedUsers);
-          setSchools(fetchedSchools);
+          setColleges(fetchedColleges);
         } catch (error) {
           console.error("Error fetching data:", error);
           toast({
             title: "Error",
-            description: "Failed to fetch user or school data.",
+            description: "Failed to fetch user or college data.",
             variant: "destructive",
           })
         } finally {
@@ -168,12 +168,12 @@ export default function UsersPage() {
             const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                                 user.email.toLowerCase().includes(searchTerm.toLowerCase());
             const matchesRole = roleFilter === 'all' || user.role === roleFilter;
-            const matchesSchool = schoolFilter === 'all' || user.school === schoolFilter;
+            const matchesCollege = collegeFilter === 'all' || user.college === collegeFilter;
             const matchesDistrict = districtFilter === 'all' || user.district === districtFilter;
             
-            return matchesSearch && matchesRole && matchesSchool && matchesDistrict;
+            return matchesSearch && matchesRole && matchesCollege && matchesDistrict;
         });
-    }, [sortedUsers, searchTerm, roleFilter, schoolFilter, districtFilter]);
+    }, [sortedUsers, searchTerm, roleFilter, collegeFilter, districtFilter]);
 
     const handleExport = () => {
         if (filteredUsers.length === 0) {
@@ -181,7 +181,7 @@ export default function UsersPage() {
             return;
         }
 
-        const csvHeader = "ID,Name,Email,Phone,Status,Role,School,District,Designation\n";
+        const csvHeader = "ID,Name,Email,Phone,Status,Role,College,District,Designation\n";
         const csvRows = filteredUsers.map(user => {
             const row = [
                 user.id,
@@ -190,7 +190,7 @@ export default function UsersPage() {
                 user.phone,
                 user.status,
                 user.role,
-                `"${user.school}"`,
+                `"${user.college}"`,
                 `"${user.district}"`,
                 `"${user.designation || ''}"`
             ];
@@ -294,13 +294,13 @@ export default function UsersPage() {
                     <DropdownMenuTrigger asChild>
                         <Button variant="outline" className="w-full sm:w-auto">
                             <School2 className="mr-2 h-4 w-4" />
-                            School
+                            College
                             <ChevronDown className="ml-auto h-4 w-4" />
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                        <DropdownMenuCheckboxItem checked={schoolFilter === 'all'} onCheckedChange={() => setSchoolFilter('all')}>All Schools</DropdownMenuCheckboxItem>
-                        {schools.map(school => <DropdownMenuCheckboxItem key={school.id} checked={schoolFilter === school.name} onCheckedChange={() => setSchoolFilter(school.name)}>{school.name}</DropdownMenuCheckboxItem>)}
+                        <DropdownMenuCheckboxItem checked={collegeFilter === 'all'} onCheckedChange={() => setCollegeFilter('all')}>All Colleges</DropdownMenuCheckboxItem>
+                        {colleges.map(college => <DropdownMenuCheckboxItem key={college.id} checked={collegeFilter === college.name} onCheckedChange={() => setCollegeFilter(college.name)}>{college.name}</DropdownMenuCheckboxItem>)}
                     </DropdownMenuContent>
                 </DropdownMenu>
                  <DropdownMenu>
@@ -345,7 +345,7 @@ export default function UsersPage() {
                       <SortableHeader column="role" label="Role" />
                   </TableHead>
                   <TableHead className="hidden md:table-cell">
-                      <SortableHeader column="school" label="School" />
+                      <SortableHeader column="college" label="College" />
                   </TableHead>
                    <TableHead className="hidden md:table-cell">
                       <SortableHeader column="district" label="District" />
@@ -400,7 +400,7 @@ export default function UsersPage() {
                               <Badge variant={getRoleBadgeVariant(user.role)} className="capitalize">{user.role.toLowerCase()}</Badge>
                            </TableCell>
                           <TableCell className="hidden md:table-cell">
-                              {user.school}
+                              {user.college}
                           </TableCell>
                           <TableCell className="hidden md:table-cell">
                               {user.district}

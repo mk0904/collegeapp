@@ -129,7 +129,7 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
             <div>
               <CardTitle className="text-2xl font-headline">{project.name}</CardTitle>
               <CardDescription>
-                Part of <span className="font-semibold">{project.schoolName}</span>
+                Part of <span className="font-semibold">{project.collegeName}</span>
               </CardDescription>
             </div>
              <div className="flex items-center space-x-2">

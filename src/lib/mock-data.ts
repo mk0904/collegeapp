@@ -7,12 +7,12 @@ export type User = {
   status: 'Active' | 'Inactive';
   role: 'Admin' | 'Teacher' | 'Student';
   createdOn: string;
-  school: string;
+  college: string;
   district: string;
   designation?: string;
 };
 
-export type School = {
+export type College = {
   id: string;
   name: string;
   projectsCount: number;
@@ -24,8 +24,8 @@ export type School = {
 export type Project = {
     id: string;
     name: string;
-    schoolId: string;
-    schoolName: string;
+    collegeId: string;
+    collegeName: string;
     submissionsCount: number;
     status: 'Ongoing' | 'Completed' | 'Pending';
     description: string;
@@ -76,14 +76,14 @@ const placeholderImage = (publicId: string): CloudinaryImage => ({
 });
 
 export const mockUsers: User[] = [
-  { id: 'usr_1', name: 'T. N. Angami', email: 'tn.angami@example.com', phone: '+91 98765 43210', status: 'Active', role: 'Admin', createdOn: '2023-01-15', school: 'Kohima Science College', district: 'Kohima' },
-  { id: 'usr_2', name: 'P. Shilu Ao', email: 'shilu.ao@example.com', phone: '+91 98765 43211', status: 'Active', role: 'Teacher', createdOn: '2023-02-20', school: 'St. Joseph\'s College', district: 'Kohima' },
-  { id: 'usr_3', name: 'Hokishe Sema', email: 'hokishe.sema@example.com', phone: '+91 98765 43212', status: 'Inactive', role: 'Student', createdOn: '2023-03-10', school: 'Model Christian College', district: 'Kohima' },
-  { id: 'usr_4', name: 'S. C. Jamir', email: 'sc.jamir@example.com', phone: '+91 98765 43213', status: 'Active', role: 'Teacher', createdOn: '2023-04-05', school: 'Kohima Science College', district: 'Kohima' },
-  { id: 'usr_5', name: 'Neiphiu Rio', email: 'neiphiu.rio@example.com', phone: '+91 98765 43214', status: 'Active', role: 'Admin', createdOn: '2023-05-21', school: 'Nagaland University', district: 'Zunheboto' },
+  { id: 'usr_1', name: 'T. N. Angami', email: 'tn.angami@example.com', phone: '+91 98765 43210', status: 'Active', role: 'Admin', createdOn: '2023-01-15', college: 'Kohima Science College', district: 'Kohima' },
+  { id: 'usr_2', name: 'P. Shilu Ao', email: 'shilu.ao@example.com', phone: '+91 98765 43211', status: 'Active', role: 'Teacher', createdOn: '2023-02-20', college: 'St. Joseph\'s College', district: 'Kohima' },
+  { id: 'usr_3', name: 'Hokishe Sema', email: 'hokishe.sema@example.com', phone: '+91 98765 43212', status: 'Inactive', role: 'Student', createdOn: '2023-03-10', college: 'Model Christian College', district: 'Kohima' },
+  { id: 'usr_4', name: 'S. C. Jamir', email: 'sc.jamir@example.com', phone: '+91 98765 43213', status: 'Active', role: 'Teacher', createdOn: '2023-04-05', college: 'Kohima Science College', district: 'Kohima' },
+  { id: 'usr_5', name: 'Neiphiu Rio', email: 'neiphiu.rio@example.com', phone: '+91 98765 43214', status: 'Active', role: 'Admin', createdOn: '2023-05-21', college: 'Nagaland University', district: 'Zunheboto' },
 ];
 
-export const mockSchools: School[] = [
+export const mockColleges: College[] = [
     { id: 'sch_1', name: 'Kohima Science College', projectsCount: 2, location: 'Jotsoma, Kohima', email: 'contact@ksc.ac.in', phone: '0370-2231022' },
     { id: 'sch_2', name: 'St. Joseph\'s College', projectsCount: 1, location: 'Jakhama, Kohima', email: 'info@sjc.ac.in', phone: '0370-2232145'},
     { id: 'sch_3', name: 'Model Christian College', projectsCount: 3, location: 'Kohima', email: 'principal@mcc.ac.in', phone: '0370-2290344' },
@@ -91,11 +91,11 @@ export const mockSchools: School[] = [
 ];
 
 export const mockProjects: Project[] = [
-    { id: 'proj_1', name: 'Annual Science Fair', schoolId: 'sch_1', schoolName: 'Kohima Science College', submissionsCount: 0, status: 'Ongoing', description: 'A showcase of innovative science projects from students across all departments, promoting scientific temper and research.' },
-    { id: 'proj_2', name: 'Inter-College Debate Competition', schoolId: 'sch_2', schoolName: 'St. Joseph\'s College', submissionsCount: 0, status: 'Completed', description: 'An annual event fostering public speaking and critical thinking skills among students on contemporary topics.' },
-    { id: 'proj_3', name: 'Tech Fest 2024', schoolId: 'sch_1', schoolName: 'Kohima Science College', submissionsCount: 0, status: 'Ongoing', description: 'A week-long festival with coding competitions, workshops, and tech talks by industry experts.' },
-    { id: 'proj_4', name: 'Literary Fest', schoolId: 'sch_3', schoolName: 'Model Christian College', submissionsCount: 0, status: 'Pending', description: 'A celebration of literature, poetry, and storytelling, featuring guest authors and creative writing workshops.' },
-    { id: 'proj_5', name: 'Research Symposium', schoolId: 'sch_4', schoolName: 'Nagaland University', submissionsCount: 0, status: 'Completed', description: 'A platform for postgraduate students and faculty to present their latest research findings to the academic community.' },
+    { id: 'proj_1', name: 'Annual Science Fair', collegeId: 'sch_1', collegeName: 'Kohima Science College', submissionsCount: 0, status: 'Ongoing', description: 'A showcase of innovative science projects from students across all departments, promoting scientific temper and research.' },
+    { id: 'proj_2', name: 'Inter-College Debate Competition', collegeId: 'sch_2', collegeName: 'St. Joseph\'s College', submissionsCount: 0, status: 'Completed', description: 'An annual event fostering public speaking and critical thinking skills among students on contemporary topics.' },
+    { id: 'proj_3', name: 'Tech Fest 2024', collegeId: 'sch_1', collegeName: 'Kohima Science College', submissionsCount: 0, status: 'Ongoing', description: 'A week-long festival with coding competitions, workshops, and tech talks by industry experts.' },
+    { id: 'proj_4', name: 'Literary Fest', collegeId: 'sch_3', collegeName: 'Model Christian College', submissionsCount: 0, status: 'Pending', description: 'A celebration of literature, poetry, and storytelling, featuring guest authors and creative writing workshops.' },
+    { id: 'proj_5', name: 'Research Symposium', collegeId: 'sch_4', collegeName: 'Nagaland University', submissionsCount: 0, status: 'Completed', description: 'A platform for postgraduate students and faculty to present their latest research findings to the academic community.' },
 ];
 
 export const mockSubmissions: Submission[] = [
@@ -228,5 +228,3 @@ export const mockTickets: Ticket[] = [
         image: 'https://placehold.co/600x400.png'
     },
 ];
-
-    

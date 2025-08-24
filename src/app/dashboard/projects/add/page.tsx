@@ -1,3 +1,4 @@
+
 'use client'
 
 import * as React from "react";
@@ -9,45 +10,45 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { addProject, getSchools } from "@/lib/firebase/firestore";
-import type { School } from "@/lib/mock-data";
+import { addProject, getColleges } from "@/lib/firebase/firestore";
+import type { College } from "@/lib/mock-data";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function AddProjectPage() {
     const router = useRouter();
     const { toast } = useToast();
 
-    const [schools, setSchools] = React.useState<School[]>([]);
-    const [loadingSchools, setLoadingSchools] = React.useState(true);
+    const [colleges, setColleges] = React.useState<College[]>([]);
+    const [loadingColleges, setLoadingColleges] = React.useState(true);
     
     const [name, setName] = React.useState('');
-    const [schoolId, setSchoolId] = React.useState('');
+    const [collegeId, setCollegeId] = React.useState('');
     const [description, setDescription] = React.useState('');
     const [loading, setLoading] = React.useState(false);
 
     React.useEffect(() => {
-        async function fetchSchools() {
+        async function fetchColleges() {
             try {
-                setLoadingSchools(true);
-                const fetchedSchools = await getSchools();
-                setSchools(fetchedSchools);
+                setLoadingColleges(true);
+                const fetchedColleges = await getColleges();
+                setColleges(fetchedColleges);
             } catch (error) {
-                console.error("Error fetching schools:", error);
+                console.error("Error fetching colleges:", error);
                 toast({
                     title: "Error",
-                    description: "Failed to fetch schools for the dropdown.",
+                    description: "Failed to fetch colleges for the dropdown.",
                     variant: "destructive"
                 });
             } finally {
-                setLoadingSchools(false);
+                setLoadingColleges(false);
             }
         }
-        fetchSchools();
+        fetchColleges();
     }, [toast]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!name || !schoolId || !description) {
+        if (!name || !collegeId || !description) {
             toast({
                 title: "Error",
                 description: "Please fill out all fields.",
@@ -57,9 +58,9 @@ export default function AddProjectPage() {
         }
         setLoading(true);
         try {
-            const selectedSchool = schools.find(s => s.id === schoolId);
-            if (!selectedSchool) {
-                 toast({ title: "Error", description: "Selected school not found.", variant: "destructive" });
+            const selectedCollege = colleges.find(s => s.id === collegeId);
+            if (!selectedCollege) {
+                 toast({ title: "Error", description: "Selected college not found.", variant: "destructive" });
                  setLoading(false);
                  return;
             }
@@ -67,8 +68,8 @@ export default function AddProjectPage() {
             await addProject({
                 name,
                 description,
-                schoolId,
-                schoolName: selectedSchool.name,
+                collegeId,
+                collegeName: selectedCollege.name,
             });
 
             toast({
@@ -102,17 +103,17 @@ export default function AddProjectPage() {
                     <Input id="name" placeholder="e.g. Annual Science Fair" value={name} onChange={e => setName(e.target.value)} required />
                 </div>
                 <div className="space-y-2">
-                    <Label htmlFor="school">School</Label>
-                    {loadingSchools ? (
+                    <Label htmlFor="college">College</Label>
+                    {loadingColleges ? (
                         <Skeleton className="h-10 w-full" />
                     ) : (
-                        <Select onValueChange={setSchoolId} value={schoolId} required>
-                            <SelectTrigger id="school">
-                                <SelectValue placeholder="Select a school" />
+                        <Select onValueChange={setCollegeId} value={collegeId} required>
+                            <SelectTrigger id="college">
+                                <SelectValue placeholder="Select a college" />
                             </SelectTrigger>
                             <SelectContent>
-                                {schools.map(school => (
-                                    <SelectItem key={school.id} value={school.id}>{school.name}</SelectItem>
+                                {colleges.map(college => (
+                                    <SelectItem key={college.id} value={college.id}>{college.name}</SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
@@ -122,7 +123,7 @@ export default function AddProjectPage() {
                         <Label htmlFor="description">Description</Label>
                         <Textarea id="description" placeholder="Provide a brief description of the project." value={description} onChange={e => setDescription(e.target.value)} required />
                 </div>
-                <Button type="submit" disabled={loading || loadingSchools}>{loading ? 'Creating...' : 'Create Project'}</Button>
+                <Button type="submit" disabled={loading || loadingColleges}>{loading ? 'Creating...' : 'Create Project'}</Button>
             </form>
         </CardContent>
       </Card>

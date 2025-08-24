@@ -1,8 +1,8 @@
 
 import { collection, doc, getDoc, getDocs, getFirestore, query, where, updateDoc, limit as queryLimit, addDoc, runTransaction } from 'firebase/firestore';
 import { app } from '../firebase';
-import type { User, School, Project, Submission, Ticket } from '../mock-data';
-import { mockUsers, mockSchools, mockProjects, mockSubmissions, mockTickets } from '../mock-data';
+import type { User, College, Project, Submission, Ticket } from '../mock-data';
+import { mockUsers, mockColleges, mockProjects, mockSubmissions, mockTickets } from '../mock-data';
 
 const db = getFirestore(app);
 
@@ -37,20 +37,20 @@ export async function updateUserStatus(userId: string, status: 'Active' | 'Inact
 }
 
 
-// Schools
-export async function getSchools(): Promise<School[]> {
-  const schoolsCol = collection(db, 'schools');
-  const schoolSnapshot = await getDocs(schoolsCol);
-  if (schoolSnapshot.docs.length > 0) {
-    const schoolList = schoolSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as School));
-    return schoolList;
+// Colleges
+export async function getColleges(): Promise<College[]> {
+  const collegesCol = collection(db, 'colleges');
+  const collegeSnapshot = await getDocs(collegesCol);
+  if (collegeSnapshot.docs.length > 0) {
+    const collegeList = collegeSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as College));
+    return collegeList;
   }
-  return mockSchools;
+  return mockColleges;
 }
 
-export async function addSchool(school: Omit<School, 'id' | 'projectsCount'>) {
-    await addDoc(collection(db, 'schools'), {
-        ...school,
+export async function addCollege(college: Omit<College, 'id' | 'projectsCount'>) {
+    await addDoc(collection(db, 'colleges'), {
+        ...college,
         projectsCount: 0,
     });
 }
@@ -97,22 +97,22 @@ export async function getProjectById(id: string): Promise<Project | null> {
 }
 
 export async function addProject(project: Omit<Project, 'id' | 'submissionsCount' | 'status'> & { description: string }) {
-    const schoolRef = doc(db, "schools", project.schoolId);
+    const collegeRef = doc(db, "colleges", project.collegeId);
     
     await runTransaction(db, async (transaction) => {
-        const schoolDoc = await transaction.get(schoolRef);
-        if (!schoolDoc.exists()) {
-            throw "School document does not exist!";
+        const collegeDoc = await transaction.get(collegeRef);
+        if (!collegeDoc.exists()) {
+            throw "College document does not exist!";
         }
 
-        const newProjectsCount = (schoolDoc.data().projectsCount || 0) + 1;
-        transaction.update(schoolRef, { projectsCount: newProjectsCount });
+        const newProjectsCount = (collegeDoc.data().projectsCount || 0) + 1;
+        transaction.update(collegeRef, { projectsCount: newProjectsCount });
 
         const projectRef = doc(collection(db, "projects"));
         transaction.set(projectRef, {
             name: project.name,
-            schoolId: project.schoolId,
-            schoolName: project.schoolName,
+            collegeId: project.collegeId,
+            collegeName: project.collegeName,
             description: project.description,
             submissionsCount: 0,
             status: 'Ongoing',
