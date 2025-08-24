@@ -4,6 +4,9 @@
 import {
   MoreHorizontal,
   PlusCircle,
+  FolderKanban,
+  School as SchoolIcon,
+  Download,
 } from 'lucide-react'
 import Link from 'next/link'
 import * as React from 'react'
@@ -74,11 +77,18 @@ export default function ProjectsPage() {
     <Tabs value={activeTab} onValueChange={setActiveTab}>
       <div className="flex items-center mb-4">
         <TabsList className="bg-muted p-1 rounded-lg">
-          <TabsTrigger value="projects" className="px-3 py-1.5 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm rounded-md transition-all">Projects</TabsTrigger>
-          <TabsTrigger value="schools" className="px-3 py-1.5 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm rounded-md transition-all">Schools</TabsTrigger>
+          <TabsTrigger value="projects" className="px-3 py-1.5 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm rounded-md transition-all flex items-center gap-2">
+            <FolderKanban className="h-4 w-4" />
+            Projects
+          </TabsTrigger>
+          <TabsTrigger value="schools" className="px-3 py-1.5 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm rounded-md transition-all flex items-center gap-2">
+            <SchoolIcon className="h-4 w-4" />
+            Schools
+          </TabsTrigger>
         </TabsList>
         <div className="ml-auto flex items-center gap-2">
           <Button size="sm" variant="outline">
+            <Download className="mr-2 h-4 w-4" />
             Export
           </Button>
            {activeTab === 'projects' ? (
