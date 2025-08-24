@@ -6,6 +6,7 @@ import {
   BookOpenCheck,
   Ticket,
   Users as UsersIcon,
+  PieChart as PieChartIcon,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -19,7 +20,7 @@ import {
 import * as React from 'react';
 import { getSchools, getUsers, getTickets, getProjects } from '@/lib/firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, AreaChart, Area, CartesianGrid } from 'recharts';
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, PieChart, Pie, Cell, Legend } from 'recharts';
 import type { School, User } from '@/lib/mock-data';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 
@@ -63,36 +64,17 @@ export default function DashboardPage() {
         fetchData();
     }, []);
 
-    const userChartData = React.useMemo(() => {
-        const monthCounts = Array(12).fill(0).map(() => ({ month: '', users: 0 }));
-        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-        
-        const now = new Date();
-        const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
-
-        for (let i = 0; i < 12; i++) {
-            const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-            monthCounts[11-i] = { month: monthNames[date.getMonth()], users: 0 };
-        }
-        
+    const userRoleData = React.useMemo(() => {
+        const roles = { Admin: 0, Teacher: 0, Student: 0 };
         users.forEach(user => {
-            const createdDate = new Date(user.createdOn);
-            if (createdDate >= oneYearAgo) {
-                const monthIndex = (now.getMonth() - createdDate.getMonth() + 12) % 12;
-                 if (11-monthIndex >=0 && 11-monthIndex < 12) {
-                     monthCounts[11 - monthIndex].users++;
-                 }
+            if (user.role in roles) {
+                roles[user.role]++;
             }
         });
-        
-        // Accumulate counts
-        for(let i = 1; i < monthCounts.length; i++) {
-            monthCounts[i].users += monthCounts[i-1].users;
-        }
-
-        return monthCounts;
+        return Object.entries(roles).map(([name, value]) => ({ name, value }));
     }, [users]);
-
+    
+    const COLORS = ['#004643', '#00756f', '#00a096'];
 
     const projectChartConfig = {
       projects: {
@@ -100,14 +82,6 @@ export default function DashboardPage() {
         color: "hsl(var(--chart-1))",
       },
     } satisfies ChartConfig
-
-    const userChartConfig = {
-      users: {
-        label: 'Users',
-        color: 'hsl(var(--chart-2))',
-      },
-    } satisfies ChartConfig
-
 
   return (
     <>
@@ -169,8 +143,8 @@ export default function DashboardPage() {
           </Link>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7 mt-8">
-            <Card className="lg:col-span-4">
+        <div className="grid gap-4 mt-8">
+            <Card>
                 <CardHeader>
                     <CardTitle>Projects by School</CardTitle>
                      <CardDescription>A look at the distribution of projects across schools.</CardDescription>
@@ -181,9 +155,8 @@ export default function DashboardPage() {
                         <Skeleton className="w-full h-[300px]" />
                     </div>
                    ) : (
-                    <ChartContainer config={projectChartConfig} className="min-h-[200px] w-full">
+                    <ChartContainer config={projectChartConfig} className="min-h-[300px] w-full">
                        <BarChart accessibilityLayer data={schools} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-                         <CartesianGrid vertical={false} />
                          <XAxis
                             dataKey="name"
                             tickLine={false}
@@ -199,39 +172,47 @@ export default function DashboardPage() {
                    )}
                 </CardContent>
             </Card>
-             <Card className="lg:col-span-3">
+             <Card>
                 <CardHeader>
-                    <CardTitle>User Growth</CardTitle>
-                    <CardDescription>Cumulative user sign-ups over the last 12 months.</CardDescription>
+                    <CardTitle>User Role Distribution</CardTitle>
+                    <CardDescription>A breakdown of users by their assigned role.</CardDescription>
                 </CardHeader>
-                <CardContent className="pl-2">
+                <CardContent>
                     {loading ? (
                          <div className="flex aspect-video justify-center items-center">
                             <Skeleton className="w-full h-[300px]" />
                         </div>
                     ) : (
-                        <ChartContainer config={userChartConfig} className="min-h-[200px] w-full">
-                            <AreaChart accessibilityLayer data={userChartData} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-                                <CartesianGrid vertical={false} />
-                                <XAxis
-                                    dataKey="month"
-                                    tickLine={false}
-                                    axisLine={false}
-                                    tickMargin={8}
-                                />
-                                <ChartTooltip
-                                    cursor={false}
-                                    content={<ChartTooltipContent indicator="dot" />}
-                                />
-                                <Area
-                                    dataKey="users"
-                                    type="natural"
-                                    fill="var(--color-users)"
-                                    fillOpacity={0.4}
-                                    stroke="var(--color-users)"
-                                />
-                            </AreaChart>
-                        </ChartContainer>
+                        <ResponsiveContainer width="100%" height={300}>
+                            <PieChart>
+                                <Pie
+                                    data={userRoleData}
+                                    cx="50%"
+                                    cy="50%"
+                                    labelLine={false}
+                                    outerRadius={100}
+                                    fill="#8884d8"
+                                    dataKey="value"
+                                    nameKey="name"
+                                    label={({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
+                                        const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+                                        const x = cx + radius * Math.cos(-midAngle * (Math.PI / 180));
+                                        const y = cy + radius * Math.sin(-midAngle * (Math.PI / 180));
+                                        return (
+                                            <text x={x} y={y} fill="white" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central">
+                                                {`${(percent * 100).toFixed(0)}%`}
+                                            </text>
+                                        );
+                                    }}
+                                >
+                                    {userRoleData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                    ))}
+                                </Pie>
+                                <Tooltip content={<ChartTooltipContent />} />
+                                <Legend />
+                            </PieChart>
+                        </ResponsiveContainer>
                     )}
                 </CardContent>
             </Card>
