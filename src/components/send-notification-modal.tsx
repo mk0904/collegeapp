@@ -20,6 +20,10 @@ import { uploadFile } from '@/lib/firebase/storage';
 import type { User } from '@/lib/mock-data';
 import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { Calendar } from './ui/calendar';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface SendNotificationModalProps {
   isOpen: boolean;
@@ -34,6 +38,7 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
   const [files, setFiles] = React.useState<File[]>([]);
   const [isSending, setIsSending] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const [eventDate, setEventDate] = React.useState<Date>();
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
@@ -51,6 +56,7 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
     setDescription('');
     setFiles([]);
     setIsSending(false);
+    setEventDate(undefined);
   };
   
   React.useEffect(() => {
@@ -166,11 +172,35 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
                     <div className="grid grid-cols-2 gap-4">
                          <div className="space-y-2">
                             <Label htmlFor="event-time">Event Time</Label>
-                            <Input id="event-time" placeholder="e.g. 10:00 AM" />
+                            <div className="relative">
+                                <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <Input id="event-time" placeholder="e.g. 10:00 AM" className="pl-10" />
+                            </div>
                         </div>
                          <div className="space-y-2">
                             <Label htmlFor="event-date">Event Date</Label>
-                            <Input id="event-date" placeholder="e.g. 2024-08-15" />
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                <Button
+                                    variant={"outline"}
+                                    className={cn(
+                                    "w-full justify-start text-left font-normal",
+                                    !eventDate && "text-muted-foreground"
+                                    )}
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {eventDate ? format(eventDate, "PPP") : <span>Pick a date</span>}
+                                </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0">
+                                <Calendar
+                                    mode="single"
+                                    selected={eventDate}
+                                    onSelect={setEventDate}
+                                    initialFocus
+                                />
+                                </PopoverContent>
+                            </Popover>
                         </div>
                     </div>
                      <div className="space-y-2">
