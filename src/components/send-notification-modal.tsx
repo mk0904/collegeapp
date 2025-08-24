@@ -302,27 +302,31 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                        <div className="flex items-center gap-2">
-                         <div className="grid grid-cols-2 gap-1 items-center rounded-md border border-input h-10 px-3">
+                         <div className="flex items-center gap-1 rounded-md border border-input h-10 px-3">
                            <Input 
                             type="number"
                             value={eventHour}
                             onChange={handleHourChange}
-                            onBlur={(e) => setEventHour(e.target.value.padStart(2, '0'))}
+                            onBlur={(e) => {
+                                if (e.target.value) {
+                                    setEventHour(e.target.value.padStart(2, '0'))
+                                }
+                            }}
                             placeholder="HH"
-                            className="w-10 border-none text-center p-0 h-auto focus-visible:ring-0"
-                            min="1"
-                            max="12"
+                            className="w-8 border-none text-center p-0 h-auto focus-visible:ring-0"
                            />
-                           <span>:</span>
+                           <span className="text-muted-foreground">:</span>
                            <Input
                              type="number"
                              value={eventMinute}
                              onChange={handleMinuteChange}
-                             onBlur={(e) => setEventMinute(e.target.value.padStart(2, '0'))}
+                             onBlur={(e) => {
+                                if (e.target.value) {
+                                    setEventMinute(e.target.value.padStart(2, '0'))
+                                }
+                             }}
                              placeholder="MM"
-                             className="w-10 border-none text-center p-0 h-auto focus-visible:ring-0"
-                             min="0"
-                             max="59"
+                             className="w-8 border-none text-center p-0 h-auto focus-visible:ring-0"
                            />
                          </div>
                           <Select value={eventPeriod} onValueChange={setEventPeriod}>
@@ -391,3 +395,5 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
     </Dialog>
   );
 }
+
+    
