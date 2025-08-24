@@ -15,6 +15,7 @@ import {
   MapPin,
   Phone,
   ShieldCheck,
+  Download,
 } from 'lucide-react'
 
 import { Badge } from '@/components/ui/badge'
@@ -177,6 +178,42 @@ export default function UsersPage() {
         });
     }, [sortedUsers, searchTerm, roleFilter, schoolFilter, districtFilter]);
 
+    const handleExport = () => {
+        if (filteredUsers.length === 0) {
+            toast({ title: "No Users to Export", description: "The current filter has no users to export.", variant: "destructive" });
+            return;
+        }
+
+        const csvHeader = "ID,Name,Email,Phone,Status,Role,School,District,Designation\n";
+        const csvRows = filteredUsers.map(user => {
+            const row = [
+                user.id,
+                `"${user.name}"`,
+                user.email,
+                user.phone,
+                user.status,
+                user.role,
+                `"${user.school}"`,
+                `"${user.district}"`,
+                `"${user.designation || ''}"`
+            ];
+            return row.join(',');
+        }).join('\n');
+
+        const csvContent = csvHeader + csvRows;
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        if (link.href) {
+            URL.revokeObjectURL(link.href);
+        }
+        const url = URL.createObjectURL(blob);
+        link.href = url;
+        link.setAttribute("download", `users_export_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        toast({ title: "Export successful", description: `${filteredUsers.length} users have been exported.`});
+    }
 
     const isAllSelected = selectedUserIds.length === filteredUsers.length && filteredUsers.length > 0;
     const isIndeterminate = selectedUserIds.length > 0 && selectedUserIds.length < filteredUsers.length;
@@ -239,34 +276,38 @@ export default function UsersPage() {
              <div className="flex w-full sm:w-auto gap-2">
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="w-full sm:w-auto">Role <ChevronDown className="ml-2 h-4 w-4" /></Button>
+                        <Button variant="outline" className="w-full sm:w-auto capitalize"><ShieldCheck className="mr-2 h-4 w-4" /> Role <ChevronDown className="ml-2 h-4 w-4" /></Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                        <DropdownMenuCheckboxItem checked={roleFilter === 'all'} onCheckedChange={() => setRoleFilter('all')}>All</DropdownMenuCheckboxItem>
-                        {uniqueRoles.map(role => <DropdownMenuCheckboxItem key={role} checked={roleFilter === role} onCheckedChange={() => setRoleFilter(role)}>{role}</DropdownMenuCheckboxItem>)}
+                        <DropdownMenuCheckboxItem checked={roleFilter === 'all'} onCheckedChange={() => setRoleFilter('all')}>All Roles</DropdownMenuCheckboxItem>
+                        {uniqueRoles.map(role => <DropdownMenuCheckboxItem key={role} checked={roleFilter === role} onCheckedChange={() => setRoleFilter(role)} className="capitalize">{role.toLowerCase()}</DropdownMenuCheckboxItem>)}
                     </DropdownMenuContent>
                 </DropdownMenu>
                  <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="w-full sm:w-auto">School <ChevronDown className="ml-2 h-4 w-4" /></Button>
+                        <Button variant="outline" className="w-full sm:w-auto"><School2 className="mr-2 h-4 w-4" />School <ChevronDown className="ml-2 h-4 w-4" /></Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                        <DropdownMenuCheckboxItem checked={schoolFilter === 'all'} onCheckedChange={() => setSchoolFilter('all')}>All</DropdownMenuCheckboxItem>
+                        <DropdownMenuCheckboxItem checked={schoolFilter === 'all'} onCheckedChange={() => setSchoolFilter('all')}>All Schools</DropdownMenuCheckboxItem>
                         {schools.map(school => <DropdownMenuCheckboxItem key={school.id} checked={schoolFilter === school.name} onCheckedChange={() => setSchoolFilter(school.name)}>{school.name}</DropdownMenuCheckboxItem>)}
                     </DropdownMenuContent>
                 </DropdownMenu>
                  <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="w-full sm:w-auto">District <ChevronDown className="ml-2 h-4 w-4" /></Button>
+                        <Button variant="outline" className="w-full sm:w-auto"><MapPin className="mr-2 h-4 w-4" />District <ChevronDown className="ml-2 h-4 w-4" /></Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                        <DropdownMenuCheckboxItem checked={districtFilter === 'all'} onCheckedChange={() => setDistrictFilter('all')}>All</DropdownMenuCheckboxItem>
+                        <DropdownMenuCheckboxItem checked={districtFilter === 'all'} onCheckedChange={() => setDistrictFilter('all')}>All Districts</DropdownMenuCheckboxItem>
                          {uniqueDistricts.map(district => <DropdownMenuCheckboxItem key={district} checked={districtFilter === district} onCheckedChange={() => setDistrictFilter(district)}>{district}</DropdownMenuCheckboxItem>)}
                     </DropdownMenuContent>
                 </DropdownMenu>
               <Button size="sm" variant="outline" onClick={() => setIsModalOpen(true)} disabled={selectedUserIds.length === 0} className="w-full sm:w-auto">
                 <Mail className="mr-2 h-4 w-4" />
                 Send ({selectedUserIds.length})
+              </Button>
+              <Button size="sm" variant="outline" onClick={handleExport} className="w-full sm:w-auto">
+                <Download className="mr-2 h-4 w-4" />
+                Export
               </Button>
             </div>
           </div>
@@ -374,5 +415,3 @@ export default function UsersPage() {
     </>
   )
 }
-
-    
