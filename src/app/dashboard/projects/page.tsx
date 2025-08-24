@@ -72,10 +72,10 @@ export default function ProjectsPage() {
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab}>
-      <div className="flex items-center">
-        <TabsList className="gap-2">
-          <TabsTrigger value="projects" className="rounded-md">Projects</TabsTrigger>
-          <TabsTrigger value="schools" className="rounded-md">Schools</TabsTrigger>
+      <div className="flex items-center mb-4">
+        <TabsList className="grid w-full grid-cols-2 bg-muted/60 h-auto p-0">
+          <TabsTrigger value="projects" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-none">Projects</TabsTrigger>
+          <TabsTrigger value="schools" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-none">Schools</TabsTrigger>
         </TabsList>
         <div className="ml-auto flex items-center gap-2">
           <Button size="sm" variant="outline">
