@@ -21,7 +21,7 @@ import { getSchools, getUsers, getTickets, getProjects } from '@/lib/firebase/fi
 import { Skeleton } from '@/components/ui/skeleton';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, AreaChart, Area, CartesianGrid } from 'recharts';
 import type { School, User } from '@/lib/mock-data';
-import { ChartConfig, ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
+import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 
 export default function DashboardPage() {
     const [stats, setStats] = React.useState({
