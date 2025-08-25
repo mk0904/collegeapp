@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { addSchool } from "@/lib/firebase/firestore";
 
-export default function AddSchoolPage() {
+export default function AddCollegePage() {
     const router = useRouter();
     const { toast } = useToast();
     const [name, setName] = React.useState('');
@@ -24,7 +24,7 @@ export default function AddSchoolPage() {
         if (!name || !location) {
             toast({
                 title: "Error",
-                description: "School Name and Location are required.",
+                description: "College Name and Location are required.",
                 variant: "destructive"
             });
             return;
@@ -34,14 +34,14 @@ export default function AddSchoolPage() {
             await addSchool({ name, location, email, phone });
             toast({
                 title: "Success!",
-                description: "School has been added successfully."
+                description: "College has been added successfully."
             });
             router.push('/dashboard/projects');
         } catch (error) {
-            console.error("Error adding school:", error);
+            console.error("Error adding college:", error);
             toast({
                 title: "Error",
-                description: "Failed to add school. Please try again.",
+                description: "Failed to add college. Please try again.",
                 variant: "destructive"
             });
         } finally {
@@ -54,13 +54,13 @@ export default function AddSchoolPage() {
     <div className="space-y-6 max-w-4xl mx-auto">
       <Card>
         <CardHeader>
-          <CardTitle>Add a New School</CardTitle>
-          <CardDescription>Fill out the form below to register a new school.</CardDescription>
+          <CardTitle>Add a New College</CardTitle>
+          <CardDescription>Fill out the form below to register a new college.</CardDescription>
         </CardHeader>
         <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                    <Label htmlFor="name">School Name</Label>
+                    <Label htmlFor="name">College Name</Label>
                     <Input id="name" placeholder="e.g. Kohima Science College" value={name} onChange={e => setName(e.target.value)} required/>
                 </div>
                 <div className="space-y-2">
@@ -77,7 +77,7 @@ export default function AddSchoolPage() {
                         <Input id="phone" placeholder="e.g. +91 98765 43210" value={phone} onChange={e => setPhone(e.target.value)} />
                     </div>
                 </div>
-                <Button type="submit" disabled={loading}>{loading ? 'Adding...' : 'Add School'}</Button>
+                <Button type="submit" disabled={loading}>{loading ? 'Adding...' : 'Add College'}</Button>
             </form>
         </CardContent>
       </Card>

@@ -173,3 +173,11 @@ export async function updateTicketStatus(ticketId: string, status: 'Resolved', r
     const ticketDoc = doc(db, 'tickets', ticketId);
     await updateDoc(ticketDoc, { status, dateClosed: resolutionDate });
 }
+
+// Colleges
+export async function addSchool(college: any): Promise<void> {
+    await addDoc(collection(db, 'colleges'), {
+        ...college,
+        createdAt: new Date().toISOString(),
+    });
+}

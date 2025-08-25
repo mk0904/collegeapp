@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import * as React from 'react'
+import { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 
 import { Badge } from '@/components/ui/badge'
@@ -57,13 +58,13 @@ import { AddCollegeModal } from '@/components/add-college-modal'
 
 type ProjectStatus = 'Ongoing' | 'Completed' | 'Pending';
 
-export default function ProjectsPage() {
+function ProjectsContent() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const [projects, setProjects] = React.useState<Project[]>([]);
   const [colleges, setColleges] = React.useState<College[]>([]);
   const [loading, setLoading] = React.useState(true);
-  const [activeTab, setActiveTab] = React.useState(searchParams.get('tab') || 'projects');
+  const [activeTab, setActiveTab] = React.useState(searchParams?.get('tab') || 'projects');
 
   // Modal states
   const [isAddProjectModalOpen, setIsAddProjectModalOpen] = React.useState(false);
@@ -345,4 +346,12 @@ export default function ProjectsPage() {
       </Tabs>
     </>
   )
+}
+
+export default function ProjectsPage() {
+  return (
+    <Suspense fallback={<div>Loading projects...</div>}>
+      <ProjectsContent />
+    </Suspense>
+  );
 }
