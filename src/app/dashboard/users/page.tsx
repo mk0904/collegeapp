@@ -106,14 +106,6 @@ export default function UsersPage() {
         }
     }
 
-    const handleSelectAll = (checked: boolean) => {
-        if (checked) {
-            setSelectedUserIds(filteredUsers.map(user => user.id));
-        } else {
-            setSelectedUserIds([]);
-        }
-    }
-
     const handleSelectUser = (userId: string, checked: boolean) => {
         if (checked) {
             setSelectedUserIds(prev => [...prev, userId]);
@@ -174,6 +166,26 @@ export default function UsersPage() {
             return matchesSearch && matchesRole && matchesCollege && matchesDistrict;
         });
     }, [sortedUsers, searchTerm, roleFilter, collegeFilter, districtFilter]);
+    
+    // Reset selected users when filters change
+    React.useEffect(() => {
+        // Only keep selections that still exist in filtered results
+        const validSelections = selectedUserIds.filter(id => 
+            filteredUsers.some(user => user.id === id)
+        );
+        if (validSelections.length !== selectedUserIds.length) {
+            setSelectedUserIds(validSelections);
+        }
+    }, [filteredUsers, selectedUserIds]);
+    
+    // Add back the handle select all function
+    const handleSelectAll = (checked: boolean) => {
+        if (checked) {
+            setSelectedUserIds(filteredUsers.map(user => user.id));
+        } else {
+            setSelectedUserIds([]);
+        }
+    };
 
     const handleExport = () => {
         if (filteredUsers.length === 0) {
@@ -253,7 +265,6 @@ export default function UsersPage() {
         <CardHeader>
             <div className="flex items-start justify-between">
                 <div>
-                    <CardTitle>Users</CardTitle>
                     <CardDescription>
                         Manage your users and view their details.
                     </CardDescription>
@@ -416,7 +427,9 @@ export default function UsersPage() {
           </div>
           <div className="flex items-center justify-end space-x-2 py-4">
               <div className="flex-1 text-sm text-muted-foreground">
-                {selectedUserIds.length} of {filteredUsers.length} row(s) selected.
+                {filteredUsers.length === 0 ? 'No users found' : 
+                 selectedUserIds.length > 0 ? `${selectedUserIds.length} of ${filteredUsers.length} row(s) selected` : 
+                 `${filteredUsers.length} user(s) found`}
               </div>
               <Button variant="outline" size="sm">Previous</Button>
               <Button variant="outline" size="sm">Next</Button>

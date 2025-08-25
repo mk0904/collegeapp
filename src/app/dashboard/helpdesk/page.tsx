@@ -121,7 +121,7 @@ export default function HelpdeskPage() {
       {selectedTicket && <TicketDetailsModal isOpen={isModalOpen} onOpenChange={setIsModalOpen} ticket={selectedTicket} />}
       <Card>
         <CardHeader>
-            <CardTitle>Helpdesk</CardTitle>
+            {/* Removed title to avoid duplication with dashboard header */}
             <CardDescription>
                 Manage user support tickets.
             </CardDescription>

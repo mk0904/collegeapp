@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -11,6 +10,9 @@ import {
   UserCircle,
   Bell,
   ChevronDown,
+  FileText,
+  LogOut,
+  Search, // Added for search icon
 } from 'lucide-react';
 import * as React from 'react';
 
@@ -30,6 +32,7 @@ import {
   SidebarSeparator,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -45,8 +48,9 @@ import { auth } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 
 const navItems = [
-  { href: '/dashboard', icon: Home, label: 'Home' },
-  { href: '/dashboard/users', icon: Users, label: 'Users' },
+    { href: '/dashboard', icon: Home, label: 'Home' },
+    { href: '/dashboard/users', icon: Users, label: 'Users' },
+    { href: '/dashboard/circular', icon: FileText, label: 'Circular' },
 ];
 
 const projectsNav = {
@@ -66,6 +70,13 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const router = useRouter();
   const { toast } = useToast();
+  const [activeSection, setActiveSection] = React.useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const section = localStorage.getItem('activeSection');
+      return section || 'dashboard';
+    }
+    return 'dashboard';
+  });
 
   const handleLogout = async () => {
     try {
@@ -78,19 +89,30 @@ export default function DashboardLayout({
     }
   };
 
+  // Set active section based on pathname
+  React.useEffect(() => {
+    const section = pathname.split('/')[2] || 'dashboard';
+    setActiveSection(section);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('activeSection', section);
+    }
+  }, [pathname]);
+
   return (
     <div className="bg-gradient-to-br from-blue-50/50 via-green-50/50 to-blue-100/50 min-h-screen">
         <SidebarProvider>
-        <Sidebar variant="inset" collapsible="icon">
-            <SidebarHeader className="border-b-0 p-0">
-            <div className="flex items-center justify-between p-2 h-20">
-                <div className="group-data-[collapsible=icon]:hidden">
-                    <Logo onDarkBg={true} />
+        <Sidebar variant="inset" className="border-r bg-white shadow-sm">
+            <SidebarHeader className="border-b p-0">
+            <div className="flex items-center justify-between p-4 h-20">
+                <div className="flex items-center w-full">
+                    <Logo onDarkBg={false} />
                 </div>
-                <SidebarTrigger className="hidden group-data-[collapsible=icon]:block" />
             </div>
             </SidebarHeader>
-            <SidebarContent>
+            <SidebarContent className="p-2">
+            <div className="px-3 py-2">
+              <p className="text-xs font-semibold text-muted-foreground mb-2">MAIN NAVIGATION</p>
+            </div>
             <SidebarMenu>
                 {navItems.map((item) => (
                 <SidebarMenuItem key={item.href}>
@@ -101,27 +123,66 @@ export default function DashboardLayout({
                         ? pathname === item.href
                         : pathname.startsWith(item.href)
                     }
-                    tooltip={{ children: item.label }}
+                    className={cn(
+                      "flex gap-3 items-center px-3 py-2.5 rounded-md transition-colors w-full",
+                      (item.href === '/dashboard' ? pathname === item.href : pathname.startsWith(item.href))
+                        ? "bg-primary text-white"
+                        : "hover:bg-primary/10"
+                    )}
                     >
-                    <Link href={item.href}>
-                        <item.icon />
-                        <span>{item.label}</span>
+                    <Link href={item.href} className="flex gap-3 items-center w-full">
+                        <span className={cn(
+                          "p-1.5 rounded-md transition-colors",
+                          (item.href === '/dashboard' ? pathname === item.href : pathname.startsWith(item.href))
+                            ? "bg-primary text-white"
+                            : "bg-primary/10 text-primary"
+                        )}>
+                          <item.icon className="h-4 w-4" />
+                        </span>
+                        <span className={cn(
+                          "font-medium transition-colors",
+                          (item.href === '/dashboard' ? pathname === item.href : pathname.startsWith(item.href))
+                            ? "font-semibold"
+                            : ""
+                        )}>{item.label}</span>
                     </Link>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
                 ))}
 
-                <SidebarSeparator />
+                <SidebarSeparator className="my-3" />
+                
+                <div className="px-3 py-2 group-data-[collapsible=icon]:hidden">
+                  <p className="text-xs font-semibold text-muted-foreground mb-2">WORKSPACE</p>
+                </div>
                 
                 <SidebarMenuItem>
                     <SidebarMenuButton
                         asChild
                         isActive={pathname.startsWith(projectsNav.href)}
                         tooltip={{ children: projectsNav.label }}
+                        className={cn(
+                          "flex gap-3 items-center px-3 py-2.5 rounded-md transition-colors",
+                          pathname.startsWith(projectsNav.href)
+                            ? "bg-primary text-white"
+                            : "hover:bg-primary/10"
+                        )}
                     >
-                        <Link href={projectsNav.href}>
-                            <projectsNav.icon />
-                            <span>{projectsNav.label}</span>
+                        <Link href={projectsNav.href} className="flex gap-3 items-center w-full">
+                            <span className={cn(
+                              "p-1.5 rounded-md transition-colors",
+                              pathname.startsWith(projectsNav.href)
+                                ? "bg-primary text-white"
+                                : "bg-primary/10 text-primary"
+                            )}>
+                              <projectsNav.icon className="h-4 w-4" />
+                            </span>
+                            <span className={cn(
+                              "font-medium transition-colors",
+                              pathname.startsWith(projectsNav.href)
+                                ? "font-semibold"
+                                : ""
+                            )}>{projectsNav.label}</span>
                         </Link>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -131,29 +192,80 @@ export default function DashboardLayout({
                         asChild
                         isActive={pathname.startsWith(helpdeskNavItem.href)}
                         tooltip={{ children: helpdeskNavItem.label }}
+                        className={cn(
+                          "flex gap-3 items-center px-3 py-2.5 rounded-md transition-colors",
+                          pathname.startsWith(helpdeskNavItem.href)
+                            ? "bg-primary text-white"
+                            : "hover:bg-primary/10"
+                        )}
                     >
-                        <Link href={helpdeskNavItem.href}>
-                            <helpdeskNavItem.icon />
-                            <span>{helpdeskNavItem.label}</span>
+                        <Link href={helpdeskNavItem.href} className="flex gap-3 items-center w-full">
+                            <span className={cn(
+                              "p-1.5 rounded-md transition-colors",
+                              pathname.startsWith(helpdeskNavItem.href)
+                                ? "bg-primary text-white"
+                                : "bg-primary/10 text-primary"
+                            )}>
+                              <helpdeskNavItem.icon className="h-4 w-4" />
+                            </span>
+                            <span className={cn(
+                              "font-medium transition-colors",
+                              pathname.startsWith(helpdeskNavItem.href)
+                                ? "font-semibold"
+                                : ""
+                            )}>{helpdeskNavItem.label}</span>
                         </Link>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
 
             </SidebarMenu>
             </SidebarContent>
-            <SidebarFooter>
-            <SidebarSeparator />
+            <SidebarFooter className="border-t p-2">
+            <div className="px-3 py-2 group-data-[collapsible=icon]:hidden">
+              <p className="text-xs font-semibold text-muted-foreground mb-2">ACCOUNT</p>
+            </div>
             <SidebarMenu>
                 <SidebarMenuItem>
                 <SidebarMenuButton
                     asChild
                     isActive={pathname.startsWith(accountNavItem.href)}
                     tooltip={{ children: accountNavItem.label }}
+                    className={cn(
+                      "flex gap-3 items-center px-3 py-2.5 rounded-md transition-colors",
+                      pathname.startsWith(accountNavItem.href)
+                        ? "bg-primary text-white"
+                        : "hover:bg-primary/10"
+                    )}
                 >
-                    <Link href={accountNavItem.href}>
-                    <accountNavItem.icon />
-                    <span>{accountNavItem.label}</span>
+                    <Link href={accountNavItem.href} className="flex gap-3 items-center w-full">
+                        <span className={cn(
+                          "p-1.5 rounded-md transition-colors",
+                          pathname.startsWith(accountNavItem.href)
+                            ? "bg-primary text-white"
+                            : "bg-primary/10 text-primary"
+                        )}>
+                          <accountNavItem.icon className="h-4 w-4" />
+                        </span>
+                        <span className={cn(
+                          "font-medium transition-colors",
+                          pathname.startsWith(accountNavItem.href)
+                            ? "font-semibold"
+                            : ""
+                        )}>{accountNavItem.label}</span>
                     </Link>
+                </SidebarMenuButton>
+                </SidebarMenuItem>
+                
+                <SidebarMenuItem>
+                <SidebarMenuButton
+                    tooltip={{ children: "Logout" }}
+                    onClick={handleLogout}
+                    className="flex gap-3 items-center px-3 py-2.5 rounded-md hover:bg-primary/10 transition-colors text-red-500"
+                >
+                    <span className="bg-red-100 p-1.5 rounded-md text-red-500">
+                      <LogOut className="h-4 w-4" />
+                    </span>
+                    <span className="font-medium">Logout</span>
                 </SidebarMenuButton>
                 </SidebarMenuItem>
             </SidebarMenu>
@@ -161,31 +273,57 @@ export default function DashboardLayout({
         </Sidebar>
         <SidebarInset>
             <div className="flex flex-col">
-            <header className="flex h-14 items-center gap-4 border-b bg-transparent px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30">
-                <SidebarTrigger className="md:hidden" />
+            <header className="flex h-16 items-center gap-4 border-b bg-white px-4 lg:px-6 sticky top-0 z-30 shadow-sm">
+                <SidebarTrigger className="h-9 w-9 flex items-center justify-center border border-slate-200 bg-white rounded-md shadow-sm hover:bg-slate-50" />
                 <div className="w-full flex-1">
-                {/* Optional: Add search to header */}
+                  <nav className="flex items-center">
+                    <div className="flex items-center">
+                      <div className="h-8 w-1 bg-primary rounded-full mr-3 hidden md:block"></div>
+                      <div>
+                        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Dashboard</p>
+                        <h1 className="text-xl font-bold capitalize text-gray-800 dark:text-gray-100">{activeSection}</h1>
+                      </div>
+                    </div>
+                  </nav>
                 </div>
-                <Button variant="outline" size="icon" className="h-8 w-8">
-                <Bell className="h-4 w-4" />
-                <span className="sr-only">Toggle notifications</span>
-                </Button>
-                <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button variant="secondary" size="icon" className="rounded-full h-8 w-8">
-                    <UserCircle className="h-5 w-5" />
-                    <span className="sr-only">Toggle user menu</span>
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild><Link href="/dashboard/account">Profile</Link></DropdownMenuItem>
-                    <DropdownMenuItem asChild><Link href="/dashboard/helpdesk">Support</Link></DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onSelect={handleLogout}>Logout</DropdownMenuItem>
-                </DropdownMenuContent>
-                </DropdownMenu>
+                
+                {/* Actions */}
+                <div className="flex items-center gap-3">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 overflow-hidden p-0 bg-white/90 shadow-sm hover:bg-white">
+                        <UserCircle className="h-6 w-6 text-primary" />
+                        <span className="sr-only">User menu</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                      <div className="flex items-center gap-3 p-2">
+                        <div className="bg-primary/10 p-1 rounded-full">
+                          <UserCircle className="h-8 w-8 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-medium">Admin User</p>
+                          <p className="text-xs text-muted-foreground">admin@example.com</p>
+                        </div>
+                      </div>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
+                        <Link href="/dashboard/account" className="flex items-center cursor-pointer">
+                          <UserCircle className="h-4 w-4 mr-2" />Profile
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/dashboard/helpdesk" className="flex items-center cursor-pointer">
+                          <LifeBuoy className="h-4 w-4 mr-2" />Support
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onSelect={handleLogout} className="text-red-500 cursor-pointer flex items-center">
+                        <LogOut className="h-4 w-4 mr-2" />Logout
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
             </header>
             <main className="flex-1 p-4 lg:p-6 bg-transparent">
                 {children}

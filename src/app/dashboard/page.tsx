@@ -97,12 +97,7 @@ export default function DashboardPage() {
 
   return (
     <>
-        <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-6">
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight font-headline">Dashboard</h1>
-                <p className="text-muted-foreground">An overview of your college ecosystem.</p>
-            </div>
-        </div>
+        {/* Removed heading to avoid duplication with dashboard header */}
 
         <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
           <Link href="/dashboard/users">
@@ -221,7 +216,7 @@ export default function DashboardPage() {
                                         <Cell key={`cell-${index}`} fill={entry.fill} />
                                     ))}
                                 </Pie>
-                                <Legend contentStyle={{ textTransform: 'capitalize' }} />
+                                <Legend wrapperStyle={{ textTransform: 'capitalize' }} />
                             </PieChart>
                         </ChartContainer>
                     )}

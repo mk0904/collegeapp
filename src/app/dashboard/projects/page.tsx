@@ -161,7 +161,7 @@ export default function ProjectsPage() {
         <TabsContent value="projects">
           <Card>
             <CardHeader>
-              <CardTitle>Projects</CardTitle>
+              {/* Removed title to avoid duplication with dashboard header */}
               <CardDescription>
                 Manage all ongoing and completed projects.
               </CardDescription>
@@ -291,7 +291,7 @@ export default function ProjectsPage() {
         <TabsContent value="colleges">
           <Card>
             <CardHeader>
-              <CardTitle>Colleges</CardTitle>
+              {/* Removed title to avoid duplication with dashboard header */}
               <CardDescription>
                 Manage registered colleges.
               </CardDescription>
