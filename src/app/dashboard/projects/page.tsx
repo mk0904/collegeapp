@@ -292,53 +292,116 @@ function ProjectsContent() {
         <TabsContent value="colleges">
           <Card>
             <CardHeader>
-              {/* Removed title to avoid duplication with dashboard header */}
               <CardDescription>
                 Manage registered colleges.
               </CardDescription>
             </CardHeader>
-            <CardContent className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-               {loading ? (
-                  [...Array(4)].map((_, i) => (
-                    <Card key={i}>
-                      <CardHeader>
-                        <Skeleton className="h-6 w-40" />
-                      </CardHeader>
-                      <CardContent>
-                        <Skeleton className="h-4 w-24" />
-                      </CardContent>
-                       <CardFooter>
-                        <Skeleton className="h-4 w-20" />
-                      </CardFooter>
-                    </Card>
-                  ))
-               ) : (
-                colleges.map((college) => (
-                  <Card key={college.id}>
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                      <CardTitle className="text-lg">{college.name}</CardTitle>
-                      <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button aria-haspopup="true" size="icon" variant="ghost">
-                                <MoreHorizontal className="h-4 w-4" />
-                                <span className="sr-only">Toggle menu</span>
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                              <DropdownMenuItem>Edit</DropdownMenuItem>
-                              <DropdownMenuItem>Delete</DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-muted-foreground">{college.location}</p>
-                    </CardContent>
-                    <CardFooter>
-                      <p>{college.projectsCount} projects</p>
-                    </CardFooter>
-                  </Card>
-                ))
+            <CardContent>
+              <div className="flex flex-col sm:flex-row items-center gap-2 mb-4">
+                <div className="relative flex-1 w-full">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="search"
+                    placeholder="Search colleges by name..."
+                    className="pl-8 w-full"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+              </div>
+              
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>College Name</TableHead>
+                      <TableHead className="hidden md:table-cell">Location</TableHead>
+                      <TableHead className="hidden md:table-cell">District</TableHead>
+                      <TableHead className="hidden md:table-cell">Contact Email</TableHead>
+                      <TableHead className="hidden md:table-cell">Phone</TableHead>
+                      <TableHead>Projects</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {loading ? (
+                      [...Array(4)].map((_, i) => (
+                        <TableRow key={i}>
+                          <TableCell><Skeleton className="h-5 w-48" /></TableCell>
+                          <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
+                          <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
+                          <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-40" /></TableCell>
+                          <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-28" /></TableCell>
+                          <TableCell><Skeleton className="h-5 w-12" /></TableCell>
+                          <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      colleges
+                        .filter(college => 
+                          college.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          college.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          (college.district && college.district.toLowerCase().includes(searchTerm.toLowerCase()))
+                        )
+                        .map((college) => (
+                          <TableRow key={college.id}>
+                            <TableCell className="font-medium">
+                              {college.name}
+                            </TableCell>
+                            <TableCell className="hidden md:table-cell">
+                              {college.location}
+                            </TableCell>
+                            <TableCell className="hidden md:table-cell">
+                              {college.district || 'N/A'}
+                            </TableCell>
+                            <TableCell className="hidden md:table-cell">
+                              <a href={`mailto:${college.email}`} className="hover:underline text-blue-600 dark:text-blue-400">
+                                {college.email}
+                              </a>
+                            </TableCell>
+                            <TableCell className="hidden md:table-cell">
+                              {college.phone}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline">{college.projectsCount}</Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button aria-haspopup="true" size="icon" variant="ghost">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                    <span className="sr-only">Toggle menu</span>
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                  <DropdownMenuItem>Edit</DropdownMenuItem>
+                                  <DropdownMenuItem>Delete</DropdownMenuItem>
+                                  <DropdownMenuItem>View Projects</DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                    )}
+                    
+                    {colleges.length === 0 && !loading && (
+                      <TableRow>
+                        <TableCell colSpan={7} className="h-24 text-center">
+                          No colleges found.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+              
+              {colleges.length > 0 && (
+                <div className="flex items-center justify-end space-x-2 py-4">
+                  <div className="flex-1 text-sm text-muted-foreground">
+                    Showing {colleges.length} college(s)
+                  </div>
+                </div>
               )}
             </CardContent>
           </Card>

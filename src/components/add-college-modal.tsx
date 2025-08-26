@@ -27,6 +27,7 @@ export function AddCollegeModal({ isOpen, onOpenChange, onCollegeAdded }: AddCol
     const { toast } = useToast();
     const [name, setName] = React.useState('');
     const [location, setLocation] = React.useState('');
+    const [district, setDistrict] = React.useState('');
     const [email, setEmail] = React.useState('');
     const [phone, setPhone] = React.useState('');
     const [latitude, setLatitude] = React.useState('');
@@ -36,6 +37,7 @@ export function AddCollegeModal({ isOpen, onOpenChange, onCollegeAdded }: AddCol
     const resetForm = () => {
         setName('');
         setLocation('');
+        setDistrict('');
         setEmail('');
         setPhone('');
         setLatitude('');
@@ -56,7 +58,8 @@ export function AddCollegeModal({ isOpen, onOpenChange, onCollegeAdded }: AddCol
         try {
             await addCollege({ 
                 name, 
-                location, 
+                location,
+                district,
                 email, 
                 phone,
                 latitude: latitude ? parseFloat(latitude) : undefined,
@@ -96,6 +99,10 @@ export function AddCollegeModal({ isOpen, onOpenChange, onCollegeAdded }: AddCol
             <div className="space-y-2">
                 <Label htmlFor="location">Location</Label>
                 <Input id="location" placeholder="e.g. Jotsoma, Kohima" value={location} onChange={e => setLocation(e.target.value)} required/>
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="district">District</Label>
+                <Input id="district" placeholder="e.g. Kohima" value={district} onChange={e => setDistrict(e.target.value)} />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">

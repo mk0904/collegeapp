@@ -37,6 +37,7 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuChe
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { AddCircularModal } from '@/components/add-circular-modal'
+import { getAllCirculars } from '@/lib/firebase/circular'
 
 // Add this type definition for circulars
 type Circular = {
@@ -82,8 +83,8 @@ const mockCirculars: Circular[] = [
 
 export default function CircularPage() {
   const { toast } = useToast()
-  const [circulars, setCirculars] = React.useState<Circular[]>(mockCirculars)
-  const [loading, setLoading] = React.useState(false)
+  const [circulars, setCirculars] = React.useState<Circular[]>([])
+  const [loading, setLoading] = React.useState(true)
   const [isModalOpen, setIsModalOpen] = React.useState(false)
   
   // Filtering states
@@ -91,6 +92,56 @@ export default function CircularPage() {
   const [statusFilter, setStatusFilter] = React.useState('all')
   const [districtFilter, setDistrictFilter] = React.useState('all')
   const [schoolFilter, setSchoolFilter] = React.useState('all')
+  
+  // Fetch circulars from Firebase
+  React.useEffect(() => {
+    async function fetchCirculars() {
+      setLoading(true);
+      try {
+        const fetchedCirculars = await getAllCirculars();
+        
+        // Convert Firestore data to the Circular type
+        const formattedCirculars = fetchedCirculars.map(doc => {
+          const data = doc as any;
+          
+          // Format the date if it exists
+          let sentDate = '—';
+          if (data.sentDate) {
+            // Firestore timestamp to JS Date
+            const date = data.sentDate.toDate ? data.sentDate.toDate() : new Date(data.sentDate);
+            sentDate = date.toLocaleDateString();
+          }
+          
+          return {
+            id: data.id,
+            title: data.title || 'Untitled',
+            sentDate: sentDate,
+            status: data.status || 'Draft',
+            recipientCount: data.recipientCount || 0,
+            district: data.district || 'All Districts',
+            school: data.school || 'All Schools'
+          };
+        });
+        
+        setCirculars(formattedCirculars);
+        console.log('Fetched circulars:', formattedCirculars);
+      } catch (error) {
+        console.error('Error fetching circulars:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load circulars. Please try again.',
+          variant: 'destructive'
+        });
+        
+        // Fallback to mock data if there's an error
+        setCirculars(mockCirculars);
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    fetchCirculars();
+  }, [toast]);
   
   // Get unique filter options from data
   const uniqueDistricts = React.useMemo(() => 

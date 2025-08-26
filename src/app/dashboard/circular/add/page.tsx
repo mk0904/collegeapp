@@ -54,6 +54,7 @@ import { Calendar } from '@/components/ui/calendar'
 import { format } from 'date-fns'
 
 import { cn } from '@/lib/utils'
+import { MultiFileUpload, UploadedFile } from '@/components/ui/multi-file-upload'
 
 // Mock user types for recipient selection
 type User = {
@@ -79,7 +80,7 @@ export default function AddCircularPage() {
   const [title, setTitle] = React.useState('')
   const [message, setMessage] = React.useState('')
   const [scheduledDate, setScheduledDate] = React.useState<Date>()
-  const [files, setFiles] = React.useState<File[]>([])
+  const [uploadedFiles, setUploadedFiles] = React.useState<UploadedFile[]>([])
   
   // Filter states
   const [roleFilter, setRoleFilter] = React.useState('all')
@@ -105,13 +106,6 @@ export default function AddCircularPage() {
     })
   }, [roleFilter, districtFilter, collegeFilter])
   
-  // Handle file selection
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setFiles(Array.from(e.target.files))
-    }
-  }
-  
   // Handle user selection
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -130,7 +124,7 @@ export default function AddCircularPage() {
   }
   
   // Handle form submission
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
     if (!title.trim()) {
@@ -160,11 +154,43 @@ export default function AddCircularPage() {
       return
     }
     
-    // Here you would send the circular data to your backend
-    toast({
-      title: "Circular Created",
-      description: `Circular sent to ${selectedUserIds.length} recipient(s).`
-    })
+    try {
+      // Here you would send the circular data to your backend
+      // Including the uploadedFiles array with file URLs
+      const response = await fetch('/api/circulars', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title,
+          message,
+          files: uploadedFiles,
+          scheduledDate,
+          recipients: selectedUserIds,
+          createdBy: 'current-user-id', // Replace with actual user ID
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to create circular');
+      }
+      
+      toast({
+        title: "Circular Created",
+        description: `Circular with ${uploadedFiles.length} attachment(s) sent to ${selectedUserIds.length} recipient(s).`
+      });
+      
+      // Redirect back to circulars list
+      window.location.href = '/dashboard/circular';
+    } catch (error) {
+      console.error('Error creating circular:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create circular. Please try again.",
+        variant: "destructive"
+      });
+    }
   }
   
   const isAllSelected = selectedUserIds.length === filteredUsers.length && filteredUsers.length > 0
@@ -217,24 +243,13 @@ export default function AddCircularPage() {
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="file">Attachment (Image/PDF)</Label>
-                  <div className="mt-1 flex items-center">
-                    <Label 
-                      htmlFor="file" 
-                      className="cursor-pointer border border-dashed border-gray-300 rounded-md px-4 py-2 w-full flex items-center justify-center"
-                    >
-                      <Upload className="mr-2 h-4 w-4" />
-                      {files.length > 0 ? files[0].name : "Select File"}
-                    </Label>
-                    <Input 
-                      id="file" 
-                      type="file" 
-                      accept="image/*,application/pdf" 
-                      onChange={handleFileChange}
-                      className="hidden" 
-                    />
-                  </div>
+                <div className="md:col-span-2">
+                  <MultiFileUpload 
+                    label="Attachments (Images/Documents/PDFs)" 
+                    value={uploadedFiles}
+                    onFilesChange={setUploadedFiles}
+                    maxFiles={5}
+                  />
                 </div>
                 
                 <div>
@@ -296,10 +311,10 @@ export default function AddCircularPage() {
                 <Select value={collegeFilter} onValueChange={setCollegeFilter}>
                   <SelectTrigger className="w-[200px]">
                     <School2 className="mr-2 h-4 w-4" />
-                    <SelectValue placeholder="Select School" />
+                    <SelectValue placeholder="Select College" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Schools</SelectItem>
+                    <SelectItem value="all">All Colleges</SelectItem>
                     {uniqueColleges.map(college => (
                       <SelectItem key={college} value={college}>{college}</SelectItem>
                     ))}
@@ -323,7 +338,7 @@ export default function AddCircularPage() {
                       </TableHead>
                       <TableHead>Name</TableHead>
                       <TableHead className="hidden md:table-cell">Role</TableHead>
-                      <TableHead className="hidden md:table-cell">School</TableHead>
+                      <TableHead className="hidden md:table-cell">College</TableHead>
                       <TableHead className="hidden md:table-cell">District</TableHead>
                     </TableRow>
                   </TableHeader>

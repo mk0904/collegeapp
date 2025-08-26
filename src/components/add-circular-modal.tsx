@@ -7,8 +7,7 @@ import {
   Users,
   MapPin,
   School2,
-  ShieldCheck,
-  CalendarRange
+  ShieldCheck
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -47,8 +46,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import { Calendar } from '@/components/ui/calendar'
-import { format } from 'date-fns'
 
 // Mock user types for recipient selection
 type User = {
@@ -78,7 +75,6 @@ export function AddCircularModal({ isOpen, onOpenChange }: AddCircularModalProps
   const { toast } = useToast()
   const [title, setTitle] = React.useState('')
   const [message, setMessage] = React.useState('')
-  const [scheduledDate, setScheduledDate] = React.useState<Date>()
   const [files, setFiles] = React.useState<File[]>([])
   
   // Filter states
@@ -114,7 +110,6 @@ export function AddCircularModal({ isOpen, onOpenChange }: AddCircularModalProps
       // Reset form when modal closes
       setTitle('')
       setMessage('')
-      setScheduledDate(undefined)
       setFiles([])
       // Reset selections
       setSelectedUserIds([])
@@ -150,7 +145,7 @@ export function AddCircularModal({ isOpen, onOpenChange }: AddCircularModalProps
   }
   
   // Handle form submission
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
     if (!title.trim()) {
@@ -180,14 +175,53 @@ export function AddCircularModal({ isOpen, onOpenChange }: AddCircularModalProps
       return
     }
     
-    // Here you would send the circular data to your backend
-    toast({
-      title: "Circular Created",
-      description: `Circular sent to ${selectedUserIds.length} recipient(s).`
-    })
-    
-    // Close modal after sending
-    onOpenChange(false)
+    try {
+      // Prepare file objects
+      const fileObjects = Array.from(files).map(file => ({
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        // In a real app, you'd upload files to storage first, then get URLs
+        url: URL.createObjectURL(file) // This is temporary for demo purposes
+      }));
+      
+      // Send to API
+      const response = await fetch('/api/circulars', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title,
+          message,
+          files: fileObjects,
+          recipients: selectedUserIds,
+          createdBy: 'current-user-id', // In a real app, get this from auth
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create circular');
+      }
+      
+      const result = await response.json();
+      
+      toast({
+        title: "Circular Created",
+        description: `Circular with ${files.length} attachment(s) sent to ${selectedUserIds.length} recipient(s).`
+      })
+      
+      // Close modal after sending
+      onOpenChange(false)
+    } catch (error) {
+      console.error('Error creating circular:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create circular. Please try again.",
+        variant: "destructive"
+      });
+    }
   }
   
   const isAllSelected = selectedUserIds.length === filteredUsers.length && filteredUsers.length > 0
@@ -230,49 +264,31 @@ export function AddCircularModal({ isOpen, onOpenChange }: AddCircularModalProps
                 />
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 <div>
-                  <Label htmlFor="file">Attachment (Image/PDF)</Label>
+                  <Label htmlFor="file">Attachments (Multiple files allowed)</Label>
                   <div className="mt-1 flex items-center">
                     <Label 
                       htmlFor="file" 
                       className="cursor-pointer border border-dashed border-gray-300 rounded-md px-4 py-2 w-full flex items-center justify-center"
                     >
                       <Upload className="mr-2 h-4 w-4" />
-                      {files.length > 0 ? files[0].name : "Select File"}
+                      {files.length > 0 ? `${files.length} file(s) selected` : "Select Files"}
                     </Label>
                     <Input 
                       id="file" 
                       type="file" 
-                      accept="image/*,application/pdf" 
+                      multiple
+                      accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" 
                       onChange={handleFileChange}
                       className="hidden" 
                     />
                   </div>
-                </div>
-                
-                <div>
-                  <Label>Schedule (Optional)</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="w-full justify-start text-left mt-1"
-                        type="button"
-                      >
-                        <CalendarRange className="mr-2 h-4 w-4" />
-                        {scheduledDate ? format(scheduledDate, "PPP") : "Schedule for later"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={scheduledDate}
-                        onSelect={setScheduledDate}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
+                  {files.length > 0 && (
+                    <div className="mt-2 text-sm text-muted-foreground">
+                      {files.length} file(s) selected
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
