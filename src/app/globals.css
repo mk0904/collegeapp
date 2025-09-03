@@ -87,9 +87,6 @@
 
 @layer components {
     [data-sidebar="sidebar"] {
-        @apply backdrop-blur-lg;
-    }
-    [data-sidebar="menu-button"][data-active="true"] {
-        @apply bg-gradient-to-r from-primary to-[hsl(var(--primary)/0.8)];
+        @apply backdrop-blur-lg rounded-tl-3xl rounded-bl-3xl;
     }
 }

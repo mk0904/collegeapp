@@ -11,7 +11,8 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import Logo from '@/components/logo';
 import { auth } from '@/lib/firebase';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { doc, setDoc, getFirestore } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff } from 'lucide-react';
 
@@ -23,17 +24,39 @@ export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
+  const db = getFirestore();
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      // You can update the user's profile with the full name here if needed
+      // Create auth user
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      
+      // Update profile display name
+      await updateProfile(user, {
+        displayName: fullName
+      });
+      
+      // Save user data to Firestore
+      await setDoc(doc(db, 'users', user.uid), {
+        name: fullName,
+        email: email,
+        phone: '',
+        status: 'Active',
+        role: 'Student', // Default role
+        createdOn: new Date().toISOString(),
+        college: '',
+        district: '',
+        designation: ''
+      });
+      
       toast({
         title: 'Account Created',
         description: "You have been successfully signed up.",
       });
+      
       router.push('/dashboard');
     } catch (error: any) {
       toast({

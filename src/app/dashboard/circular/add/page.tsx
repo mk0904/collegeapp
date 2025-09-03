@@ -55,6 +55,9 @@ import { format } from 'date-fns'
 
 import { cn } from '@/lib/utils'
 import { MultiFileUpload, UploadedFile } from '@/components/ui/multi-file-upload'
+import { getAuth } from 'firebase/auth'
+import { addCircular } from '@/lib/firebase/circular'
+import { uploadFileToStorage } from '@/lib/firebase/storage'
 
 // Mock user types for recipient selection
 type User = {
@@ -155,26 +158,37 @@ export default function AddCircularPage() {
     }
     
     try {
-      // Here you would send the circular data to your backend
-      // Including the uploadedFiles array with file URLs
-      const response = await fetch('/api/circulars', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          title,
-          message,
-          files: uploadedFiles,
-          scheduledDate,
-          recipients: selectedUserIds,
-          createdBy: 'current-user-id', // Replace with actual user ID
-        }),
-      });
+      // Get current user
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
       
-      if (!response.ok) {
-        throw new Error('Failed to create circular');
+      if (!currentUser) {
+        throw new Error("You must be logged in to create a circular");
       }
+      
+      // Upload files to Firebase Storage if there are any
+      let fileObjects = [];
+      if (uploadedFiles.length > 0) {
+        // Files are already uploaded to Cloudinary, just use their data
+        fileObjects = uploadedFiles.map((file) => ({
+          name: file.name,
+          type: file.type,
+          size: 0, // Cloudinary doesn't provide size in this format
+          url: file.url,
+          path: file.id // Use Cloudinary public_id as path
+        }));
+      }
+      
+      // Save circular to Firestore
+      const circular = {
+        title,
+        message,
+        files: fileObjects,
+        recipients: selectedUserIds,
+        createdBy: currentUser.uid
+      };
+      
+      await addCircular(circular);
       
       toast({
         title: "Circular Created",

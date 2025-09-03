@@ -203,15 +203,32 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
       const fileUrls = await Promise.all(uploadPromises);
       
       payload.fileUrls = fileUrls;
+      payload.recipients = selectedUsers.map(u => u.id);
+      payload.sender = 'admin'; // Replace with actual sender ID when authentication is implemented
+      
       console.log('Sending notification to:', selectedUsers.map(u => u.id));
       console.log('Notification data:', payload);
-
-      toast({
-        title: 'Notification Sent!',
-        description: `Your ${type} notification has been sent to ${selectedUsers.length} user(s).`,
-      });
       
-      onOpenChange(false);
+      // Save notification to Firestore
+      try {
+        const { addNotification } = await import('@/lib/firebase/firestore');
+        const notificationId = await addNotification(payload);
+        console.log('Notification saved with ID:', notificationId);
+        
+        toast({
+          title: 'Notification Sent!',
+          description: `Your ${type} notification has been sent to ${selectedUsers.length} user(s).`,
+        });
+        
+        onOpenChange(false);
+      } catch (error) {
+        console.error('Error saving notification:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to save the notification to the database. Please try again.',
+          variant: 'destructive',
+        });
+      }
     } catch (error) {
       console.error('Error sending notification:', error);
       toast({

@@ -1,7 +1,7 @@
 
-import { collection, doc, getDoc, getDocs, getFirestore, query, where, updateDoc, limit as queryLimit, addDoc, runTransaction } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, getFirestore, query, where, updateDoc, limit as queryLimit, addDoc, runTransaction, setDoc } from 'firebase/firestore';
 import { app } from '../firebase';
-import type { User, College, Project, Submission, Ticket } from '../mock-data';
+import type { User, College, Project, Submission, Ticket, Notification } from '../mock-data';
 import { mockUsers, mockColleges, mockProjects, mockSubmissions, mockTickets } from '../mock-data';
 
 const db = getFirestore(app);
@@ -27,8 +27,27 @@ export async function getUserById(userId: string): Promise<User | null> {
 }
 
 export async function updateUserProfile(userId: string, data: Partial<User>): Promise<void> {
-    const userDoc = doc(db, 'users', userId);
-    await updateDoc(userDoc, data);
+    try {
+        const userDoc = doc(db, 'users', userId);
+        const userSnap = await getDoc(userDoc);
+        
+        if (userSnap.exists()) {
+            // Update existing document
+            await updateDoc(userDoc, data);
+        } else {
+            // Create new document if it doesn't exist
+            await setDoc(userDoc, {
+                ...data,
+                id: userId,
+                createdOn: new Date().toISOString(),
+                status: 'Active',
+                role: data.role || 'Student'
+            });
+        }
+    } catch (error) {
+        console.error("Error updating user profile:", error);
+        throw error;
+    }
 }
 
 export async function updateUserStatus(userId: string, status: 'Active' | 'Inactive'): Promise<void> {
@@ -180,4 +199,72 @@ export async function addSchool(college: any): Promise<void> {
         ...college,
         createdAt: new Date().toISOString(),
     });
+}
+
+// Notifications
+export async function addNotification(notification: Omit<Notification, 'id'>): Promise<string> {
+    const notificationRef = await addDoc(collection(db, 'notifications'), {
+        ...notification,
+        createdAt: new Date().toISOString(),
+        readBy: [],
+    });
+    return notificationRef.id;
+}
+
+export async function getNotifications(userId: string): Promise<Notification[]> {
+    const notificationsCol = collection(db, 'notifications');
+    const q = query(notificationsCol, where('recipients', 'array-contains', userId));
+    const notificationSnapshot = await getDocs(q);
+    if (notificationSnapshot.docs.length > 0) {
+        return notificationSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Notification));
+    }
+    return [];
+}
+
+export async function markNotificationAsRead(notificationId: string, userId: string): Promise<void> {
+    const notificationRef = doc(db, 'notifications', notificationId);
+    await runTransaction(db, async (transaction) => {
+        const notificationDoc = await transaction.get(notificationRef);
+        if (notificationDoc.exists()) {
+            const data = notificationDoc.data();
+            const readBy = data.readBy || [];
+            if (!readBy.includes(userId)) {
+                transaction.update(notificationRef, {
+                    readBy: [...readBy, userId]
+                });
+            }
+        }
+    });
+}
+
+// Circular functions
+export async function addCircular(circular: any): Promise<string> {
+    try {
+        const circularsCol = collection(db, 'circulars');
+        const docRef = await addDoc(circularsCol, {
+            ...circular,
+            createdAt: new Date()
+        });
+        
+        // Create notifications for each recipient
+        const notificationsCol = collection(db, 'notifications');
+        const notificationPromises = circular.recipients.map(async (userId: string) => {
+            return addDoc(notificationsCol, {
+                userId,
+                type: 'circular',
+                title: `New Circular: ${circular.title}`,
+                message: circular.message.substring(0, 100) + (circular.message.length > 100 ? '...' : ''),
+                refId: docRef.id,
+                createdAt: new Date(),
+                read: false
+            });
+        });
+        
+        await Promise.all(notificationPromises);
+        
+        return docRef.id;
+    } catch (error) {
+        console.error("Error adding circular:", error);
+        throw error;
+    }
 }

@@ -67,6 +67,22 @@ export type Ticket = {
     image?: string;
 };
 
+export type Notification = {
+    id: string;
+    type: 'general' | 'invitation' | 'push';
+    title: string;
+    message: string;
+    createdAt: string;
+    readBy: string[];
+    recipients: string[];
+    fileUrls?: string[];
+    // Additional fields for invitation type
+    venue?: string;
+    date?: string;
+    time?: string;
+    sender: string;
+};
+
 // --- MOCK DATA ---
 
 const placeholderImage = (publicId: string): CloudinaryImage => ({

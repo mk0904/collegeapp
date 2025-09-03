@@ -18,4 +18,13 @@ const auth = getAuth(app);
 const storage = getStorage(app);
 const db = getFirestore(app);
 
+console.log('Firebase initialized:', {
+  projectId: firebaseConfig.projectId,
+  storageBucket: firebaseConfig.storageBucket,
+  app: !!app,
+  auth: !!auth,
+  storage: !!storage,
+  db: !!db
+});
+
 export { app, auth, storage, db };

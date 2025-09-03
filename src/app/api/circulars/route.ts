@@ -18,16 +18,19 @@ export async function POST(request: Request) {
         recipients: JSON.parse(formData.get('recipients') as string || '[]'),
       };
       
-      // Extract files from form data
+      // Note: In this implementation, files should already be uploaded to Cloudinary
+      // and only the URLs/metadata should be passed here
+      
+      // Extract file metadata from form data
       for (const [key, value] of formData.entries()) {
-        if (key.startsWith('file-') && value instanceof File) {
-          files.push({
-            name: value.name,
-            type: value.type,
-            size: value.size,
-            // In a real app, you'd upload this file to storage and get a URL
-            url: URL.createObjectURL(value), // This is a temporary URL
-          });
+        if (key.startsWith('file-') && typeof value === 'string') {
+          try {
+            // Parse the file metadata from the form data
+            const fileData = JSON.parse(value);
+            files.push(fileData);
+          } catch (error) {
+            console.error('Error parsing file metadata:', error);
+          }
         }
       }
     } else {

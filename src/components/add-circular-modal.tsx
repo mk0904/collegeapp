@@ -7,7 +7,8 @@ import {
   Users,
   MapPin,
   School2,
-  ShieldCheck
+  ShieldCheck,
+  Loader2
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -25,6 +26,10 @@ import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
+import { getAuth } from 'firebase/auth'
+import { addCircular } from '@/lib/firebase/circular'
+import { getUsers } from '@/lib/firebase/firestore'
+import { uploadFileToStorage } from '@/lib/firebase/storage'
 import { 
   Select, 
   SelectContent, 
@@ -46,36 +51,22 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-
-// Mock user types for recipient selection
-type User = {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  college: string;
-  district: string;
-}
-
-// Mock data for users
-const mockUsers: User[] = [
-  { id: '1', name: 'Alex Johnson', email: 'alex@example.com', role: 'Teacher', college: 'City High School', district: 'North District' },
-  { id: '2', name: 'Maria Garcia', email: 'maria@example.com', role: 'Admin', college: 'Valley College', district: 'Central District' },
-  { id: '3', name: 'James Wilson', email: 'james@example.com', role: 'Teacher', college: 'City High School', district: 'North District' },
-  { id: '4', name: 'Sarah Chen', email: 'sarah@example.com', role: 'Student', college: 'Valley College', district: 'Central District' },
-  { id: '5', name: 'Michael Brown', email: 'michael@example.com', role: 'Teacher', college: 'East Academy', district: 'East District' }
-];
+import type { User } from '@/lib/mock-data'
 
 interface AddCircularModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
+  onCircularCreated?: () => void;
 }
 
-export function AddCircularModal({ isOpen, onOpenChange }: AddCircularModalProps) {
+export function AddCircularModal({ isOpen, onOpenChange, onCircularCreated }: AddCircularModalProps) {
   const { toast } = useToast()
   const [title, setTitle] = React.useState('')
   const [message, setMessage] = React.useState('')
   const [files, setFiles] = React.useState<File[]>([])
+  const [loading, setLoading] = React.useState(false)
+  const [isUploading, setIsUploading] = React.useState(false)
+  const [users, setUsers] = React.useState<User[]>([])
   
   // Filter states
   const [roleFilter, setRoleFilter] = React.useState('all')
@@ -85,21 +76,46 @@ export function AddCircularModal({ isOpen, onOpenChange }: AddCircularModalProps
   // Initially no filters applied, so start with empty selection
   const [selectedUserIds, setSelectedUserIds] = React.useState<string[]>([])
   
+  // Fetch users when modal opens
+  React.useEffect(() => {
+    async function fetchUsers() {
+      if (isOpen) {
+        setLoading(true)
+        try {
+          const fetchedUsers = await getUsers()
+          setUsers(fetchedUsers)
+        } catch (error) {
+          console.error('Error fetching users:', error)
+          toast({
+            title: "Error",
+            description: "Failed to load users. Please try again.",
+            variant: "destructive"
+          })
+        } finally {
+          setLoading(false)
+        }
+      }
+    }
+    
+    fetchUsers()
+  }, [isOpen, toast])
+  
   // Extract unique values for filters
-  const uniqueRoles = React.useMemo(() => [...new Set(mockUsers.map(u => u.role))], [])
-  const uniqueDistricts = React.useMemo(() => [...new Set(mockUsers.map(u => u.district))], [])
-  const uniqueColleges = React.useMemo(() => [...new Set(mockUsers.map(u => u.college))], [])
+  const uniqueRoles = React.useMemo(() => [...new Set(users.map(u => u.role))], [users])
+  const uniqueDistricts = React.useMemo(() => [...new Set(users.map(u => u.district).filter(Boolean))], [users])
+  const uniqueColleges = React.useMemo(() => [...new Set(users.map(u => u.college).filter(Boolean))], [users])
 
   // Filter users based on selected filters
   const filteredUsers = React.useMemo(() => {
-    return mockUsers.filter(user => {
+    return users.filter(user => {
       const matchesRole = roleFilter === 'all' || user.role === roleFilter
       const matchesDistrict = districtFilter === 'all' || user.district === districtFilter
       const matchesCollege = collegeFilter === 'all' || user.college === collegeFilter
+      const isActive = user.status === 'Active' || user.status === undefined // Consider users active by default if status is not set
       
-      return matchesRole && matchesDistrict && matchesCollege
+      return matchesRole && matchesDistrict && matchesCollege && isActive
     })
-  }, [roleFilter, districtFilter, collegeFilter])
+  }, [users, roleFilter, districtFilter, collegeFilter])
   
   // Select all filtered users when modal opens
   React.useEffect(() => {
@@ -145,9 +161,10 @@ export function AddCircularModal({ isOpen, onOpenChange }: AddCircularModalProps
   }
   
   // Handle form submission
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async () => {
+    console.log('Creating circular:', { title, message, files: files.length, recipients: selectedUserIds.length });
     
+    // Form validation
     if (!title.trim()) {
       toast({
         title: "Title Required",
@@ -176,44 +193,71 @@ export function AddCircularModal({ isOpen, onOpenChange }: AddCircularModalProps
     }
     
     try {
-      // Prepare file objects
-      const fileObjects = Array.from(files).map(file => ({
-        name: file.name,
-        type: file.type,
-        size: file.size,
-        // In a real app, you'd upload files to storage first, then get URLs
-        url: URL.createObjectURL(file) // This is temporary for demo purposes
-      }));
+      setIsUploading(true)
       
-      // Send to API
-      const response = await fetch('/api/circulars', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          title,
-          message,
-          files: fileObjects,
-          recipients: selectedUserIds,
-          createdBy: 'current-user-id', // In a real app, get this from auth
-        }),
+      // Show loading toast
+      toast({
+        title: "Processing",
+        description: "Uploading files and creating circular...",
       });
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create circular');
+      // Get current user
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
+      
+      if (!currentUser) {
+        throw new Error("You must be logged in to create a circular");
       }
       
-      const result = await response.json();
+      // Upload files to Firebase Storage
+      let fileObjects = [];
+      if (files.length > 0) {
+        const uploadPromises = Array.from(files).map(async (file, index) => {
+          try {
+            const filePath = `circulars/${Date.now()}_${file.name}`;
+            const downloadURL = await uploadFileToStorage(filePath, file);
+            
+            return {
+              name: file.name,
+              type: file.type,
+              size: file.size,
+              url: downloadURL,
+              path: filePath
+            };
+          } catch (error) {
+            console.error(`Error uploading file ${file.name}:`, error);
+            throw new Error(`Failed to upload ${file.name}`);
+          }
+        });
+        
+        // Wait for all uploads to complete
+        fileObjects = await Promise.all(uploadPromises);
+      }
+      
+      // Save circular to Firestore
+      const circular = {
+        title,
+        message,
+        files: fileObjects,
+        recipients: selectedUserIds,
+        createdBy: currentUser.uid
+      };
+      
+      await addCircular(circular);
       
       toast({
         title: "Circular Created",
         description: `Circular with ${files.length} attachment(s) sent to ${selectedUserIds.length} recipient(s).`
       })
       
+      // Refresh the circulars list
+      if (onCircularCreated) {
+        onCircularCreated();
+      }
+      
       // Close modal after sending
       onOpenChange(false)
+      setIsUploading(false)
     } catch (error) {
       console.error('Error creating circular:', error);
       toast({
@@ -221,6 +265,7 @@ export function AddCircularModal({ isOpen, onOpenChange }: AddCircularModalProps
         description: "Failed to create circular. Please try again.",
         variant: "destructive"
       });
+      setIsUploading(false)
     }
   }
   
@@ -230,7 +275,11 @@ export function AddCircularModal({ isOpen, onOpenChange }: AddCircularModalProps
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={(e) => {
+          e.preventDefault();
+          console.log('Form submitted, calling handleSubmit');
+          handleSubmit();
+        }}>
           <DialogHeader>
             <DialogTitle>Add Circular</DialogTitle>
             <DialogDescription>
@@ -403,7 +452,9 @@ export function AddCircularModal({ isOpen, onOpenChange }: AddCircularModalProps
             </DialogClose>
             <div className="flex gap-2">
               <Button variant="outline" type="button">Save as Draft</Button>
-              <Button type="submit">Send Circular</Button>
+              <Button type="submit" onClick={handleSubmit} disabled={isUploading}>
+                {isUploading ? "Sending..." : "Send Circular"}
+              </Button>
             </div>
           </DialogFooter>
         </form>

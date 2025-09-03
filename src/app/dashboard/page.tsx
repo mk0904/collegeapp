@@ -6,6 +6,8 @@ import {
   BookOpenCheck,
   Ticket,
   Users as UsersIcon,
+  CalendarCheck,
+  LayoutDashboard,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -29,6 +31,7 @@ export default function DashboardPage() {
         totalColleges: 0,
         openTickets: 0,
         totalProjects: 0,
+        attendanceToday: 0,
     });
     const [loading, setLoading] = React.useState(true);
     const [colleges, setColleges] = React.useState<College[]>([]);
@@ -52,6 +55,7 @@ export default function DashboardPage() {
                     totalColleges: fetchedColleges.length,
                     openTickets: tickets.filter(t => t.status === 'Open').length,
                     totalProjects: projects.length,
+                    attendanceToday: 0,
                 });
 
             } catch (error) {
@@ -96,101 +100,117 @@ export default function DashboardPage() {
     } satisfies ChartConfig
 
   return (
-    <>
-        {/* Removed heading to avoid duplication with dashboard header */}
-
-        <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
+    <div className="h-full flex flex-col gap-4">
+        {/* Stats - separate tiles */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Link href="/dashboard/users">
-            <Card className="hover:bg-card/80 transition-colors">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-                <UsersIcon className="h-4 w-4 text-muted-foreground" />
+            <Card className="rounded-xl border border-neutral-200/80 bg-white/90 backdrop-blur transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:ring-1 hover:ring-primary/20">
+              <CardHeader className="pb-1 px-4 pt-4">
+                <div className="flex items-start justify-between">
+                  <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+                  <span className="bg-gradient-to-br from-blue-500 to-blue-600 p-2.5 rounded-xl text-white">
+                    <UsersIcon className="h-5 w-5" />
+                  </span>
+                </div>
               </CardHeader>
-              <CardContent>
-                {loading ? <Skeleton className="h-7 w-16" /> : <div className="text-2xl font-bold">{stats.totalUsers}</div>}
-                {loading ? <Skeleton className="h-4 w-32 mt-1" /> : <p className="text-xs text-muted-foreground">Track and manage all users</p>}
+              <CardContent className="px-4 pb-4">
+                {loading ? <Skeleton className="h-5 w-10" /> : <div className="text-2xl font-semibold leading-tight tabular-nums">{stats.totalUsers}</div>}
               </CardContent>
             </Card>
           </Link>
-          <Link href="/dashboard/projects?tab=colleges">
-            <Card className="hover:bg-card/80 transition-colors">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Colleges</CardTitle>
-                <BookOpenCheck className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                 {loading ? <Skeleton className="h-7 w-10" /> : <div className="text-2xl font-bold">{stats.totalColleges}</div>}
-                 {loading ? <Skeleton className="h-4 w-32 mt-1" /> : <p className="text-xs text-muted-foreground">Total registered colleges</p>}
-              </CardContent>
-            </Card>
-          </Link>
+
           <Link href="/dashboard/helpdesk">
-            <Card className="hover:bg-card/80 transition-colors">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Open Support Tickets</CardTitle>
-                <Ticket className="h-4 w-4 text-muted-foreground" />
+            <Card className="rounded-xl border border-neutral-200/80 bg-white/90 backdrop-blur transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:ring-1 hover:ring-primary/20">
+              <CardHeader className="pb-1 px-4 pt-4">
+                <div className="flex items-start justify-between">
+                  <CardTitle className="text-sm font-medium">Open Tickets</CardTitle>
+                  <span className="bg-gradient-to-br from-orange-500 to-orange-600 p-2.5 rounded-xl text-white">
+                    <Ticket className="h-5 w-5" />
+                  </span>
+                </div>
               </CardHeader>
-              <CardContent>
-                 {loading ? <Skeleton className="h-7 w-12" /> : <div className="text-2xl font-bold">{stats.openTickets}</div>}
-                 {loading ? <Skeleton className="h-4 w-28 mt-1" /> : <p className="text-xs text-muted-foreground">Resolve outstanding queries</p>}
+              <CardContent className="px-4 pb-4">
+                {loading ? <Skeleton className="h-5 w-10" /> : <div className="text-2xl font-semibold leading-tight tabular-nums">{stats.openTickets}</div>}
               </CardContent>
             </Card>
           </Link>
+
           <Link href="/dashboard/projects">
-            <Card className="hover:bg-card/80 transition-colors">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Projects</CardTitle>
-                <Activity className="h-4 w-4 text-muted-foreground" />
+            <Card className="rounded-xl border border-neutral-200/80 bg-white/90 backdrop-blur transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:ring-1 hover:ring-primary/20">
+              <CardHeader className="pb-1 px-4 pt-4">
+                <div className="flex items-start justify-between">
+                  <CardTitle className="text-sm font-medium">Total Projects</CardTitle>
+                  <span className="bg-gradient-to-br from-purple-500 to-purple-600 p-2.5 rounded-xl text-white">
+                    <Activity className="h-5 w-5" />
+                  </span>
+                </div>
               </CardHeader>
-              <CardContent>
-                {loading ? <Skeleton className="h-7 w-14" /> : <div className="text-2xl font-bold">{stats.totalProjects}</div>}
-                {loading ? <Skeleton className="h-4 w-28 mt-1" /> : <p className="text-xs text-muted-foreground">Across all colleges</p>}
+              <CardContent className="px-4 pb-4">
+                {loading ? <Skeleton className="h-5 w-10" /> : <div className="text-2xl font-semibold leading-tight tabular-nums">{stats.totalProjects}</div>}
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/dashboard" title="Attendance marked today">
+            <Card className="rounded-xl border border-neutral-200/80 bg-white/90 backdrop-blur transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:ring-1 hover:ring-primary/20">
+              <CardHeader className="pb-1 px-4 pt-4">
+                <div className="flex items-start justify-between">
+                  <CardTitle className="text-sm font-medium">Attendance Today</CardTitle>
+                  <span className="bg-gradient-to-br from-emerald-500 to-emerald-600 p-2.5 rounded-xl text-white">
+                    <CalendarCheck className="h-5 w-5" />
+                  </span>
+                </div>
+              </CardHeader>
+              <CardContent className="px-4 pb-4">
+                {loading ? <Skeleton className="h-5 w-10" /> : <div className="text-2xl font-semibold leading-tight tabular-nums">{stats.attendanceToday}</div>}
               </CardContent>
             </Card>
           </Link>
         </div>
 
-        <div className="grid gap-4 mt-8 grid-cols-1 lg:grid-cols-2">
-            <Card className="lg:col-span-2">
-                <CardHeader>
-                    <CardTitle>Projects by College</CardTitle>
-                     <CardDescription>A look at the distribution of projects across colleges.</CardDescription>
+        {/* Charts - Side by side layout with reduced heights */}
+        <div className="grid gap-3 grid-cols-1 lg:grid-cols-2 flex-1">
+            <Card className="flex flex-col">
+                <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">Projects by College</CardTitle>
+                     <CardDescription className="text-xs">Distribution of projects across colleges.</CardDescription>
                 </CardHeader>
-                <CardContent className="pl-2">
+                <CardContent className="pl-2 flex-1 flex items-center">
                    {loading ? (
-                    <div className="flex aspect-video justify-center items-center">
-                        <Skeleton className="w-full h-[300px]" />
+                    <div className="flex w-full h-full justify-center items-center">
+                        <Skeleton className="w-full h-full" />
                     </div>
                    ) : (
-                    <ChartContainer config={projectChartConfig} className="min-h-[300px] w-full">
-                       <BarChart accessibilityLayer data={colleges} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                    <ChartContainer config={projectChartConfig} className="w-full h-full">
+                       <BarChart accessibilityLayer data={colleges} margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
                          <XAxis
                             dataKey="name"
                             tickLine={false}
-                            tickMargin={10}
+                            tickMargin={5}
                             axisLine={false}
                             tickFormatter={(value) => value.slice(0, 3)}
+                            fontSize={10}
                             />
-                         <YAxis />
+                         <YAxis fontSize={10} />
                          <ChartTooltip content={<ChartTooltipContent />} />
-                         <Bar dataKey="projectsCount" fill="var(--color-projects)" radius={4} />
+                         <Bar dataKey="projectsCount" fill="var(--color-projects)" radius={2} />
                        </BarChart>
                     </ChartContainer>
                    )}
                 </CardContent>
             </Card>
-             <Card className="lg:col-span-2">
-                <CardHeader>
-                    <CardTitle>User Role Distribution</CardTitle>
-                    <CardDescription>A breakdown of users by their assigned role.</CardDescription>
+             <Card className="flex flex-col">
+                <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">User Role Distribution</CardTitle>
+                    <CardDescription className="text-xs">Breakdown of users by their assigned role.</CardDescription>
                 </CardHeader>
-                <CardContent className="flex items-center justify-center [&>div]:h-[300px]">
+                <CardContent className="flex items-center justify-center flex-1">
                     {loading ? (
-                         <div className="flex aspect-video justify-center items-center">
-                            <Skeleton className="w-full h-[300px]" />
+                         <div className="flex w-full h-full justify-center items-center">
+                            <Skeleton className="w-full h-full" />
                         </div>
                     ) : (
-                        <ChartContainer config={userChartConfig} className="min-h-[300px] w-full">
+                        <ChartContainer config={userChartConfig} className="w-full h-full">
                             <PieChart>
                                 <ChartTooltip content={<ChartTooltipContent nameKey="name" />} />
                                 <Pie
@@ -199,14 +219,14 @@ export default function DashboardPage() {
                                     nameKey="name"
                                     cx="50%"
                                     cy="50%"
-                                    outerRadius={100}
+                                    outerRadius={60}
                                     labelLine={false}
                                      label={({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
                                         const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
                                         const x = cx + radius * Math.cos(-midAngle * (Math.PI / 180));
                                         const y = cy + radius * Math.sin(-midAngle * (Math.PI / 180));
                                         return (
-                                            <text x={x} y={y} fill="white" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central">
+                                            <text x={x} y={y} fill="white" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" fontSize={10}>
                                                 {`${(percent * 100).toFixed(0)}%`}
                                             </text>
                                         );
@@ -216,13 +236,13 @@ export default function DashboardPage() {
                                         <Cell key={`cell-${index}`} fill={entry.fill} />
                                     ))}
                                 </Pie>
-                                <Legend wrapperStyle={{ textTransform: 'capitalize' }} />
+                                <Legend wrapperStyle={{ textTransform: 'capitalize', fontSize: '10px' }} />
                             </PieChart>
                         </ChartContainer>
                     )}
                 </CardContent>
             </Card>
         </div>
-      </>
+      </div>
   );
 }

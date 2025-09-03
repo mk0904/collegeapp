@@ -37,10 +37,28 @@ export default function AccountPage() {
                     const userData = await getUserById(currentUser.uid);
                     if (userData) {
                         setUser(userData);
-                        setName(userData.name);
-                        setEmail(userData.email);
-                        setPhone(userData.phone);
+                        // Set form values from user data, ensuring defaults for empty values
+                        setName(userData.name || '');
+                        setEmail(userData.email || '');
+                        setPhone(userData.phone || '');
                         setDesignation(userData.designation || '');
+                    } else {
+                        // If getUserById returns null, create basic user data from auth
+                        setUser({
+                            id: currentUser.uid,
+                            name: currentUser.displayName || '',
+                            email: currentUser.email || '',
+                            phone: '',
+                            status: 'Active',
+                            role: 'Student',
+                            createdOn: new Date().toISOString(),
+                            college: '',
+                            district: ''
+                        });
+                        
+                        // Set form values from auth user
+                        setName(currentUser.displayName || '');
+                        setEmail(currentUser.email || '');
                     }
                 } catch (error) {
                     console.error("Error fetching user data:", error);
@@ -58,10 +76,27 @@ export default function AccountPage() {
 
     const handleProfileUpdate = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!user) return;
+        
+        // Get current authenticated user
+        const currentAuthUser = auth.currentUser;
+        if (!currentAuthUser) {
+            toast({ title: "Error", description: "You must be logged in to update your profile.", variant: "destructive" });
+            return;
+        }
+        
         setIsUpdatingProfile(true);
         try {
-            await updateUserProfile(user.id, { name, phone, designation });
+            // Update user profile with current form values
+            await updateUserProfile(currentAuthUser.uid, { 
+                name, 
+                phone, 
+                designation,
+                email // Include email for new users
+            });
+            
+            // Update local state
+            setUser(prev => prev ? { ...prev, name, phone, designation } : null);
+            
             toast({ title: "Success", description: "Profile updated successfully." });
         } catch (error) {
             console.error("Error updating profile:", error);

@@ -94,54 +94,54 @@ export default function CircularPage() {
   const [schoolFilter, setSchoolFilter] = React.useState('all')
   
   // Fetch circulars from Firebase
-  React.useEffect(() => {
-    async function fetchCirculars() {
-      setLoading(true);
-      try {
-        const fetchedCirculars = await getAllCirculars();
+  const fetchCirculars = React.useCallback(async () => {
+    setLoading(true);
+    try {
+      const fetchedCirculars = await getAllCirculars();
+      
+      // Convert Firestore data to the Circular type
+      const formattedCirculars = fetchedCirculars.map(doc => {
+        const data = doc as any;
         
-        // Convert Firestore data to the Circular type
-        const formattedCirculars = fetchedCirculars.map(doc => {
-          const data = doc as any;
-          
-          // Format the date if it exists
-          let sentDate = '—';
-          if (data.sentDate) {
-            // Firestore timestamp to JS Date
-            const date = data.sentDate.toDate ? data.sentDate.toDate() : new Date(data.sentDate);
-            sentDate = date.toLocaleDateString();
-          }
-          
-          return {
-            id: data.id,
-            title: data.title || 'Untitled',
-            sentDate: sentDate,
-            status: data.status || 'Draft',
-            recipientCount: data.recipientCount || 0,
-            district: data.district || 'All Districts',
-            school: data.school || 'All Schools'
-          };
-        });
+        // Format the date if it exists
+        let sentDate = '—';
+        if (data.sentDate) {
+          // Firestore timestamp to JS Date
+          const date = data.sentDate.toDate ? data.sentDate.toDate() : new Date(data.sentDate);
+          sentDate = date.toLocaleDateString();
+        }
         
-        setCirculars(formattedCirculars);
-        console.log('Fetched circulars:', formattedCirculars);
-      } catch (error) {
-        console.error('Error fetching circulars:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to load circulars. Please try again.',
-          variant: 'destructive'
-        });
-        
-        // Fallback to mock data if there's an error
-        setCirculars(mockCirculars);
-      } finally {
-        setLoading(false);
-      }
+        return {
+          id: data.id,
+          title: data.title || 'Untitled',
+          sentDate: sentDate,
+          status: data.status || 'Draft',
+          recipientCount: data.recipientCount || 0,
+          district: data.district || 'All Districts',
+          school: data.school || 'All Schools'
+        };
+      });
+      
+      setCirculars(formattedCirculars);
+      console.log('Fetched circulars:', formattedCirculars);
+    } catch (error) {
+      console.error('Error fetching circulars:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load circulars. Please try again.',
+        variant: 'destructive'
+      });
+      
+      // Fallback to mock data if there's an error
+      setCirculars(mockCirculars);
+    } finally {
+      setLoading(false);
     }
-    
-    fetchCirculars();
   }, [toast]);
+
+  React.useEffect(() => {
+    fetchCirculars();
+  }, [fetchCirculars]);
   
   // Get unique filter options from data
   const uniqueDistricts = React.useMemo(() => 
@@ -177,7 +177,7 @@ export default function CircularPage() {
 
   return (
     <>
-      <AddCircularModal isOpen={isModalOpen} onOpenChange={setIsModalOpen} />
+      <AddCircularModal isOpen={isModalOpen} onOpenChange={setIsModalOpen} onCircularCreated={fetchCirculars} />
       <Card>
         <CardHeader>
           <div className="flex items-start justify-between">
