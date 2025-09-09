@@ -41,7 +41,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import type { Ticket, User } from '@/lib/mock-data'
-import { getTickets, getUsers, updateTicketStatus } from '@/lib/firebase/firestore'
+import { getTickets, getUsers, updateTicketStatus, getSupportTickets } from '@/lib/firebase/firestore'
 import { useToast } from '@/hooks/use-toast'
 import { Skeleton } from '@/components/ui/skeleton'
 import { TicketDetailsModal } from '@/components/ticket-details-modal'
@@ -61,14 +61,19 @@ export default function HelpdeskPage() {
   // Filtering state
   const [searchTerm, setSearchTerm] = React.useState('');
   const [statusFilter, setStatusFilter] = React.useState<StatusFilter>('all');
-  const [issueTypeFilter, setIssueTypeFilter] = React.useState<IssueTypeFilter>('all');
+  const [issueTypeFilter, setIssueTypeFilter] = React.useState<IssueTypeFilter>('Support');
   const [dateRaised, setDateRaised] = React.useState<Date | undefined>(undefined);
 
   React.useEffect(() => {
     async function fetchData() {
       try {
         setLoading(true);
-        const fetchedTickets = await getTickets();
+        // Prefer real supportTickets; fall back to generic tickets if none
+        const [support, generic] = await Promise.all([
+          getSupportTickets(),
+          getTickets(),
+        ]);
+        const fetchedTickets = support.length > 0 ? support : generic;
         setTickets(fetchedTickets);
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -185,6 +190,7 @@ export default function HelpdeskPage() {
                   <TableHead>Query ID</TableHead>
                   <TableHead>Subject</TableHead>
                   <TableHead>User</TableHead>
+                  <TableHead>College</TableHead>
                   <TableHead>Issue Type</TableHead>
                   <TableHead>Date Raised</TableHead>
                   <TableHead>Date Closed</TableHead>
@@ -212,6 +218,7 @@ export default function HelpdeskPage() {
                       <TableCell className="font-medium">{ticket.id}</TableCell>
                       <TableCell>{ticket.subject}</TableCell>
                       <TableCell>{ticket.userName}</TableCell>
+                      <TableCell>{ticket.collegeName || '—'}</TableCell>
                       <TableCell><Badge variant={ticket.issueType === 'Support' ? 'secondary' : 'outline'}>{ticket.issueType}</Badge></TableCell>
                       <TableCell>{ticket.dateRaised}</TableCell>
                       <TableCell>{ticket.dateClosed || 'N/A'}</TableCell>

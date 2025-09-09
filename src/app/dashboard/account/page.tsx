@@ -49,7 +49,7 @@ export default function AccountPage() {
                             name: currentUser.displayName || '',
                             email: currentUser.email || '',
                             phone: '',
-                            status: 'Active',
+                            status: 'Inactive',
                             role: 'Student',
                             createdOn: new Date().toISOString(),
                             college: '',

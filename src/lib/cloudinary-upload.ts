@@ -4,10 +4,10 @@
  * Utility function to upload files to Cloudinary directly from the browser
  */
 export async function uploadToCloudinary(
-  file: File, 
-  options: { 
+  file: File,
+  options: {
     folder?: string;
-    resourceType?: string;
+    resourceType?: 'image' | 'video' | 'raw' | 'auto';
     preset?: 'circulars' | 'projects' | 'submissions';
   } = {}
 ): Promise<{
@@ -34,8 +34,25 @@ export async function uploadToCloudinary(
   const folder = options.folder || 'college-app/uploads';
   formData.append('folder', folder);
   
+  // Force public access mode (must also be allowed by preset)
+  formData.append('access_mode', 'public');
+  
+  // Pick resource type: default to auto; use raw for non-image/video like PDFs
+  const inferredResourceType: 'image' | 'video' | 'raw' =
+    file.type.startsWith('image/') ? 'image' : file.type.startsWith('video/') ? 'video' : 'raw';
+  const resourceType = options.resourceType || inferredResourceType;
+  
+  // Guardrails: ensure env vars exist
+  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+  if (!cloudName) {
+    throw new Error('Missing NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME');
+  }
+  if (!uploadPreset) {
+    throw new Error('Missing NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET');
+  }
+  
   // Upload to Cloudinary
-  const cloudinaryUrl = `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/auto/upload`;
+  const cloudinaryUrl = `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`;
   
   try {
     const response = await fetch(cloudinaryUrl, {
@@ -43,11 +60,16 @@ export async function uploadToCloudinary(
       body: formData,
     });
     
-    if (!response.ok) {
-      throw new Error('Upload failed');
+    const data = await response.json().catch(async () => {
+      // Fallback to text if JSON parse fails
+      const text = await response.text();
+      return { error: { message: text || 'Unknown error' } } as any;
+    });
+
+    if (!response.ok || (data && data.error)) {
+      const reason = data?.error?.message || `${response.status} ${response.statusText}`;
+      throw new Error(`Cloudinary upload failed: ${reason}`);
     }
-    
-    const data = await response.json();
     
     return {
       public_id: data.public_id,

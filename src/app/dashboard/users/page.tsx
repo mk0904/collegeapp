@@ -40,6 +40,7 @@ import { useToast } from "@/hooks/use-toast"
 import { getUsers, updateUserStatus, getColleges } from '@/lib/firebase/firestore'
 import { Skeleton } from '@/components/ui/skeleton'
 import { SendNotificationModal } from '@/components/send-notification-modal'
+import { auth } from '@/lib/firebase'
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 
@@ -51,6 +52,7 @@ export default function UsersPage() {
     const [users, setUsers] = React.useState<User[]>([])
     const [colleges, setColleges] = React.useState<College[]>([]);
     const [loading, setLoading] = React.useState(true);
+    const [currentUser, setCurrentUser] = React.useState<any>(null);
     const [isModalOpen, setIsModalOpen] = React.useState(false);
     const [selectedUserIds, setSelectedUserIds] = React.useState<string[]>([]);
     
@@ -86,6 +88,14 @@ export default function UsersPage() {
       }
       fetchData();
     }, [toast]);
+
+    // Get current user
+    React.useEffect(() => {
+      const unsubscribe = auth.onAuthStateChanged((user) => {
+        setCurrentUser(user);
+      });
+      return () => unsubscribe();
+    }, []);
 
     const handleStatusToggle = async (userId: string, currentStatus: 'Active' | 'Inactive') => {
         const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
@@ -260,7 +270,7 @@ export default function UsersPage() {
   
   return (
     <>
-      <SendNotificationModal isOpen={isModalOpen} onOpenChange={setIsModalOpen} selectedUsers={selectedUsers} />
+      <SendNotificationModal isOpen={isModalOpen} onOpenChange={setIsModalOpen} selectedUsers={selectedUsers} senderId={currentUser?.uid} />
       <Card>
         <CardHeader>
             <div className="flex items-start justify-between">

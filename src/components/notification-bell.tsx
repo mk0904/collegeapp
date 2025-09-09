@@ -8,7 +8,7 @@ import {
   PopoverContent, 
   PopoverTrigger 
 } from '@/components/ui/popover';
-import { getNotifications, markNotificationAsRead } from '@/lib/firebase/firestore';
+import { getNotifications, markNotificationAsRead, updateInvitationResponse } from '@/lib/firebase/firestore';
 import type { Notification } from '@/lib/mock-data';
 import { formatDistanceToNow } from 'date-fns';
 import { ScrollArea } from './ui/scroll-area';
@@ -49,20 +49,26 @@ export function NotificationBell({ userId }: NotificationBellProps) {
     return () => clearInterval(interval);
   }, [fetchNotifications]);
   
-  // Mark notification as read
-  const handleNotificationClick = async (notificationId: string) => {
+  // Handle invitation response
+  const handleInvitationResponse = async (notificationId: string, status: 'accepted' | 'declined' | 'maybe') => {
     try {
-      await markNotificationAsRead(notificationId, userId);
+      await updateInvitationResponse(notificationId, userId, status);
       // Update local state
       setNotifications(prev => 
         prev.map(n => 
           n.id === notificationId 
-            ? { ...n, readBy: [...n.readBy, userId] } 
+            ? { 
+                ...n, 
+                responses: {
+                  ...n.responses,
+                  [userId]: { status, respondedAt: new Date().toISOString() }
+                }
+              } 
             : n
         )
       );
     } catch (error) {
-      console.error('Error marking notification as read:', error);
+      console.error('Error updating invitation response:', error);
     }
   };
 
@@ -120,11 +126,63 @@ export function NotificationBell({ userId }: NotificationBellProps) {
                       : notification.message}
                   </p>
                   {notification.type === 'invitation' && (
-                    <div className="mt-2 text-xs font-medium">
-                      <div className="flex gap-2">
-                        <span>Venue: {notification.venue}</span>
-                        <span>Date: {notification.date}</span>
-                        <span>Time: {notification.time}</span>
+                    <div className="mt-2 space-y-2">
+                      <div className="text-xs font-medium">
+                        <div className="flex gap-2">
+                          <span>Venue: {notification.venue}</span>
+                          <span>Date: {notification.date}</span>
+                          <span>Time: {notification.time}</span>
+                        </div>
+                      </div>
+                      <div className="flex gap-1">
+                        {notification.responses?.[userId]?.status === 'pending' ? (
+                          <>
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="h-6 px-2 text-xs"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleInvitationResponse(notification.id, 'accepted');
+                              }}
+                            >
+                              ✓ Accept
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="h-6 px-2 text-xs"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleInvitationResponse(notification.id, 'maybe');
+                              }}
+                            >
+                              ? Maybe
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="h-6 px-2 text-xs"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleInvitationResponse(notification.id, 'declined');
+                              }}
+                            >
+                              ✗ Decline
+                            </Button>
+                          </>
+                        ) : (
+                          <div className="text-xs font-medium">
+                            Status: <span className={cn(
+                              "capitalize",
+                              notification.responses?.[userId]?.status === 'accepted' && "text-green-600",
+                              notification.responses?.[userId]?.status === 'declined' && "text-red-600",
+                              notification.responses?.[userId]?.status === 'maybe' && "text-yellow-600"
+                            )}>
+                              {notification.responses?.[userId]?.status}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}

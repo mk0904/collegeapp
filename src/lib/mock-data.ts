@@ -58,6 +58,8 @@ export type Ticket = {
     id: string;
     userName: string;
     userEmail: string;
+    collegeName?: string;
+    userId?: string;
     issueType: 'Support' | 'Feedback';
     dateRaised: string;
     dateClosed: string | null;
@@ -81,6 +83,14 @@ export type Notification = {
     date?: string;
     time?: string;
     sender: string;
+    // Invitation response tracking
+    responses?: {
+        [userId: string]: {
+            status: 'pending' | 'accepted' | 'declined' | 'maybe';
+            respondedAt?: string;
+            message?: string;
+        };
+    };
 };
 
 // --- MOCK DATA ---

@@ -40,6 +40,8 @@ import { useToast } from "@/hooks/use-toast"
 import { Skeleton } from '@/components/ui/skeleton'
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
+import { getAttendanceRecords } from '@/lib/firebase/firestore'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 
 // Mock attendance data structure
 interface AttendanceRecord {
@@ -124,8 +126,8 @@ type SortDirection = 'ascending' | 'descending';
 
 export default function AttendancePage() {
     const { toast } = useToast()
-    const [attendanceRecords, setAttendanceRecords] = React.useState<AttendanceRecord[]>(mockAttendanceData)
-    const [loading, setLoading] = React.useState(false);
+    const [attendanceRecords, setAttendanceRecords] = React.useState<AttendanceRecord[]>([])
+    const [loading, setLoading] = React.useState(true);
     const [selectedRecordIds, setSelectedRecordIds] = React.useState<string[]>([]);
     
     // Filtering states
@@ -138,13 +140,31 @@ export default function AttendancePage() {
     const [sortConfig, setSortConfig] = React.useState<{ key: SortableKeys; direction: SortDirection } | null>({ key: 'date', direction: 'descending'});
 
     const selectedRecords = attendanceRecords.filter(record => selectedRecordIds.includes(record.id));
+    const [tab, setTab] = React.useState<'all' | 'today'>('all')
 
     React.useEffect(() => {
-      // Simulate loading
-      setLoading(true);
-      setTimeout(() => {
-        setLoading(false);
-      }, 1000);
+      (async () => {
+        try {
+          setLoading(true)
+          const records = await getAttendanceRecords()
+          // Map to local AttendanceRecord type, with sane defaults
+          const mapped: AttendanceRecord[] = records.map((r, idx) => ({
+            id: r.id || String(idx),
+            studentName: r.studentName,
+            studentEmail: r.studentEmail,
+            college: r.college,
+            district: r.district,
+            date: r.date,
+            time: r.time,
+            status: r.status,
+            subject: r.subject,
+            teacher: r.teacher,
+          }))
+          setAttendanceRecords(mapped)
+        } finally {
+          setLoading(false)
+        }
+      })()
     }, []);
 
     const handleSelectRecord = (recordId: string, checked: boolean) => {
@@ -204,6 +224,15 @@ export default function AttendancePage() {
             return matchesSearch && matchesStatus && matchesCollege && matchesDistrict && matchesSubject;
         });
     }, [sortedRecords, searchTerm, statusFilter, collegeFilter, districtFilter, subjectFilter]);
+
+    // Effective dataset for current tab
+    const todayIso = React.useMemo(() => new Date().toISOString().slice(0,10), [])
+    const tabRecords = React.useMemo(() => {
+      if (tab === 'today') {
+        return filteredRecords.filter(r => r.date === todayIso)
+      }
+      return filteredRecords
+    }, [filteredRecords, tab, todayIso])
     
     // Reset selected records when filters change
     React.useEffect(() => {
@@ -261,8 +290,8 @@ export default function AttendancePage() {
         toast({ title: "Export successful", description: `${filteredRecords.length} attendance records have been exported.`});
     }
 
-    const isAllSelected = selectedRecordIds.length === filteredRecords.length && filteredRecords.length > 0;
-    const isIndeterminate = selectedRecordIds.length > 0 && selectedRecordIds.length < filteredRecords.length;
+    const isAllSelected = selectedRecordIds.length === tabRecords.length && tabRecords.length > 0;
+    const isIndeterminate = selectedRecordIds.length > 0 && selectedRecordIds.length < tabRecords.length;
   
   const SortableHeader = ({
     column,
@@ -319,6 +348,12 @@ export default function AttendancePage() {
           </div>
       </CardHeader>
       <CardContent>
+        <Tabs defaultValue="all" value={tab} onValueChange={(v)=>setTab(v as 'all'|'today')} className="w-full mb-2">
+          <TabsList className="bg-muted/60">
+            <TabsTrigger value="all">All</TabsTrigger>
+            <TabsTrigger value="today">Today</TabsTrigger>
+          </TabsList>
+        </Tabs>
         <div className="flex flex-col sm:flex-row items-center gap-2 mb-4">
           <div className="relative flex-1 w-full">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -439,7 +474,7 @@ export default function AttendancePage() {
                       </TableRow>
                     ))
                   ) : (
-                    filteredRecords.map(record => (
+                    tabRecords.map(record => (
                       <TableRow key={record.id} data-state={selectedRecordIds.includes(record.id) ? 'selected' : ''}>
                           <TableCell>
                               <Checkbox 
@@ -483,9 +518,9 @@ export default function AttendancePage() {
           </div>
           <div className="flex items-center justify-end space-x-2 py-4">
               <div className="flex-1 text-sm text-muted-foreground">
-                {filteredRecords.length === 0 ? 'No attendance records found' : 
-                 selectedRecordIds.length > 0 ? `${selectedRecordIds.length} of ${filteredRecords.length} row(s) selected` : 
-                 `${filteredRecords.length} attendance record(s) found`}
+                {tabRecords.length === 0 ? 'No attendance records found' : 
+                 selectedRecordIds.length > 0 ? `${selectedRecordIds.length} of ${tabRecords.length} row(s) selected` : 
+                 `${tabRecords.length} attendance record(s) found`}
               </div>
               <Button variant="outline" size="sm">Previous</Button>
               <Button variant="outline" size="sm">Next</Button>

@@ -13,25 +13,12 @@ import {
   FileText,
   LogOut,
   Search, // Added for search icon
-  Calendar,
+  PanelLeft,
+  CalendarDays,
 } from 'lucide-react';
 import * as React from 'react';
 
-import {
-  SidebarProvider,
-  Sidebar,
-  SidebarHeader,
-  SidebarContent,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarFooter,
-  SidebarTrigger,
-  SidebarInset,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarSeparator,
-} from '@/components/ui/sidebar';
+// Replaced complex sidebar with a simple icon-only rail
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -53,7 +40,7 @@ const navItems = [
     { href: '/dashboard', icon: Home, label: 'Home' },
     { href: '/dashboard/users', icon: Users, label: 'Users' },
     { href: '/dashboard/circular', icon: FileText, label: 'Circular' },
-    { href: '/dashboard/attendance', icon: Calendar, label: 'Attendance' },
+    { href: '/dashboard/attendance', icon: CalendarDays, label: 'Attendance' },
 ];
 
 const projectsNav = {
@@ -73,6 +60,14 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const router = useRouter();
   const { toast } = useToast();
+  const [currentUser, setCurrentUser] = React.useState<any>(null);
+  const [expanded, setExpanded] = React.useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const v = localStorage.getItem('sidebar_expanded');
+      return v === 'true';
+    }
+    return false;
+  });
   const [activeSection, setActiveSection] = React.useState<string>(() => {
     if (typeof window !== 'undefined') {
       const section = localStorage.getItem('activeSection');
@@ -80,10 +75,6 @@ export default function DashboardLayout({
     }
     return 'dashboard';
   });
-  
-  // Add state for current user
-  const [currentUser, setCurrentUser] = React.useState<any>(null);
-  const [loading, setLoading] = React.useState(true);
 
   const handleLogout = async () => {
     try {
@@ -104,225 +95,65 @@ export default function DashboardLayout({
       localStorage.setItem('activeSection', section);
     }
   }, [pathname]);
-  
-  // Fetch current user data
+
+  // Get current user
   React.useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async (authUser) => {
-      if (authUser) {
-        try {
-          // Import dynamically to avoid circular dependencies
-          const { getUserById } = await import('@/lib/firebase/firestore');
-          const userData = await getUserById(authUser.uid);
-          setCurrentUser(userData);
-        } catch (error) {
-          console.error("Error fetching user data:", error);
-        } finally {
-          setLoading(false);
-        }
-      } else {
-        // If not logged in, redirect to login
-        router.push('/login');
-      }
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      setCurrentUser(user);
     });
-    
     return () => unsubscribe();
-  }, [router]);
+  }, []);
+
+  const toggleExpanded = () => {
+    setExpanded((prev) => {
+      const next = !prev;
+      if (typeof window !== 'undefined') localStorage.setItem('sidebar_expanded', String(next));
+      return next;
+    });
+  };
 
   return (
-    <div className="min-h-screen">
-        <SidebarProvider>
-                <Sidebar
-          className="border-r bg-primary shadow-lg transition-all duration-700 ease-out min-w-[280px] group-data-[state=collapsed]:min-w-[64px] !bg-primary z-20"
-          collapsible="icon"
-        >
-            <SidebarHeader className="border-b border-white/20 p-0 !bg-primary">
-                        <div className="flex items-center justify-between p-4 h-16">
-                <div className="flex items-center gap-3 group-data-[state=collapsed]:justify-center">
-                    <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shrink-0 group-data-[state=collapsed]:hidden">
-                        <span className="text-primary font-bold text-sm">C</span>
-                    </div>
-                    <span className="text-white font-semibold text-lg group-data-[state=collapsed]:hidden">College App</span>
-                </div>
-                <SidebarTrigger className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shrink-0 hover:bg-white/90 transition-all duration-300 opacity-100 group-data-[state=collapsed]:opacity-100 group-data-[state=expanded]:opacity-100">
-                    <ChevronDown className="h-4 w-4 text-primary transition-transform duration-300 ease-out rotate-90 group-data-[state=expanded]:rotate-[-90deg]" />
-                </SidebarTrigger>
-            </div>
-            </SidebarHeader>
-            <SidebarContent className="p-2 group-data-[state=collapsed]:p-1 !bg-primary">
-                          <div className="px-2 py-2 group-data-[state=collapsed]:hidden">
-                <p className="text-xs font-semibold text-white/70 mb-2 uppercase tracking-wider">Main Menu</p>
+    <div className="bg-gradient-to-br from-blue-50/50 via-green-50/50 to-blue-100/50 min-h-screen">
+        {/* Collapsible icon rail */}
+        <aside className={cn("fixed inset-y-0 left-0 z-20 border-r bg-white flex flex-col py-4 gap-2 transition-[width] duration-200 ease-linear", expanded ? "w-64" : "w-16")}> 
+          <div className={cn("px-3 flex items-center", expanded ? "justify-between" : "justify-center")}> 
+            {expanded && (
+              <div className="h-10 flex items-center">
+                <Logo onDarkBg={false} />
               </div>
-            <SidebarMenu>
-                {navItems.map((item) => (
-                <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton
-                    asChild
-                    isActive={
-                        item.href === '/dashboard'
-                        ? pathname === item.href
-                        : pathname.startsWith(item.href)
-                    }
-                    tooltip={{ children: item.label }}
-                    className={cn(
-                      "flex gap-3 items-center px-6 py-2.5 rounded-lg transition-all duration-700 ease-out w-full mb-1 group-data-[state=collapsed]:justify-center group-data-[state=collapsed]:px-1 group-data-[state=collapsed]:w-12 group-data-[state=collapsed]:h-12 w-12 h-12 px-1 justify-start",
-                      (item.href === '/dashboard' ? pathname === item.href : pathname.startsWith(item.href))
-                        ? "bg-white text-primary shadow-sm hover:bg-white hover:text-primary"
-                        : "text-white hover:text-white/90 hover:bg-white/10"
-                    )}
-                    >
-                    <Link href={item.href} className="flex gap-3 items-center w-full group-data-[state=collapsed]:justify-center justify-start">
-                        <span className={cn(
-                          "transition-colors shrink-0 flex items-center justify-center",
-                          (item.href === '/dashboard' ? pathname === item.href : pathname.startsWith(item.href))
-                            ? "text-primary"
-                            : "text-white group-data-[state=collapsed]:text-white",
-                          "group-data-[state=collapsed]:p-0"
-                        )}>
-                          <item.icon className="h-4 w-4" />
-                        </span>
-                        <span className={cn(
-                          "font-medium transition-all duration-700 ease-out whitespace-nowrap",
-                          (item.href === '/dashboard' ? pathname === item.href : pathname.startsWith(item.href))
-                            ? "text-primary font-semibold"
-                            : "text-white",
-                          "group-data-[state=collapsed]:hidden"
-                        )}>{item.label}</span>
-                    </Link>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
-                ))}
+            )}
+            <button onClick={toggleExpanded} className="h-8 w-8 flex items-center justify-center rounded-md border bg-white hover:bg-slate-50">
+              <PanelLeft className="h-4 w-4" />
+            </button>
+          </div>
+          <nav className="flex-1 flex flex-col mt-2">
+            {[...navItems, { href: projectsNav.href, icon: projectsNav.icon, label: projectsNav.label }, { href: helpdeskNavItem.href, icon: helpdeskNavItem.icon, label: helpdeskNavItem.label }].map((item) => {
+              const active = item.href === '/dashboard' ? pathname === item.href : pathname.startsWith(item.href);
+              const Icon = item.icon as any;
+              return (
+                <Link key={item.href} href={item.href} className={cn("mx-3 my-1 h-10 rounded-xl flex items-center gap-3 px-2 transition-colors", active ? "bg-primary text-white" : "text-primary hover:bg-primary/10")}> 
+                  <span className="h-10 w-10 flex items-center justify-center"><Icon className="h-5 w-5" /></span>
+                  <span className={cn("text-sm font-medium whitespace-nowrap", !expanded && "hidden")}>{item.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
+          <div className="flex flex-col gap-2 px-3 mb-2">
+            <Link href={accountNavItem.href} className={cn("h-10 rounded-xl flex items-center gap-3 px-2 transition-colors", pathname.startsWith(accountNavItem.href) ? "bg-primary text-white" : "text-primary hover:bg-primary/10")}> 
+              <span className="h-10 w-10 flex items-center justify-center"><accountNavItem.icon className="h-5 w-5" /></span>
+              <span className={cn("text-sm font-medium whitespace-nowrap", !expanded && "hidden")}>{accountNavItem.label}</span>
+            </Link>
+            <button onClick={handleLogout} className="h-10 rounded-xl flex items-center gap-3 px-2 text-red-500 hover:bg-red-50">
+              <span className="h-10 w-10 flex items-center justify-center"><LogOut className="h-5 w-5" /></span>
+              <span className={cn("text-sm font-medium whitespace-nowrap", !expanded && "hidden")}>Logout</span>
+            </button>
+          </div>
+        </aside>
 
-                <SidebarSeparator className="my-3 group-data-[state=collapsed]:my-2 border-white/20" />
-                
-                                  <div className="px-2 py-2 group-data-[state=collapsed]:hidden">
-                    <p className="text-xs font-semibold text-white/70 mb-2 uppercase tracking-wider">Workspace</p>
-                  </div>
-                
-                <SidebarMenuItem>
-                    <SidebarMenuButton
-                        asChild
-                        isActive={pathname.startsWith(projectsNav.href)}
-                        tooltip={{ children: projectsNav.label }}
-                        className={cn(
-                          "flex gap-3 items-center px-6 py-2.5 rounded-lg transition-all duration-700 ease-out mb-1 group-data-[state=collapsed]:justify-center group-data-[state=collapsed]:px-1 group-data-[state=collapsed]:w-12 group-data-[state=collapsed]:h-12 w-12 h-12 px-1 justify-start",
-                          pathname.startsWith(projectsNav.href)
-                            ? "bg-white text-primary shadow-sm hover:bg-white hover:text-primary"
-                            : "text-white hover:text-white/90 hover:bg-white/10"
-                        )}
-                    >
-                        <Link href={projectsNav.href} className="flex gap-3 items-center w-full group-data-[state=collapsed]:justify-center justify-start">
-                            <span className={cn(
-                              "transition-colors shrink-0 flex items-center justify-center",
-                              pathname.startsWith(projectsNav.href)
-                                ? "text-primary"
-                                : "text-white group-data-[state=collapsed]:text-white",
-                              "group-data-[state=collapsed]:p-0"
-                            )}>
-                              <projectsNav.icon className="h-4 w-4" />
-                            </span>
-                            <span className={cn(
-                              "font-medium transition-all duration-700 ease-out whitespace-nowrap",
-                              pathname.startsWith(projectsNav.href)
-                                ? "text-primary font-semibold"
-                                : "text-white",
-                              "group-data-[state=collapsed]:hidden"
-                            )}>{projectsNav.label}</span>
-                        </Link>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
-                
-                <SidebarMenuItem>
-                    <SidebarMenuButton
-                        asChild
-                        isActive={pathname.startsWith(helpdeskNavItem.href)}
-                        tooltip={{ children: helpdeskNavItem.label }}
-                        className={cn(
-                          "flex gap-3 items-center px-6 py-2.5 rounded-lg transition-all duration-700 ease-out mb-1 group-data-[state=collapsed]:justify-center group-data-[state=collapsed]:px-1 group-data-[state=collapsed]:w-12 group-data-[state=collapsed]:h-12 w-12 h-12 px-1 justify-start",
-                          pathname.startsWith(helpdeskNavItem.href)
-                            ? "bg-white text-primary shadow-sm hover:bg-white hover:text-primary"
-                            : "text-white hover:text-white/90 hover:bg-white/10"
-                        )}
-                    >
-                        <Link href={helpdeskNavItem.href} className="flex gap-3 items-center w-full group-data-[state=collapsed]:justify-center justify-start">
-                            <span className={cn(
-                              "transition-colors shrink-0 flex items-center justify-center",
-                              pathname.startsWith(helpdeskNavItem.href)
-                                ? "text-primary"
-                                : "text-white group-data-[state=collapsed]:text-white",
-                              "group-data-[state=collapsed]:p-0"
-                            )}>
-                              <helpdeskNavItem.icon className="h-4 w-4" />
-                            </span>
-                            <span className={cn(
-                              "font-medium transition-all duration-700 ease-out whitespace-nowrap",
-                              pathname.startsWith(helpdeskNavItem.href)
-                                ? "text-primary font-semibold"
-                                : "text-white",
-                              "group-data-[state=collapsed]:hidden"
-                            )}>{helpdeskNavItem.label}</span>
-                        </Link>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
-
-            </SidebarMenu>
-            </SidebarContent>
-            <SidebarFooter className="border-t border-white/20 p-2 group-data-[state=collapsed]:p-1 !bg-primary">
-                          <div className="px-2 py-2 group-data-[state=collapsed]:hidden">
-                <p className="text-xs font-semibold text-white/70 mb-2 uppercase tracking-wider">Account</p>
-              </div>
-            <SidebarMenu>
-                <SidebarMenuItem>
-                <SidebarMenuButton
-                    asChild
-                    isActive={pathname.startsWith(accountNavItem.href)}
-                    tooltip={{ children: accountNavItem.label }}
-                    className={cn(
-                      "flex gap-3 items-center px-6 py-2.5 rounded-lg transition-all duration-700 ease-out mb-1 group-data-[state=collapsed]:justify-center group-data-[state=collapsed]:px-1 group-data-[state=collapsed]:w-12 group-data-[state=collapsed]:h-12 w-12 h-12 px-1 justify-start",
-                      pathname.startsWith(accountNavItem.href)
-                        ? "bg-white text-primary shadow-sm hover:bg-white hover:text-primary"
-                        : "text-white hover:text-white/90 hover:bg-white/10"
-                    )}
-                >
-                    <Link href={accountNavItem.href} className="flex gap-3 items-center w-full group-data-[state=collapsed]:justify-center justify-start">
-                        <span className={cn(
-                          "transition-colors shrink-0 flex items-center justify-center",
-                          pathname.startsWith(accountNavItem.href)
-                            ? "text-primary"
-                            : "text-white group-data-[state=collapsed]:text-white",
-                          "group-data-[state=collapsed]:p-0"
-                        )}>
-                          <accountNavItem.icon className="h-4 w-4" />
-                        </span>
-                        <span className={cn(
-                          "font-medium transition-all duration-700 ease-out whitespace-nowrap",
-                          pathname.startsWith(accountNavItem.href)
-                            ? "text-primary font-semibold"
-                            : "text-white",
-                          "group-data-[state=collapsed]:hidden"
-                        )}>{accountNavItem.label}</span>
-                    </Link>
-                </SidebarMenuButton>
-                </SidebarMenuItem>
-                
-                <SidebarMenuItem>
-                <SidebarMenuButton
-                    tooltip={{ children: "Logout" }}
-                    onClick={handleLogout}
-                    className="flex gap-3 items-center px-6 py-2.5 rounded-lg transition-all duration-700 ease-out text-white hover:text-white/90 hover:bg-white/10 mb-1 group-data-[state=collapsed]:justify-center group-data-[state=collapsed]:px-1 group-data-[state=collapsed]:w-12 group-data-[state=collapsed]:h-12 w-12 h-12 px-1 justify-start"
-                >
-                    <span className="text-white group-data-[state=collapsed]:p-0">
-                      <LogOut className="h-4 w-4" />
-                    </span>
-                    <span className="font-medium group-data-[state=collapsed]:hidden">Logout</span>
-                </SidebarMenuButton>
-                </SidebarMenuItem>
-            </SidebarMenu>
-            </SidebarFooter>
-        </Sidebar>
-        <SidebarInset>
+        {/* Main area with left margin equal to rail width */}
+        <div className={cn(expanded ? "ml-64" : "ml-16")}> 
             <div className="flex flex-col">
-            <header className="flex h-16 items-center gap-4 border-b bg-white px-4 lg:px-6 sticky top-0 z-10 shadow-sm">
-                <SidebarTrigger className="h-9 w-9 flex items-center justify-center border border-slate-200 bg-white rounded-md shadow-sm hover:bg-slate-50 transition-colors lg:hidden" />
+            <header className="flex h-16 items-center gap-4 border-b bg-white px-4 lg:px-6 sticky top-0 z-30 shadow-sm">
                 <div className="w-full flex-1">
                   <nav className="flex items-center">
                     <div className="flex items-center">
@@ -337,9 +168,7 @@ export default function DashboardLayout({
                 
                 {/* Actions */}
                 <div className="flex items-center gap-3">
-                  {/* Notification Bell */}
-                  <NotificationBell userId={currentUser?.id || "admin"} />
-                  
+                  {currentUser && <NotificationBell userId={currentUser.uid} />}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 overflow-hidden p-0 bg-white/90 shadow-sm hover:bg-white">
@@ -353,8 +182,8 @@ export default function DashboardLayout({
                           <UserCircle className="h-8 w-8 text-primary" />
                         </div>
                         <div>
-                          <p className="font-medium">{currentUser?.name || "Admin User"}</p>
-                          <p className="text-xs text-muted-foreground">{currentUser?.email || "admin@example.com"}</p>
+                          <p className="font-medium">Admin User</p>
+                          <p className="text-xs text-muted-foreground">admin@example.com</p>
                         </div>
                       </div>
                       <DropdownMenuSeparator />
@@ -376,12 +205,11 @@ export default function DashboardLayout({
                   </DropdownMenu>
                 </div>
             </header>
-            <main className="flex-1 p-4 lg:p-6 pl-6 lg:pl-8 bg-transparent">
+            <main className="flex-1 p-4 lg:p-6 bg-transparent">
                 {children}
             </main>
             </div>
-        </SidebarInset>
-        </SidebarProvider>
+        </div>
     </div>
   );
 }

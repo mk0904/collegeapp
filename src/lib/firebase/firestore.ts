@@ -40,7 +40,7 @@ export async function updateUserProfile(userId: string, data: Partial<User>): Pr
                 ...data,
                 id: userId,
                 createdOn: new Date().toISOString(),
-                status: 'Active',
+                status: 'Inactive',
                 role: data.role || 'Student'
             });
         }
@@ -188,6 +188,117 @@ export async function getTickets(): Promise<Ticket[]> {
   return mockTickets;
 }
 
+// Fetch support tickets from the `supportTickets` collection and map to the Ticket shape
+export async function getSupportTickets(): Promise<Ticket[]> {
+  const col = collection(db, 'supportTickets');
+  const snap = await getDocs(col);
+  if (snap.docs.length === 0) {
+    return [];
+  }
+
+  const toIsoDate = (value: any): string => {
+    try {
+      if (value?.toDate) {
+        // Firestore Timestamp
+        return value.toDate().toISOString().slice(0, 10);
+      }
+      const d = new Date(value);
+      if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+    } catch (_) {}
+    return '';
+  };
+
+  const tickets: Ticket[] = snap.docs.map((d) => {
+    const data: any = d.data();
+    return {
+      id: d.id,
+      subject: typeof data.subject === 'string' && data.subject.trim().length > 0 ? data.subject : (data.message || 'Support request'),
+      userName: data.name || data.email || 'User',
+      userEmail: data.email || '',
+      userId: data.userId || '',
+      collegeName: '',
+      issueType: 'Support',
+      dateRaised: toIsoDate(data.createdAt) || toIsoDate(new Date()),
+      dateClosed: null,
+      status: data.status === 'Resolved' ? 'Resolved' : 'Open',
+      description: data.message || '',
+    } as Ticket;
+  });
+
+  // Enrich with college name by joining on users collection
+  const userIds = tickets.map(t => t.userId).filter(Boolean) as string[];
+  const uniqueUserIds = Array.from(new Set(userIds));
+  if (uniqueUserIds.length > 0) {
+    const usersCol = collection(db, 'users');
+    // Firestore doesn't support 'in' for more than 10; for simplicity, fetch individually
+    const userDocs = await Promise.all(uniqueUserIds.map(async (uid) => {
+      try { const udoc = await getDoc(doc(usersCol, uid)); return udoc.exists() ? { id: uid, ...udoc.data() } as any : null; } catch { return null; }
+    }));
+    const idToCollege: Record<string, string> = {};
+    userDocs.forEach(u => { if (u) idToCollege[u.id] = u.college || u.collegeName || ''; });
+    tickets.forEach(t => { if (t.userId && idToCollege[t.userId]) t.collegeName = idToCollege[t.userId]; });
+  }
+
+  return tickets;
+}
+
+// Attendance
+export type FirestoreAttendance = {
+  user_id?: string
+  user_name?: string
+  teacher_id?: string
+  teacher_name?: string
+  college_name?: string
+  latitude?: number
+  longitude?: number
+  timestamp?: string | any
+  synced?: boolean
+  synced_at?: string | any
+}
+
+export async function getAttendanceRecords(): Promise<{
+  id: string
+  studentName: string
+  studentEmail: string
+  college: string
+  district: string
+  date: string
+  time: string
+  status: 'Present' | 'Absent' | 'Late'
+  subject: string
+  teacher: string
+}[]> {
+  const colRef = collection(db, 'attendance')
+  const snap = await getDocs(colRef)
+
+  const records = snap.docs.map((d) => {
+    const data = d.data() as FirestoreAttendance
+    const ts = data.timestamp
+    const jsDate = (ts && typeof ts === 'object' && 'toDate' in ts)
+      ? (ts as any).toDate() as Date
+      : new Date(String(ts || ''))
+
+    const isValid = !isNaN(jsDate.getTime())
+    const date = isValid ? jsDate.toISOString().slice(0, 10) : ''
+    const time = isValid ? jsDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : ''
+
+    return {
+      id: d.id,
+      studentName: data.user_name || 'User',
+      studentEmail: '',
+      college: data.college_name || '',
+      district: '',
+      date,
+      time,
+      status: 'Present',
+      subject: '',
+      teacher: data.teacher_name || '',
+    }
+  })
+
+  return records
+}
+
 export async function updateTicketStatus(ticketId: string, status: 'Resolved', resolutionDate: string): Promise<void> {
     const ticketDoc = doc(db, 'tickets', ticketId);
     await updateDoc(ticketDoc, { status, dateClosed: resolutionDate });
@@ -203,11 +314,23 @@ export async function addSchool(college: any): Promise<void> {
 
 // Notifications
 export async function addNotification(notification: Omit<Notification, 'id'>): Promise<string> {
-    const notificationRef = await addDoc(collection(db, 'notifications'), {
+    // Initialize invitation responses if it's an invitation
+    let notificationData = {
         ...notification,
         createdAt: new Date().toISOString(),
         readBy: [],
-    });
+    };
+
+    if (notification.type === 'invitation') {
+        // Initialize all recipients with pending status
+        const responses: { [userId: string]: { status: 'pending' } } = {};
+        notification.recipients.forEach(userId => {
+            responses[userId] = { status: 'pending' };
+        });
+        notificationData.responses = responses;
+    }
+
+    const notificationRef = await addDoc(collection(db, 'notifications'), notificationData);
     return notificationRef.id;
 }
 
@@ -221,20 +344,56 @@ export async function getNotifications(userId: string): Promise<Notification[]> 
     return [];
 }
 
-export async function markNotificationAsRead(notificationId: string, userId: string): Promise<void> {
+export async function updateInvitationResponse(
+    notificationId: string, 
+    userId: string, 
+    status: 'accepted' | 'declined' | 'maybe',
+    message?: string
+): Promise<void> {
     const notificationRef = doc(db, 'notifications', notificationId);
     await runTransaction(db, async (transaction) => {
         const notificationDoc = await transaction.get(notificationRef);
         if (notificationDoc.exists()) {
             const data = notificationDoc.data();
-            const readBy = data.readBy || [];
-            if (!readBy.includes(userId)) {
-                transaction.update(notificationRef, {
-                    readBy: [...readBy, userId]
-                });
-            }
+            const responses = data.responses || {};
+            responses[userId] = {
+                status,
+                respondedAt: new Date().toISOString(),
+                ...(message && { message })
+            };
+            transaction.update(notificationRef, { responses });
         }
     });
+}
+
+export async function getInvitationStats(notificationId: string): Promise<{
+    total: number;
+    pending: number;
+    accepted: number;
+    declined: number;
+    maybe: number;
+}> {
+    const notificationDoc = await getDoc(doc(db, 'notifications', notificationId));
+    if (!notificationDoc.exists()) {
+        throw new Error('Notification not found');
+    }
+    
+    const data = notificationDoc.data();
+    const responses = data.responses || {};
+    
+    const stats = {
+        total: Object.keys(responses).length,
+        pending: 0,
+        accepted: 0,
+        declined: 0,
+        maybe: 0
+    };
+    
+    Object.values(responses).forEach((response: any) => {
+        stats[response.status]++;
+    });
+    
+    return stats;
 }
 
 // Circular functions
@@ -250,13 +409,14 @@ export async function addCircular(circular: any): Promise<string> {
         const notificationsCol = collection(db, 'notifications');
         const notificationPromises = circular.recipients.map(async (userId: string) => {
             return addDoc(notificationsCol, {
-                userId,
                 type: 'circular',
                 title: `New Circular: ${circular.title}`,
                 message: circular.message.substring(0, 100) + (circular.message.length > 100 ? '...' : ''),
+                recipients: [userId],
+                sender: 'admin',
                 refId: docRef.id,
-                createdAt: new Date(),
-                read: false
+                createdAt: new Date().toISOString(),
+                readBy: []
             });
         });
         

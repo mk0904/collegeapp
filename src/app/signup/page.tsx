@@ -44,7 +44,7 @@ export default function SignupPage() {
         name: fullName,
         email: email,
         phone: '',
-        status: 'Active',
+        status: 'Inactive',
         role: 'Student', // Default role
         createdOn: new Date().toISOString(),
         college: '',

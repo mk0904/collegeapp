@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Upload, X, File as FileIcon, Loader2, Calendar as CalendarIcon, MessageSquare, Send } from 'lucide-react';
+import { uploadToCloudinary } from '@/lib/cloudinary-upload';
 import { uploadFile } from '@/lib/firebase/storage';
 import type { User } from '@/lib/mock-data';
 import { Badge } from './ui/badge';
@@ -27,6 +28,7 @@ interface SendNotificationModalProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   selectedUsers: User[];
+  senderId?: string;
 }
 
 const MAX_TOTAL_SIZE_MB = 10;
@@ -104,14 +106,15 @@ const FileUploader = ({ files, onFilesChange, disabled }: { files: File[], onFil
     );
 };
 
-export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: SendNotificationModalProps) {
+export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers, senderId = 'admin' }: SendNotificationModalProps) {
   const { toast } = useToast();
   const [isSending, setIsSending] = React.useState(false);
 
   // Form states
-  const [generalTitle, setGeneralTitle] = React.useState('');
-  const [generalMessage, setGeneralMessage] = React.useState('');
-  const [generalFiles, setGeneralFiles] = React.useState<File[]>([]);
+  // Push states
+  const [pushTitle, setPushTitle] = React.useState('');
+  const [pushMessage, setPushMessage] = React.useState('');
+  const [pushFiles, setPushFiles] = React.useState<File[]>([]);
   
   const [invitationTitle, setInvitationTitle] = React.useState('');
   const [invitationMessage, setInvitationMessage] = React.useState('');
@@ -121,15 +124,10 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
   const [eventMinute, setEventMinute] = React.useState('');
   const [eventPeriod, setEventPeriod] = React.useState<'AM' | 'PM'>('AM');
   const [invitationFiles, setInvitationFiles] = React.useState<File[]>([]);
-  
-  const [pushTitle, setPushTitle] = React.useState('');
-  const [pushMessage, setPushMessage] = React.useState('');
+
 
   
   const resetForm = () => {
-    setGeneralTitle('');
-    setGeneralMessage('');
-    setGeneralFiles([]);
     setInvitationTitle('');
     setInvitationMessage('');
     setVenue('');
@@ -140,6 +138,7 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
     setInvitationFiles([]);
     setPushTitle('');
     setPushMessage('');
+    setPushFiles([]);
     setIsSending(false);
   };
   
@@ -149,7 +148,7 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
     }
   }, [isOpen]);
 
-  const handleSendNotification = async (type: 'general' | 'invitation' | 'push') => {
+  const handleSendNotification = async (type: 'invitation' | 'push') => {
     if (selectedUsers.length === 0) {
       toast({ title: 'No users selected', description: 'Please select at least one user.', variant: 'destructive' });
       return;
@@ -169,17 +168,8 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
         time = `${eventHour.padStart(2, '0')}:${eventMinute.padStart(2, '0')} ${eventPeriod}`;
     }
 
-
-    if (type === 'general') {
-        if (!generalTitle) {
-            toast({ title: 'Title is required', variant: 'destructive' });
-            return;
-        }
-        payload = { type, title: generalTitle, message: generalMessage };
-        filesToUpload = generalFiles;
-
-    } else if (type === 'invitation') {
-        if (!invitationTitle || !invitationMessage || !venue || !eventDate || !time) {
+    if (type === 'invitation') {
+        if (!invitationTitle || !invitationMessage || !venue || !eventDate || !eventHour || !eventMinute) {
             toast({ title: 'All invitation fields are required', variant: 'destructive'});
             return;
         }
@@ -192,19 +182,53 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
             return;
         }
         payload = { type, title: pushTitle, message: pushMessage };
+        filesToUpload = pushFiles;
     }
 
     setIsSending(true);
     try {
-      const uploadPromises = filesToUpload.map(file => {
-          const path = `notifications/${Date.now()}_${file.name}`;
-          return uploadFile(file, path);
-      });
-      const fileUrls = await Promise.all(uploadPromises);
+      let fileUrls: string[] = [];
+      let attachments: { public_id: string; secure_url: string; format: string; resource_type: string }[] = [];
+      if (filesToUpload.length > 0) {
+        const uploadPromises = filesToUpload.map((file, index) => {
+            // Try Cloudinary first; if it fails, fall back to Firebase Storage
+            return uploadToCloudinary(file, { folder: 'college-app/notifications' })
+              .catch(async (err) => {
+                console.warn('Cloudinary upload failed, falling back to Firebase Storage for this file:', err);
+                const fallbackPath = `notifications/${Date.now()}_${index}_${file.name}`;
+                const url = await uploadFile(file, fallbackPath);
+                const resourceType = file.type.startsWith('image/') ? 'image' : file.type.startsWith('video/') ? 'video' : 'raw';
+                const formatGuess = (file.type.split('/')[1] || 'raw');
+                return { public_id: fallbackPath, secure_url: url, format: formatGuess, resource_type: resourceType };
+              });
+        });
+        const results = await Promise.allSettled(uploadPromises);
+        const succeeded = results.filter(r => r.status === 'fulfilled') as PromiseFulfilledResult<{ public_id: string; secure_url: string; format: string; resource_type: string }>[];
+        const failed = results.filter(r => r.status === 'rejected') as PromiseRejectedResult[];
+        attachments = succeeded.map(r => r.value);
+        fileUrls = attachments.map(a => a.secure_url);
+        if (succeeded.length === 0) {
+          toast({
+            title: 'Attachment upload failed',
+            description: 'All selected attachments failed to upload. Please check your network and Cloudinary preset, then try again.',
+            variant: 'destructive',
+          });
+          throw new Error('All attachments failed to upload');
+        }
+        if (failed.length > 0) {
+          console.error('Some file uploads failed:', failed.map(f => f.reason));
+          toast({
+            title: 'Partial upload',
+            description: `${failed.length} attachment(s) failed to upload. Continuing with uploaded files.`,
+            variant: 'destructive',
+          });
+        }
+      }
       
       payload.fileUrls = fileUrls;
+      payload.attachments = attachments;
       payload.recipients = selectedUsers.map(u => u.id);
-      payload.sender = 'admin'; // Replace with actual sender ID when authentication is implemented
+      payload.sender = senderId;
       
       console.log('Sending notification to:', selectedUsers.map(u => u.id));
       console.log('Notification data:', payload);
@@ -212,6 +236,7 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
       // Save notification to Firestore
       try {
         const { addNotification } = await import('@/lib/firebase/firestore');
+        console.log('Attempting to save notification with payload:', payload);
         const notificationId = await addNotification(payload);
         console.log('Notification saved with ID:', notificationId);
         
@@ -225,7 +250,7 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
         console.error('Error saving notification:', error);
         toast({
           title: 'Error',
-          description: 'Failed to save the notification to the database. Please try again.',
+          description: `Failed to save the notification to the database: ${error instanceof Error ? error.message : 'Unknown error'}`,
           variant: 'destructive',
         });
       }
@@ -233,7 +258,7 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
       console.error('Error sending notification:', error);
       toast({
         title: 'Error',
-        description: 'Failed to send the notification. Please try again.',
+        description: `Failed to send the notification: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: 'destructive',
       });
     } finally {
@@ -278,35 +303,15 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
             </Badge>
           </div>
         </DialogHeader>
-        <Tabs defaultValue="general" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 bg-muted/60">
-                <TabsTrigger value="general" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                    <MessageSquare className="mr-2 h-4 w-4" /> General
+        <Tabs defaultValue="push" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 bg-muted/60">
+                <TabsTrigger value="push" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                    <Send className="mr-2 h-4 w-4" /> Push
                 </TabsTrigger>
                 <TabsTrigger value="invitation" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                     <CalendarIcon className="mr-2 h-4 w-4" /> Invitation
                 </TabsTrigger>
-                <TabsTrigger value="push" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                    <Send className="mr-2 h-4 w-4" /> Push
-                </TabsTrigger>
             </TabsList>
-            <TabsContent value="general" className="py-4">
-                 <div className="space-y-4">
-                    <div className="space-y-2">
-                        <Input id="general-title" value={generalTitle} onChange={e => setGeneralTitle(e.target.value)} placeholder="Title (e.g. Important Update)" disabled={isSending} />
-                    </div>
-                    <div className="space-y-2">
-                        <Textarea id="general-message" value={generalMessage} onChange={e => setGeneralMessage(e.target.value)} placeholder="Message" className="min-h-24" disabled={isSending}/>
-                    </div>
-                     <FileUploader files={generalFiles} onFilesChange={setGeneralFiles} disabled={isSending} />
-                    <DialogFooter>
-                        <Button onClick={() => handleSendNotification('general')} disabled={isSending}>
-                            {isSending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Submit
-                        </Button>
-                    </DialogFooter>
-                 </div>
-            </TabsContent>
             <TabsContent value="invitation" className="py-4">
                 <div className="space-y-4">
                     <div className="space-y-2">
@@ -396,6 +401,7 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers }: S
                     <div className="space-y-2">
                         <Textarea id="push-message" value={pushMessage} onChange={e => setPushMessage(e.target.value)} placeholder="Push Message (concise, max 150 chars)." maxLength={150} className="min-h-24" disabled={isSending}/>
                     </div>
+                    <FileUploader files={pushFiles} onFilesChange={setPushFiles} disabled={isSending} />
                     <DialogFooter>
                         <Button onClick={() => handleSendNotification('push')} disabled={isSending}>
                             {isSending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
