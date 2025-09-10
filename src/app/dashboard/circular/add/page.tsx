@@ -7,7 +7,7 @@ import {
   ChevronDown,
   Users,
   MapPin,
-  School2,
+  GraduationCap,
   ArrowLeft,
   ShieldCheck,
   CalendarRange
@@ -324,7 +324,7 @@ export default function AddCircularPage() {
                 
                 <Select value={collegeFilter} onValueChange={setCollegeFilter}>
                   <SelectTrigger className="w-[200px]">
-                    <School2 className="mr-2 h-4 w-4" />
+                    <GraduationCap className="mr-2 h-4 w-4" />
                     <SelectValue placeholder="Select College" />
                   </SelectTrigger>
                   <SelectContent>
