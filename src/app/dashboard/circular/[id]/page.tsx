@@ -97,7 +97,7 @@ For any queries, please contact the examination department at exams@college.edu.
   ],
   recipientCount: 145,
   district: 'North District',
-  school: 'All Schools',
+  school: 'All Colleges',
   createdBy: {
     id: 'user-001',
     name: 'Principal Johnson',
@@ -145,7 +145,7 @@ export default function CircularDetailsPage({ params }: { params: { id: string }
           files: data.files || [],
           recipientCount: data.recipientCount || 0,
           district: data.district || 'All Districts',
-          school: data.school || 'All Schools',
+          school: data.school || 'All Colleges',
           createdBy: {
             id: data.createdBy || 'unknown',
             name: data.createdByName || 'Unknown User',
@@ -384,7 +384,7 @@ export default function CircularDetailsPage({ params }: { params: { id: string }
                 <div className="font-medium">{circular.district}</div>
               </div>
               <div className="p-3 rounded-lg border">
-                <div className="text-sm text-muted-foreground">School</div>
+                <div className="text-sm text-muted-foreground">College</div>
                 <div className="font-medium">{circular.school}</div>
               </div>
               <div className="p-3 rounded-lg border">

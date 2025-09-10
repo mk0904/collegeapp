@@ -19,7 +19,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import * as React from 'react';
-import { getColleges, getUsers, getTickets, getProjects } from '@/lib/firebase/firestore';
+import { getColleges, getUsers, getTickets, getProjects, getAttendanceRecords } from '@/lib/firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Bar, BarChart, XAxis, YAxis, PieChart, Pie, Cell, Legend } from 'recharts';
 import type { College, User } from '@/lib/mock-data';
@@ -41,21 +41,26 @@ export default function DashboardPage() {
         async function fetchData() {
             try {
                 setLoading(true);
-                const [fetchedUsers, fetchedColleges, tickets, projects] = await Promise.all([
+                const [fetchedUsers, fetchedColleges, tickets, projects, attendance] = await Promise.all([
                     getUsers(),
                     getColleges(),
                     getTickets(),
                     getProjects(),
+                    getAttendanceRecords(),
                 ]);
 
                 setUsers(fetchedUsers);
                 setColleges(fetchedColleges);
+                // Count today's attendance by date field (YYYY-MM-DD)
+                const todayIso = new Date().toISOString().slice(0,10)
+                const attendanceToday = (attendance || []).filter((r: any) => (r.date || '').startsWith(todayIso)).length
+
                 setStats({
                     totalUsers: fetchedUsers.length,
                     totalColleges: fetchedColleges.length,
                     openTickets: tickets.filter(t => t.status === 'Open').length,
                     totalProjects: projects.length,
-                    attendanceToday: 0,
+                    attendanceToday,
                 });
 
             } catch (error) {

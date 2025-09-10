@@ -92,7 +92,7 @@ export async function GET(request: Request) {
           status: 'Sent',
           recipientCount: 145,
           district: 'North District',
-          school: 'All Schools'
+          school: 'All Colleges'
         },
         {
           id: 'circ-002',
@@ -101,7 +101,7 @@ export async function GET(request: Request) {
           status: 'Sent',
           recipientCount: 42,
           district: 'Central District',
-          school: 'City High School'
+          school: 'City High College'
         }
       ]
     });

@@ -5,7 +5,7 @@ import {
   MoreHorizontal,
   PlusCircle,
   FolderKanban,
-  School2,
+  College2,
   Download,
   Check,
   Search,
@@ -137,7 +137,7 @@ function ProjectsContent() {
               Projects
             </TabsTrigger>
             <TabsTrigger value="colleges" className="px-3 py-1.5 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm rounded-md transition-all flex items-center gap-2">
-              <School2 className="h-4 w-4" />
+              <College2 className="h-4 w-4" />
               Colleges
             </TabsTrigger>
           </TabsList>

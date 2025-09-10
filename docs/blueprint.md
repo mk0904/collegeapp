@@ -6,7 +6,7 @@
 - Advanced Filtering and Search: User Management: Admins can filter users by role, status, school, and date joined; search users with autocomplete.
 - Bulk Actions: User Status Management: Toggle users between Active/Inactive.
 - Account Management: Admin Profile Management: Allow admins to view and edit their profiles.
-- Project Hierarchy: School and Project Management: Add, edit, and delete schools and projects, maintaining a clear hierarchy.
+- Project Hierarchy: College and Project Management: Add, edit, and delete schools and projects, maintaining a clear hierarchy.
 - Submissions Tracking: Submission Monitoring: Display a list of submissions linked to each project.
 - AI driven insight: Actionable insights: Display key metrics. Use AI tool to highlight areas where user activity, project completions or help desk responsiveness falls outside of norms for similar regions or projects.
 

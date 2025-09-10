@@ -6,7 +6,7 @@ import {
   ChevronDown,
   Users,
   MapPin,
-  School2,
+  College2,
   ShieldCheck,
   Loader2,
   X,
@@ -574,11 +574,11 @@ export function AddCircularModal({ isOpen, onOpenChange, onCircularCreated }: Ad
                 
                 <Select value={collegeFilter} onValueChange={setCollegeFilter}>
                     <SelectTrigger className="h-9 text-sm">
-                      <School2 className="mr-2 h-4 w-4 text-muted-foreground" />
-                      <SelectValue placeholder="School" />
+                      <College2 className="mr-2 h-4 w-4 text-muted-foreground" />
+                      <SelectValue placeholder="College" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Schools</SelectItem>
+                    <SelectItem value="all">All Colleges</SelectItem>
                     {uniqueColleges.map(college => (
                       <SelectItem key={college} value={college}>{college}</SelectItem>
                     ))}

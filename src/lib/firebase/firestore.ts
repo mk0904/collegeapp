@@ -245,35 +245,32 @@ export async function getSupportTickets(): Promise<Ticket[]> {
 // Attendance
 export type FirestoreAttendance = {
   user_id?: string
+  userId?: string
   user_name?: string
+  userName?: string
   teacher_id?: string
   teacher_name?: string
   college_name?: string
+  collegeName?: string
   latitude?: number
   longitude?: number
   timestamp?: string | any
+  checkinTime?: string
+  checkoutTime?: string
+  date?: string
+  method?: string
+  similarity?: number
   synced?: boolean
   synced_at?: string | any
 }
 
-export async function getAttendanceRecords(): Promise<{
-  id: string
-  studentName: string
-  studentEmail: string
-  college: string
-  district: string
-  date: string
-  time: string
-  status: 'Present' | 'Absent' | 'Late'
-  subject: string
-  teacher: string
-}[]> {
+export async function getAttendanceRecords(): Promise<any[]> {
   const colRef = collection(db, 'attendance')
   const snap = await getDocs(colRef)
 
   const records = snap.docs.map((d) => {
     const data = d.data() as FirestoreAttendance
-    const ts = data.timestamp
+    const ts = (data as any).timestamp
     const jsDate = (ts && typeof ts === 'object' && 'toDate' in ts)
       ? (ts as any).toDate() as Date
       : new Date(String(ts || ''))
@@ -282,17 +279,20 @@ export async function getAttendanceRecords(): Promise<{
     const date = isValid ? jsDate.toISOString().slice(0, 10) : ''
     const time = isValid ? jsDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : ''
 
+    const userName = data.userName || data.user_name || 'Unknown'
+    const userId = data.userId || data.user_id || 'unknown'
+
     return {
       id: d.id,
-      studentName: data.user_name || 'User',
-      studentEmail: '',
-      college: data.college_name || '',
-      district: '',
-      date,
-      time,
-      status: 'Present',
-      subject: '',
-      teacher: data.teacher_name || '',
+      userName,
+      userId,
+      date: data.date || date,
+      timestamp: isValid ? jsDate.toISOString() : (typeof ts === 'string' ? ts : ''),
+      checkinTime: data.checkinTime || undefined,
+      checkoutTime: data.checkoutTime || undefined,
+      method: data.method || '',
+      similarity: data.similarity ?? '',
+      college: data.collegeName || data.college_name || '',
     }
   })
 
@@ -305,12 +305,7 @@ export async function updateTicketStatus(ticketId: string, status: 'Resolved', r
 }
 
 // Colleges
-export async function addSchool(college: any): Promise<void> {
-    await addDoc(collection(db, 'colleges'), {
-        ...college,
-        createdAt: new Date().toISOString(),
-    });
-}
+// Duplicate definition removed (consolidated above)
 
 // Notifications
 export async function addNotification(notification: Omit<Notification, 'id'>): Promise<string> {

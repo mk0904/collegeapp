@@ -7,7 +7,7 @@ import {
   ChevronDown,
   Users,
   MapPin,
-  School2,
+  College2,
   ArrowLeft,
   ShieldCheck,
   CalendarRange
@@ -71,9 +71,9 @@ type User = {
 
 // Mock data for users
 const mockUsers: User[] = [
-  { id: '1', name: 'Alex Johnson', email: 'alex@example.com', role: 'Teacher', college: 'City High School', district: 'North District' },
+  { id: '1', name: 'Alex Johnson', email: 'alex@example.com', role: 'Teacher', college: 'City High College', district: 'North District' },
   { id: '2', name: 'Maria Garcia', email: 'maria@example.com', role: 'Admin', college: 'Valley College', district: 'Central District' },
-  { id: '3', name: 'James Wilson', email: 'james@example.com', role: 'Teacher', college: 'City High School', district: 'North District' },
+  { id: '3', name: 'James Wilson', email: 'james@example.com', role: 'Teacher', college: 'City High College', district: 'North District' },
   { id: '4', name: 'Sarah Chen', email: 'sarah@example.com', role: 'Student', college: 'Valley College', district: 'Central District' },
   { id: '5', name: 'Michael Brown', email: 'michael@example.com', role: 'Teacher', college: 'East Academy', district: 'East District' }
 ];
@@ -324,7 +324,7 @@ export default function AddCircularPage() {
                 
                 <Select value={collegeFilter} onValueChange={setCollegeFilter}>
                   <SelectTrigger className="w-[200px]">
-                    <School2 className="mr-2 h-4 w-4" />
+                    <College2 className="mr-2 h-4 w-4" />
                     <SelectValue placeholder="Select College" />
                   </SelectTrigger>
                   <SelectContent>

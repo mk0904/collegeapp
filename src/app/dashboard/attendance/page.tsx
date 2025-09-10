@@ -190,6 +190,7 @@ export default function AttendancePage() {
 
     // Effective dataset for current tab
     const todayIso = React.useMemo(() => new Date().toISOString().slice(0,10), [])
+    const todaysCount = React.useMemo(() => attendanceRecords.filter(r => r.date === todayIso).length, [attendanceRecords, todayIso])
     const tabRecords = React.useMemo(() => {
       if (tab === 'today') {
         return filteredRecords.filter(r => r.date === todayIso)
@@ -298,11 +299,15 @@ export default function AttendancePage() {
   return (
     <Card>
       <CardHeader>
-          <div className="flex items-start justify-between">
-              <div>
+          <div className="flex items-start justify-between gap-3">
+              <div className="space-y-1">
                   <CardDescription>
                       Manage attendance records and view detailed reports.
                   </CardDescription>
+                  <div className="inline-flex items-center gap-2 text-sm">
+                    <span className="text-muted-foreground">Today</span>
+                    <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">{todaysCount}</span>
+                  </div>
               </div>
               <Button onClick={handleExport}>
                   <Download className="mr-2 h-4 w-4" />
@@ -358,9 +363,7 @@ export default function AttendancePage() {
                   <TableHead className="hidden md:table-cell">
                       <SortableHeader column="timestamp" label="Timestamp" />
                   </TableHead>
-                  <TableHead className="hidden md:table-cell">
-                      <SortableHeader column="userId" label="User ID" />
-                  </TableHead>
+                  
                   </TableRow>
               </TableHeader>
               <TableBody>
@@ -389,15 +392,11 @@ export default function AttendancePage() {
                                 aria-label={`Select row for ${record.userName}`}
                               />
                           </TableCell>
-                          <TableCell className="font-medium">
-                              <div>{record.userName}</div>
-                              <div className="text-sm text-muted-foreground">{record.userId}</div>
-                          </TableCell>
+                          <TableCell className="font-medium">{record.userName}</TableCell>
                           <TableCell className="hidden md:table-cell">{formatDate(record.date)}</TableCell>
                           <TableCell className="hidden md:table-cell">{record.time}</TableCell>
                           <TableCell className="hidden md:table-cell">{record.checkoutTime ? new Date(record.checkoutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}</TableCell>
                           <TableCell className="hidden md:table-cell">{new Date(record.timestamp).toLocaleString()}</TableCell>
-                          <TableCell className="hidden md:table-cell">{record.userId}</TableCell>
                       </TableRow>
                     ))
                   )}

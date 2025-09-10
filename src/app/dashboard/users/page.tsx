@@ -11,7 +11,7 @@ import {
   ArrowUpDown,
   Download,
   ShieldCheck,
-  School2,
+  College2,
   MapPin,
 } from 'lucide-react'
 
@@ -314,7 +314,7 @@ export default function UsersPage() {
                  <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="outline" className="w-full sm:w-auto">
-                            <School2 className="mr-2 h-4 w-4" />
+                            <College2 className="mr-2 h-4 w-4" />
                             College
                             <ChevronDown className="ml-auto h-4 w-4" />
                         </Button>

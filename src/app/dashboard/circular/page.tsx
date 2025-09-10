@@ -7,7 +7,7 @@ import {
   ChevronDown,
   PlusCircle,
   CalendarIcon,
-  School2,
+  College2,
   MapPin,
   Users,
   Download
@@ -59,7 +59,7 @@ const mockCirculars: Circular[] = [
     status: 'Sent',
     recipientCount: 145,
     district: 'North District',
-    school: 'All Schools'
+    school: 'All Colleges'
   },
   {
     id: 'circ-002',
@@ -68,7 +68,7 @@ const mockCirculars: Circular[] = [
     status: 'Sent',
     recipientCount: 42,
     district: 'Central District',
-    school: 'City High School'
+    school: 'City College'
   },
   {
     id: 'circ-003',
@@ -77,7 +77,7 @@ const mockCirculars: Circular[] = [
     status: 'Draft',
     recipientCount: 0,
     district: 'All Districts',
-    school: 'All Schools'
+    school: 'All Colleges'
   }
 ];
 
@@ -91,7 +91,7 @@ export default function CircularPage() {
   const [searchTerm, setSearchTerm] = React.useState('')
   const [statusFilter, setStatusFilter] = React.useState('all')
   const [districtFilter, setDistrictFilter] = React.useState('all')
-  const [schoolFilter, setSchoolFilter] = React.useState('all')
+  const [schoolFilter, setCollegeFilter] = React.useState('all')
   
   // Fetch circulars from Firebase
   const fetchCirculars = React.useCallback(async () => {
@@ -151,7 +151,7 @@ export default function CircularPage() {
           status: data.status || 'Draft',
           recipientCount: data.recipientCount || 0,
           district: data.district || 'All Districts',
-          school: data.school || 'All Schools'
+          school: data.school || 'All Colleges'
         };
       });
       
@@ -182,7 +182,7 @@ export default function CircularPage() {
     [circulars]
   )
   
-  const uniqueSchools = React.useMemo(() => 
+  const uniqueColleges = React.useMemo(() => 
     [...new Set(circulars.map(c => c.school))], 
     [circulars]
   )
@@ -193,9 +193,9 @@ export default function CircularPage() {
       const matchesSearch = circular.title.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = statusFilter === 'all' || circular.status.toLowerCase() === statusFilter.toLowerCase();
       const matchesDistrict = districtFilter === 'all' || circular.district === districtFilter;
-      const matchesSchool = schoolFilter === 'all' || circular.school === schoolFilter;
+      const matchesCollege = schoolFilter === 'all' || circular.school === schoolFilter;
       
-      return matchesSearch && matchesStatus && matchesDistrict && matchesSchool;
+      return matchesSearch && matchesStatus && matchesDistrict && matchesCollege;
     });
   }, [circulars, searchTerm, statusFilter, districtFilter, schoolFilter]);
 
@@ -293,20 +293,20 @@ export default function CircularPage() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className="w-full sm:w-auto">
-                    <School2 className="mr-2 h-4 w-4" />
-                    School
+                    <College2 className="mr-2 h-4 w-4" />
+                    College
                     <ChevronDown className="ml-auto h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuCheckboxItem checked={schoolFilter === 'all'} onCheckedChange={() => setSchoolFilter('all')}>
-                    All Schools
+                  <DropdownMenuCheckboxItem checked={schoolFilter === 'all'} onCheckedChange={() => setCollegeFilter('all')}>
+                    All Colleges
                   </DropdownMenuCheckboxItem>
-                  {uniqueSchools.map(school => (
+                  {uniqueColleges.map(school => (
                     <DropdownMenuCheckboxItem 
                       key={school} 
                       checked={schoolFilter === school} 
-                      onCheckedChange={() => setSchoolFilter(school)}
+                      onCheckedChange={() => setCollegeFilter(school)}
                     >
                       {school}
                     </DropdownMenuCheckboxItem>
@@ -325,7 +325,7 @@ export default function CircularPage() {
                   <TableHead>Status</TableHead>
                   <TableHead className="hidden md:table-cell">Recipients</TableHead>
                   <TableHead className="hidden md:table-cell">District</TableHead>
-                  <TableHead className="hidden md:table-cell">School</TableHead>
+                  <TableHead className="hidden md:table-cell">College</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

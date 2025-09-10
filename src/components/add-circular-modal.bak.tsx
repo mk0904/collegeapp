@@ -7,7 +7,7 @@ import {
   ChevronDown,
   Users,
   MapPin,
-  School2,
+  College2,
   ShieldCheck,
   CalendarRange,
   X
@@ -66,9 +66,9 @@ type User = {
 
 // Mock data for users
 const mockUsers: User[] = [
-  { id: '1', name: 'Alex Johnson', email: 'alex@example.com', role: 'Teacher', college: 'City High School', district: 'North District' },
+  { id: '1', name: 'Alex Johnson', email: 'alex@example.com', role: 'Teacher', college: 'City High College', district: 'North District' },
   { id: '2', name: 'Maria Garcia', email: 'maria@example.com', role: 'Admin', college: 'Valley College', district: 'Central District' },
-  { id: '3', name: 'James Wilson', email: 'james@example.com', role: 'Teacher', college: 'City High School', district: 'North District' },
+  { id: '3', name: 'James Wilson', email: 'james@example.com', role: 'Teacher', college: 'City High College', district: 'North District' },
   { id: '4', name: 'Sarah Chen', email: 'sarah@example.com', role: 'Student', college: 'Valley College', district: 'Central District' },
   { id: '5', name: 'Michael Brown', email: 'michael@example.com', role: 'Teacher', college: 'East Academy', district: 'East District' }
 ];
@@ -421,11 +421,11 @@ export function AddCircularModal({ isOpen, onOpenChange }: AddCircularModalProps
                 
                 <Select value={collegeFilter} onValueChange={setCollegeFilter}>
                   <SelectTrigger className="w-[200px]">
-                    <School2 className="mr-2 h-4 w-4" />
-                    <SelectValue placeholder="Select School" />
+                    <College2 className="mr-2 h-4 w-4" />
+                    <SelectValue placeholder="Select College" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Schools</SelectItem>
+                    <SelectItem value="all">All Colleges</SelectItem>
                     {uniqueColleges.map(college => (
                       <SelectItem key={college} value={college}>{college}</SelectItem>
                     ))}
@@ -449,7 +449,7 @@ export function AddCircularModal({ isOpen, onOpenChange }: AddCircularModalProps
                       </TableHead>
                       <TableHead>Name</TableHead>
                       <TableHead className="hidden md:table-cell">Role</TableHead>
-                      <TableHead className="hidden md:table-cell">School</TableHead>
+                      <TableHead className="hidden md:table-cell">College</TableHead>
                       <TableHead className="hidden md:table-cell">District</TableHead>
                     </TableRow>
                   </TableHeader>

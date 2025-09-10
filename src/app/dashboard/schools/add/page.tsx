@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { addSchool } from "@/lib/firebase/firestore";
+import { addCollege } from "@/lib/firebase/firestore";
 
 export default function AddCollegePage() {
     const router = useRouter();
@@ -31,7 +31,7 @@ export default function AddCollegePage() {
         }
         setLoading(true);
         try {
-            await addSchool({ name, location, email, phone });
+            await addCollege({ name, location, email, phone });
             toast({
                 title: "Success!",
                 description: "College has been added successfully."
