@@ -102,13 +102,46 @@ export default function CircularPage() {
       // Convert Firestore data to the Circular type
       const formattedCirculars = fetchedCirculars.map(doc => {
         const data = doc as any;
+        console.log('Processing circular:', data.id, 'sentDate:', data.sentDate, 'type:', typeof data.sentDate);
         
-        // Format the date if it exists
+        // Format the date if it exists - try sentDate first, then createdAt
         let sentDate = '—';
-        if (data.sentDate) {
-          // Firestore timestamp to JS Date
-          const date = data.sentDate.toDate ? data.sentDate.toDate() : new Date(data.sentDate);
-          sentDate = date.toLocaleDateString();
+        const dateField = data.sentDate || data.createdAt;
+        if (dateField) {
+          try {
+            // Handle Firestore timestamp
+            let date;
+            if (dateField.toDate && typeof dateField.toDate === 'function') {
+              // Firestore Timestamp
+              date = dateField.toDate();
+            } else if (dateField.seconds) {
+              // Firestore Timestamp object
+              date = new Date(dateField.seconds * 1000);
+            } else if (typeof dateField === 'string') {
+              // ISO string
+              date = new Date(dateField);
+            } else if (dateField instanceof Date) {
+              // Already a Date object
+              date = dateField;
+            } else {
+              // Fallback to current date
+              date = new Date();
+            }
+            
+            // Check if date is valid
+            if (!isNaN(date.getTime())) {
+              sentDate = date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+              });
+            } else {
+              sentDate = 'Invalid Date';
+            }
+          } catch (error) {
+            console.error('Error formatting date:', error, 'dateField:', dateField);
+            sentDate = 'Invalid Date';
+          }
         }
         
         return {

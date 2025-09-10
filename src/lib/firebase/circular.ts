@@ -13,15 +13,30 @@ export async function addCircular(circularData: {
     type: string;
     size?: number;
   }>;
+  attachments?: Array<{
+    name: string;
+    url: string;
+    type: string;
+    size: number;
+    public_id?: string;
+    format?: string;
+    resource_type?: string;
+  }>;
   recipients: string[];
   createdBy: string;
 }): Promise<{ id: string }> {
   try {
+    // Validate input data
+    if (!circularData.title) throw new Error('Title is required');
+    if (!circularData.message) throw new Error('Message is required');
+    if (!circularData.createdBy) throw new Error('CreatedBy is required');
+    if (!Array.isArray(circularData.recipients)) throw new Error('Recipients must be an array');
+    
     // Create a data object to save to Firestore
-    const data = {
+    const data: any = {
       title: circularData.title,
       message: circularData.message,
-      files: circularData.files,
+      files: circularData.files || [],
       recipients: circularData.recipients,
       recipientCount: circularData.recipients.length,
       createdBy: circularData.createdBy,
@@ -30,8 +45,32 @@ export async function addCircular(circularData: {
       sentDate: Timestamp.now(),
     };
     
+    // Add attachments if they exist and are valid
+    if (circularData.attachments && Array.isArray(circularData.attachments)) {
+      data.attachments = circularData.attachments;
+    }
+    
+    // Final validation - remove any undefined values
+    const cleanData = (obj: any): any => {
+      if (obj === null || obj === undefined) return null;
+      if (typeof obj !== 'object') return obj;
+      if (Array.isArray(obj)) {
+        return obj.map(cleanData).filter(item => item !== undefined);
+      }
+      const cleaned: any = {};
+      for (const key in obj) {
+        if (obj[key] !== undefined) {
+          cleaned[key] = cleanData(obj[key]);
+        }
+      }
+      return cleaned;
+    };
+    
+    const finalData = cleanData(data);
+    console.log('Final data being saved to Firestore:', finalData);
+    
     // Add the document to Firestore
-    const docRef = await addDoc(collection(db, 'circulars'), data);
+    const docRef = await addDoc(collection(db, 'circulars'), finalData);
     
     console.log('Circular created with ID:', docRef.id);
     return { id: docRef.id };

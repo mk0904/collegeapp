@@ -5,6 +5,7 @@ import * as React from 'react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -109,6 +110,7 @@ const FileUploader = ({ files, onFilesChange, disabled }: { files: File[], onFil
 export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers, senderId = 'admin' }: SendNotificationModalProps) {
   const { toast } = useToast();
   const [isSending, setIsSending] = React.useState(false);
+  const [currentTab, setCurrentTab] = React.useState('push');
 
   // Form states
   // Push states
@@ -293,127 +295,296 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers, sen
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl">
-        <DialogHeader>
-          <div className="flex justify-between items-center">
-            <DialogTitle className="font-headline text-2xl">Send Notification</DialogTitle>
-            <Badge variant="outline" className="flex items-center gap-2">
-                <div className="bg-primary rounded-full w-2 h-2"></div>
-                {selectedUsers.length} Selected
-            </Badge>
+      <DialogContent className="max-w-6xl h-[95vh] flex flex-col p-0">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+              <Send className="w-5 h-5 text-primary-foreground" />
+            </div>
+            <div>
+              <DialogTitle className="text-xl font-semibold">Send Notification</DialogTitle>
+              <DialogDescription>
+                Send announcements and updates to your organization members.
+              </DialogDescription>
+            </div>
           </div>
         </DialogHeader>
-        <Tabs defaultValue="push" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 bg-muted/60">
-                <TabsTrigger value="push" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                    <Send className="mr-2 h-4 w-4" /> Push
-                </TabsTrigger>
-                <TabsTrigger value="invitation" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                    <CalendarIcon className="mr-2 h-4 w-4" /> Invitation
-                </TabsTrigger>
+        <Tabs defaultValue="push" value={currentTab} onValueChange={setCurrentTab} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+          <div className="px-6 py-4 border-b">
+            <TabsList className="grid w-full grid-cols-2 bg-accent">
+              <TabsTrigger value="push" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <Send className="mr-2 h-4 w-4" /> Push Notification
+              </TabsTrigger>
+              <TabsTrigger value="invitation" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <CalendarIcon className="mr-2 h-4 w-4" /> Event Invitation
+              </TabsTrigger>
             </TabsList>
-            <TabsContent value="invitation" className="py-4">
-                <div className="space-y-4">
-                    <div className="space-y-2">
-                        <Input id="invitation-title" value={invitationTitle} onChange={e => setInvitationTitle(e.target.value)} placeholder="Invitation Title (e.g. Tech Fest 2024)" disabled={isSending} />
+          </div>
+          <TabsContent value="invitation" className="flex-1 flex min-h-0 overflow-y-auto">
+            {/* Left Column - Invitation Details */}
+            <div className="w-1/2 p-6 border-r space-y-6">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Event Title *</label>
+                <Input 
+                  id="invitation-title" 
+                  value={invitationTitle} 
+                  onChange={e => setInvitationTitle(e.target.value)} 
+                  placeholder="Enter event title (e.g. Tech Fest 2024)" 
+                  disabled={isSending} 
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Event Message *</label>
+                <Textarea 
+                  id="invitation-message" 
+                  value={invitationMessage} 
+                  onChange={e => setInvitationMessage(e.target.value)} 
+                  placeholder="Enter event details and description" 
+                  className="min-h-24 resize-none" 
+                  disabled={isSending} 
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Venue *</label>
+                <Input 
+                  id="venue" 
+                  value={venue} 
+                  onChange={e => setVenue(e.target.value)} 
+                  placeholder="Enter venue (e.g. College Auditorium)" 
+                  disabled={isSending} 
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Event Date & Time *</label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1 rounded-md border border-input h-10 px-3 w-full focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
+                      <Input 
+                        type="text"
+                        maxLength={2}
+                        value={eventHour}
+                        onChange={handleHourChange}
+                        onBlur={(e) => {
+                          if (e.target.value) {
+                            setEventHour(e.target.value.padStart(2, '0'))
+                          }
+                        }}
+                        placeholder="HH"
+                        className="w-8 border-none text-center p-0 h-auto focus-visible:ring-0 focus-visible:border-none"
+                        disabled={isSending}
+                      />
+                      <span className="text-muted-foreground">:</span>
+                      <Input
+                        type="text"
+                        maxLength={2}
+                        value={eventMinute}
+                        onChange={handleMinuteChange}
+                        onBlur={(e) => {
+                          if (e.target.value) {
+                            setEventMinute(e.target.value.padStart(2, '0'))
+                          }
+                        }}
+                        placeholder="MM"
+                        className="w-8 border-none text-center p-0 h-auto focus-visible:ring-0"
+                        disabled={isSending}
+                      />
                     </div>
-                    <div className="space-y-2">
-                        <Textarea id="invitation-message" value={invitationMessage} onChange={e => setInvitationMessage(e.target.value)} placeholder="Message" className="min-h-24" disabled={isSending} />
-                    </div>
-                     <div className="space-y-2">
-                        <Input id="venue" value={venue} onChange={e => setVenue(e.target.value)} placeholder="Venue (e.g. College Auditorium)" disabled={isSending} />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                       <div className="flex items-center gap-2">
-                         <div className="flex items-center gap-1 rounded-md border border-input h-10 px-3 w-full focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
-                           <Input 
-                            type="text"
-                            maxLength={2}
-                            value={eventHour}
-                            onChange={handleHourChange}
-                            onBlur={(e) => {
-                                if (e.target.value) {
-                                    setEventHour(e.target.value.padStart(2, '0'))
-                                }
-                            }}
-                            placeholder="HH"
-                            className="w-8 border-none text-center p-0 h-auto focus-visible:ring-0 focus-visible:border-none"
-                           />
-                           <span className="text-muted-foreground">:</span>
-                           <Input
-                             type="text"
-                             maxLength={2}
-                             value={eventMinute}
-                             onChange={handleMinuteChange}
-                             onBlur={(e) => {
-                                if (e.target.value) {
-                                    setEventMinute(e.target.value.padStart(2, '0'))
-                                }
-                             }}
-                             placeholder="MM"
-                             className="w-8 border-none text-center p-0 h-auto focus-visible:ring-0"
-                           />
-                         </div>
-                         <Button variant="outline" className="w-[80px]" onClick={() => setEventPeriod(p => p === 'AM' ? 'PM' : 'AM')}>
-                            {eventPeriod}
-                         </Button>
-                       </div>
-                         <div className="space-y-2">
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                <Button
-                                    variant={"outline"}
-                                    className={cn(
-                                    "w-full justify-start text-left font-normal",
-                                    !eventDate && "text-muted-foreground"
-                                    )}
-                                    disabled={isSending}
-                                >
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {eventDate ? format(eventDate, "PPP") : <span>Event Date</span>}
-                                </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0">
-                                <Calendar
-                                    mode="single"
-                                    selected={eventDate}
-                                    onSelect={setEventDate}
-                                    initialFocus
-                                />
-                                </PopoverContent>
-                            </Popover>
-                        </div>
-                    </div>
-                    <FileUploader files={invitationFiles} onFilesChange={setInvitationFiles} disabled={isSending}/>
-                    <DialogFooter>
-                        <Button onClick={() => handleSendNotification('invitation')} disabled={isSending}>
-                            {isSending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Submit
+                    <Button variant="outline" className="w-[80px]" onClick={() => setEventPeriod(p => p === 'AM' ? 'PM' : 'AM')} disabled={isSending}>
+                      {eventPeriod}
+                    </Button>
+                  </div>
+                  <div className="space-y-2">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !eventDate && "text-muted-foreground"
+                          )}
+                          disabled={isSending}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {eventDate ? format(eventDate, "PPP") : <span>Select Date</span>}
                         </Button>
-                    </DialogFooter>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0">
+                        <Calendar
+                          mode="single"
+                          selected={eventDate}
+                          onSelect={setEventDate}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
                 </div>
-            </TabsContent>
-            <TabsContent value="push" className="py-4">
-                 <div className="space-y-4">
-                    <div className="space-y-2">
-                        <Input id="push-title" value={pushTitle} onChange={e => setPushTitle(e.target.value)} placeholder="Push Title (short and catchy)" disabled={isSending} />
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Attachments</label>
+                <FileUploader files={invitationFiles} onFilesChange={setInvitationFiles} disabled={isSending}/>
+              </div>
+            </div>
+            
+            {/* Right Column - Recipients */}
+            <div className="w-1/2 p-6 space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-accent rounded-lg flex items-center justify-center">
+                    <MessageSquare className="w-4 w-4 text-muted-foreground" />
+                  </div>
+                  <h3 className="text-lg font-semibold">Recipients</h3>
+                </div>
+                <div className="px-3 py-1 bg-accent rounded-full">
+                  <span className="text-sm font-medium text-muted-foreground">
+                    {selectedUsers.length} selected
+                  </span>
+                </div>
+              </div>
+              
+              <div className="border rounded-lg max-h-64 overflow-y-auto">
+                <div className="p-3 border-b bg-accent">
+                  <div className="flex items-center space-x-3">
+                    <span className="text-sm font-medium">Selected Recipients</span>
+                  </div>
+                </div>
+                <div className="divide-y">
+                  {selectedUsers.map(user => (
+                    <div key={user.id} className="p-3 flex items-center space-x-3 hover:bg-accent transition-colors">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium truncate">{user.name}</div>
+                        <div className="text-xs text-muted-foreground flex items-center space-x-1">
+                          <span>{user.role}</span>
+                          <span>•</span>
+                          <span>{user.district}</span>
+                        </div>
+                      </div>
+                      <Badge variant="secondary" className="text-xs">
+                        {user.college}
+                      </Badge>
                     </div>
-                    <div className="space-y-2">
-                        <Textarea id="push-message" value={pushMessage} onChange={e => setPushMessage(e.target.value)} placeholder="Push Message (concise, max 150 chars)." maxLength={150} className="min-h-24" disabled={isSending}/>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+          <TabsContent value="push" className="flex-1 flex min-h-0 overflow-y-auto">
+            {/* Left Column - Push Details */}
+            <div className="w-1/2 p-6 border-r space-y-6">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Notification Title *</label>
+                <Input 
+                  id="push-title" 
+                  value={pushTitle} 
+                  onChange={e => setPushTitle(e.target.value)} 
+                  placeholder="Enter notification title (short and catchy)" 
+                  disabled={isSending} 
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Notification Message *</label>
+                <Textarea 
+                  id="push-message" 
+                  value={pushMessage} 
+                  onChange={e => setPushMessage(e.target.value)} 
+                  placeholder="Enter notification message (concise, max 150 chars)" 
+                  maxLength={150} 
+                  className="min-h-24 resize-none w-full" 
+                  disabled={isSending}
+                  rows={4}
+                />
+                <div className="text-xs text-muted-foreground text-right">
+                  {pushMessage.length}/150 characters
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Attachments</label>
+                <FileUploader files={pushFiles} onFilesChange={setPushFiles} disabled={isSending} />
+              </div>
+            </div>
+            
+            {/* Right Column - Recipients */}
+            <div className="w-1/2 p-6 space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-accent rounded-lg flex items-center justify-center">
+                    <MessageSquare className="w-4 w-4 text-muted-foreground" />
+                  </div>
+                  <h3 className="text-lg font-semibold">Recipients</h3>
+                </div>
+                <div className="px-3 py-1 bg-accent rounded-full">
+                  <span className="text-sm font-medium text-muted-foreground">
+                    {selectedUsers.length} selected
+                  </span>
+                </div>
+              </div>
+              
+              <div className="border rounded-lg max-h-64 overflow-y-auto">
+                <div className="p-3 border-b bg-accent">
+                  <div className="flex items-center space-x-3">
+                    <span className="text-sm font-medium">Selected Recipients</span>
+                  </div>
+                </div>
+                <div className="divide-y">
+                  {selectedUsers.map(user => (
+                    <div key={user.id} className="p-3 flex items-center space-x-3 hover:bg-accent transition-colors">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium truncate">{user.name}</div>
+                        <div className="text-xs text-muted-foreground flex items-center space-x-1">
+                          <span>{user.role}</span>
+                          <span>•</span>
+                          <span>{user.district}</span>
+                        </div>
+                      </div>
+                      <Badge variant="secondary" className="text-xs">
+                        {user.college}
+                      </Badge>
                     </div>
-                    <FileUploader files={pushFiles} onFilesChange={setPushFiles} disabled={isSending} />
-                    <DialogFooter>
-                        <Button onClick={() => handleSendNotification('push')} disabled={isSending}>
-                            {isSending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Submit
-                        </Button>
-                    </DialogFooter>
-                 </div>
-            </TabsContent>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </TabsContent>
         </Tabs>
+        
+        {/* Footer */}
+        <DialogFooter className="px-6 py-4 border-t bg-accent flex-shrink-0">
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center space-x-4">
+              <div className="text-sm text-muted-foreground">
+                Ready to send to {selectedUsers.length} recipient{selectedUsers.length !== 1 ? 's' : ''}
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={() => handleSendNotification(currentTab as 'push' | 'invitation')} 
+                disabled={isSending}
+              >
+                {isSending ? (
+                  <div className="flex items-center space-x-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Sending...</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center space-x-2">
+                    <Send className="h-4 w-4" />
+                    <span>Send {currentTab === 'push' ? 'Notification' : 'Invitation'}</span>
+                  </div>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
-
-    

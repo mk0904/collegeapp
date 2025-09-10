@@ -8,7 +8,11 @@ import {
   MapPin,
   School2,
   ShieldCheck,
-  Loader2
+  Loader2,
+  X,
+  FileText,
+  Image,
+  File
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -29,7 +33,7 @@ import { Label } from '@/components/ui/label'
 import { getAuth } from 'firebase/auth'
 import { addCircular } from '@/lib/firebase/circular'
 import { getUsers } from '@/lib/firebase/firestore'
-import { uploadFileToStorage } from '@/lib/firebase/storage'
+import { uploadMultipleFilesToUploadThing, testUploadThingUrl } from '@/lib/uploadthing-client'
 import { 
   Select, 
   SelectContent, 
@@ -99,85 +103,125 @@ export function AddCircularModal({ isOpen, onOpenChange, onCircularCreated }: Ad
     
     fetchUsers()
   }, [isOpen, toast])
-  
-  // Extract unique values for filters
-  const uniqueRoles = React.useMemo(() => [...new Set(users.map(u => u.role))], [users])
-  const uniqueDistricts = React.useMemo(() => [...new Set(users.map(u => u.district).filter(Boolean))], [users])
-  const uniqueColleges = React.useMemo(() => [...new Set(users.map(u => u.college).filter(Boolean))], [users])
 
   // Filter users based on selected filters
   const filteredUsers = React.useMemo(() => {
     return users.filter(user => {
-      const matchesRole = roleFilter === 'all' || user.role === roleFilter
+      const matchesRole = roleFilter === 'all' || user.role.toLowerCase() === roleFilter.toLowerCase()
       const matchesDistrict = districtFilter === 'all' || user.district === districtFilter
       const matchesCollege = collegeFilter === 'all' || user.college === collegeFilter
-      const isActive = user.status === 'Active' || user.status === undefined // Consider users active by default if status is not set
-      
-      return matchesRole && matchesDistrict && matchesCollege && isActive
+      return matchesRole && matchesDistrict && matchesCollege
     })
   }, [users, roleFilter, districtFilter, collegeFilter])
   
-  // Select all filtered users when modal opens
+  // Get unique values for filter options
+  const uniqueRoles = React.useMemo(() => 
+    [...new Set(users.map(user => user.role))], 
+    [users]
+  )
+  
+  const uniqueDistricts = React.useMemo(() => 
+    [...new Set(users.map(user => user.district))], 
+    [users]
+  )
+  
+  const uniqueColleges = React.useMemo(() => 
+    [...new Set(users.map(user => user.college))], 
+    [users]
+  )
+
+  // Select all users by default when modal opens
   React.useEffect(() => {
-    if (isOpen) {
-      // When modal opens, select all users matching current filters
-      setSelectedUserIds(filteredUsers.map(user => user.id))
-    } else {
+    if (isOpen && users.length > 0 && selectedUserIds.length === 0) {
+      setSelectedUserIds(users.map(user => user.id))
+    }
+  }, [isOpen, users, selectedUserIds.length])
+
+  // Auto-filter selected users when filters change
+  React.useEffect(() => {
+    if (selectedUserIds.length > 0) {
+      // Keep only selected users that match current filters
+      const filteredUserIds = filteredUsers.map(user => user.id)
+      const validSelectedIds = selectedUserIds.filter(id => filteredUserIds.includes(id))
+      
+      // Only update if there's a change to avoid infinite loops
+      if (validSelectedIds.length !== selectedUserIds.length) {
+        setSelectedUserIds(validSelectedIds)
+      }
+    }
+  }, [roleFilter, districtFilter, collegeFilter, filteredUsers, selectedUserIds])
+
       // Reset form when modal closes
+  React.useEffect(() => {
+    if (!isOpen) {
       setTitle('')
       setMessage('')
       setFiles([])
       // Reset selections
       setSelectedUserIds([])
     }
-  }, [isOpen, filteredUsers])
+  }, [isOpen])
   
-  // Handle file selection
+  // Handle file selection - append new files instead of replacing
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      setFiles(Array.from(e.target.files))
+      const newFiles = Array.from(e.target.files)
+      setFiles(prevFiles => [...prevFiles, ...newFiles])
+    }
+    // Clear the input so the same file can be selected again if needed
+    e.target.value = ''
+  }
+
+  // Handle removing a specific file
+  const handleRemoveFile = (indexToRemove: number) => {
+    setFiles(prevFiles => prevFiles.filter((_, index) => index !== indexToRemove))
+  }
+
+  // Get file icon based on file type
+  const getFileIcon = (file: File) => {
+    if (file.type.startsWith('image/')) {
+      return <Image className="h-4 w-4 text-blue-500" />
+    } else if (file.type === 'application/pdf') {
+      return <FileText className="h-4 w-4 text-red-500" />
+    } else {
+      return <File className="h-4 w-4 text-gray-500" />
     }
   }
+
+  // Format file size
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes'
+    const k = 1024
+    const sizes = ['Bytes', 'KB', 'MB', 'GB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+  }
   
-  // Handle user selection
+  // Handle user selection - works with filtered users only
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      // Only select users that match current filters
+      // Select all filtered users
       setSelectedUserIds(filteredUsers.map(user => user.id))
     } else {
-      setSelectedUserIds([])
+      // Deselect all filtered users
+      const filteredUserIds = filteredUsers.map(user => user.id)
+      setSelectedUserIds(selectedUserIds.filter(id => !filteredUserIds.includes(id)))
     }
   }
   
-  const handleSelectUser = (userId: string, checked: boolean) => {
+  const handleUserSelect = (userId: string, checked: boolean) => {
     if (checked) {
-      // Make sure the user exists in the filtered list before adding
-      if (filteredUsers.some(user => user.id === userId)) {
         setSelectedUserIds(prev => [...prev, userId])
-      }
     } else {
       setSelectedUserIds(prev => prev.filter(id => id !== userId))
     }
   }
   
-  // Handle form submission
   const handleSubmit = async () => {
-    console.log('Creating circular:', { title, message, files: files.length, recipients: selectedUserIds.length });
-    
-    // Form validation
-    if (!title.trim()) {
+    if (!title.trim() || !message.trim()) {
       toast({
-        title: "Title Required",
-        description: "Please enter a circular title.",
-        variant: "destructive"
-      })
-      return
-    }
-    
-    if (!message.trim()) {
-      toast({
-        title: "Message Required",
-        description: "Please enter a circular message.",
+        title: "Validation Error",
+        description: "Please fill in all required fields.",
         variant: "destructive"
       })
       return
@@ -185,7 +229,7 @@ export function AddCircularModal({ isOpen, onOpenChange, onCircularCreated }: Ad
     
     if (selectedUserIds.length === 0) {
       toast({
-        title: "Recipients Required",
+        title: "No Recipients",
         description: "Please select at least one recipient.",
         variant: "destructive"
       })
@@ -209,48 +253,127 @@ export function AddCircularModal({ isOpen, onOpenChange, onCircularCreated }: Ad
         throw new Error("You must be logged in to create a circular");
       }
       
-      // Upload files to Firebase Storage
-      let fileObjects = [];
+      // Upload multiple files to UploadThing
+      let fileObjects: Array<{
+        name: string;
+        type: string;
+        size: number;
+        url: string;
+        key?: string;
+      }> = [];
       if (files.length > 0) {
-        const uploadPromises = Array.from(files).map(async (file, index) => {
-          try {
-            const filePath = `circulars/${Date.now()}_${file.name}`;
-            const downloadURL = await uploadFileToStorage(filePath, file);
-            
-            return {
-              name: file.name,
-              type: file.type,
-              size: file.size,
-              url: downloadURL,
-              path: filePath
-            };
-          } catch (error) {
-            console.error(`Error uploading file ${file.name}:`, error);
-            throw new Error(`Failed to upload ${file.name}`);
-          }
-        });
+        console.log(`Starting upload of ${files.length} files to UploadThing...`);
         
-        // Wait for all uploads to complete
-        fileObjects = await Promise.all(uploadPromises);
+        try {
+          // Upload all files to UploadThing
+          const uploadResults = await uploadMultipleFilesToUploadThing(
+            Array.from(files)
+          );
+          
+          // Convert UploadThing results to the format expected by addCircular
+          fileObjects = uploadResults.map((result) => ({
+            name: result.name,
+            type: result.type,
+            size: result.size,
+            url: result.url,
+            key: result.key
+          }));
+          
+          console.log('All files uploaded successfully to UploadThing:', fileObjects);
+          
+          // Test URLs to make sure they work
+          console.log('Testing uploaded URLs...');
+          for (const file of fileObjects) {
+            const isAccessible = await testUploadThingUrl(file.url);
+            console.log(`URL for ${file.name}: ${isAccessible ? '✅ Accessible' : '❌ Not accessible'}`);
+            if (!isAccessible) {
+              console.warn(`Warning: URL for ${file.name} is not accessible: ${file.url}`);
+            }
+          }
+          
+          // Show success message
+          toast({
+            title: "Files Uploaded",
+            description: `Successfully uploaded ${files.length} file(s) to UploadThing.`,
+          });
+          
+        } catch (error) {
+          console.error('UploadThing upload failed:', error);
+          
+          // Show specific error message
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          toast({
+            title: "Upload Failed",
+            description: `Failed to upload files to UploadThing: ${errorMessage}`,
+            variant: "destructive",
+          });
+          
+          throw new Error(`File upload failed: ${errorMessage}`);
+        }
       }
       
-      // Save circular to Firestore
+      // Validate all data before saving
+      console.log('Validating circular data before save...');
+      console.log('Title:', title);
+      console.log('Message:', message);
+      console.log('File objects:', fileObjects);
+      console.log('Selected user IDs:', selectedUserIds);
+      console.log('Current user ID:', currentUser.uid);
+      
+      // Create circular data with strict validation
       const circular = {
-        title,
-        message,
-        files: fileObjects,
-        recipients: selectedUserIds,
-        createdBy: currentUser.uid
+        title: title || '',
+        message: message || '',
+        files: (fileObjects || []).map(file => ({
+          name: file.name || '',
+          url: file.url || '',
+          type: file.type || '',
+          size: file.size || 0
+        })),
+        attachments: (fileObjects || []).map(file => {
+          const attachment: any = {
+            name: file.name || '',
+            url: file.url || '',
+            type: file.type || '',
+            size: file.size || 0
+          };
+          
+          // Only add UploadThing metadata if they exist
+          if (file.key && file.key !== undefined) attachment.key = file.key;
+          
+          return attachment;
+        }),
+        recipients: selectedUserIds || [],
+        createdBy: currentUser.uid || ''
       };
       
-      await addCircular(circular);
+      // Final validation - check for any undefined values
+      const validateData = (obj: any, path = ''): void => {
+        for (const key in obj) {
+          const currentPath = path ? `${path}.${key}` : key;
+          if (obj[key] === undefined) {
+            throw new Error(`Undefined value found at path: ${currentPath}`);
+          }
+          if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
+            validateData(obj[key], currentPath);
+          }
+        }
+      };
+      
+      console.log('Validating circular data structure...');
+      validateData(circular);
+      console.log('✅ All data validated successfully');
+      
+      // Add circular to Firebase
+      const result = await addCircular(circular);
+      console.log('Circular created successfully:', result);
       
       toast({
-        title: "Circular Created",
-        description: `Circular with ${files.length} attachment(s) sent to ${selectedUserIds.length} recipient(s).`
-      })
+        title: "Success",
+        description: "Circular created and sent successfully!",
+      });
       
-      // Refresh the circulars list
+      // Call the callback to refresh the circulars list
       if (onCircularCreated) {
         onCircularCreated();
       }
@@ -260,69 +383,100 @@ export function AddCircularModal({ isOpen, onOpenChange, onCircularCreated }: Ad
       setIsUploading(false)
     } catch (error) {
       console.error('Error creating circular:', error);
+      
+      // Provide more specific error messages
+      let errorMessage = "Failed to create circular. Please try again.";
+      
+      if (error instanceof Error) {
+        if (error.message.includes('Firebase')) {
+          errorMessage = `Database error: ${error.message}`;
+        } else if (error.message.includes('Failed to upload')) {
+          errorMessage = `File upload error: ${error.message}`;
+        } else {
+          errorMessage = `Error: ${error.message}`;
+        }
+      }
+      
       toast({
         title: "Error",
-        description: "Failed to create circular. Please try again.",
+        description: errorMessage,
         variant: "destructive"
       });
       setIsUploading(false)
     }
   }
   
-  const isAllSelected = selectedUserIds.length === filteredUsers.length && filteredUsers.length > 0
-  const isIndeterminate = selectedUserIds.length > 0 && selectedUserIds.length < filteredUsers.length
+  // Check if all filtered users are selected
+  const filteredUserIds = filteredUsers.map(user => user.id)
+  const selectedFilteredUsers = selectedUserIds.filter(id => filteredUserIds.includes(id))
+  const isAllFilteredSelected = selectedFilteredUsers.length === filteredUsers.length && filteredUsers.length > 0
+  const isIndeterminate = selectedFilteredUsers.length > 0 && selectedFilteredUsers.length < filteredUsers.length
   
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-6xl h-[95vh] flex flex-col p-0">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+              <FileText className="w-5 h-5 text-primary-foreground" />
+            </div>
+            <div>
+              <DialogTitle className="text-xl font-semibold">Create Circular</DialogTitle>
+              <DialogDescription>
+                Send announcements and documents to your organization.
+              </DialogDescription>
+            </div>
+          </div>
+        </DialogHeader>
+        
         <form onSubmit={(e) => {
           e.preventDefault();
-          console.log('Form submitted, calling handleSubmit');
           handleSubmit();
-        }}>
-          <DialogHeader>
-            <DialogTitle>Add Circular</DialogTitle>
-            <DialogDescription>
-              Create a new circular and select recipients.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-6 py-4">
-            {/* Circular Details */}
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="title">Title</Label>
+        }} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+          {/* Main Content - Two Column Layout */}
+          <div className="flex-1 flex min-h-0 overflow-y-auto">
+            {/* Left Column - Circular Details */}
+            <div className="w-1/2 p-6 border-r space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="title" className="text-sm font-medium">Title *</Label>
                 <Input 
                   id="title" 
                   placeholder="Enter circular title" 
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   className="mt-1"
+                  required
                 />
               </div>
               
-              <div>
-                <Label htmlFor="message">Message</Label>
+              <div className="space-y-2">
+                <Label htmlFor="message" className="text-sm font-medium">Message *</Label>
                 <Textarea 
                   id="message" 
-                  placeholder="Enter circular message" 
-                  rows={5}
+                  placeholder="Enter your message here..." 
+                  rows={4}
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  className="mt-1"
+                  className="mt-1 resize-none"
+                  required
                 />
               </div>
               
-              <div className="grid grid-cols-1 gap-4">
-                <div>
-                  <Label htmlFor="file">Attachments (Multiple files allowed)</Label>
-                  <div className="mt-1 flex items-center">
+              {/* File Attachments */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Attachments</Label>
+                <div className="mt-1">
                     <Label 
                       htmlFor="file" 
-                      className="cursor-pointer border border-dashed border-gray-300 rounded-md px-4 py-2 w-full flex items-center justify-center"
-                    >
-                      <Upload className="mr-2 h-4 w-4" />
-                      {files.length > 0 ? `${files.length} file(s) selected` : "Select Files"}
+                    className="cursor-pointer border-2 border-dashed border-border rounded-lg px-6 py-4 w-full flex flex-col items-center justify-center hover:border-primary hover:bg-accent transition-colors"
+                  >
+                    <div className="w-12 h-12 bg-accent rounded-full flex items-center justify-center mb-3">
+                      <Upload className="w-5 h-5 text-muted-foreground" />
+                    </div>
+                    <span className="text-sm font-medium">
+                      {files.length > 0 ? `Add More Files (${files.length} selected)` : "Click to Add Files"}
+                    </span>
+                    <span className="text-xs text-muted-foreground mt-1">Supports images, PDFs, and documents</span>
                     </Label>
                     <Input 
                       id="file" 
@@ -333,24 +487,69 @@ export function AddCircularModal({ isOpen, onOpenChange, onCircularCreated }: Ad
                       className="hidden" 
                     />
                   </div>
+                
+                {/* Selected Files - Compact List */}
                   {files.length > 0 && (
-                    <div className="mt-2 text-sm text-muted-foreground">
-                      {files.length} file(s) selected
+                  <div className="mt-3 space-y-2 max-h-32 overflow-y-auto">
+                    <div className="text-xs font-medium text-muted-foreground">
+                      Selected Files ({files.length})
+                    </div>
+                    {files.map((file, index) => (
+                      <div 
+                        key={`${file.name}-${index}`}
+                        className="flex items-center justify-between p-3 bg-card border rounded-lg hover:bg-accent transition-colors"
+                      >
+                        <div className="flex items-center space-x-3 flex-1 min-w-0">
+                          <div className="flex-shrink-0">
+                            {getFileIcon(file)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-medium truncate">{file.name}</div>
+                            <div className="text-xs text-muted-foreground">{formatFileSize(file.size)}</div>
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveFile(index)}
+                          className="h-6 w-6 p-0 hover:bg-destructive hover:text-destructive-foreground rounded-full"
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
                     </div>
                   )}
-                </div>
               </div>
             </div>
             
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium">Recipients</h3>
+            {/* Right Column - Recipients */}
+            <div className="w-1/2 p-6 space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-accent rounded-lg flex items-center justify-center">
+                    <Users className="w-4 h-4 text-muted-foreground" />
+                  </div>
+                  <h3 className="text-lg font-semibold">Recipients</h3>
+                </div>
+                <div className="px-3 py-1 bg-accent rounded-full">
+                  <span className="text-sm font-medium text-muted-foreground">
+                    {selectedUserIds.length} of {filteredUsers.length} selected
+                  </span>
+                </div>
+              </div>
               
               {/* Filter Controls */}
-              <div className="flex flex-wrap gap-3">
+              <div className="space-y-3">
+                <div className="text-xs font-medium text-muted-foreground">
+                  Filter Recipients
+                </div>
+                <div className="grid grid-cols-3 gap-3">
                 <Select value={roleFilter} onValueChange={setRoleFilter}>
-                  <SelectTrigger className="w-[200px]">
-                    <ShieldCheck className="mr-2 h-4 w-4" />
-                    <SelectValue placeholder="Select Role" />
+                    <SelectTrigger className="h-9 text-sm">
+                      <ShieldCheck className="mr-2 h-4 w-4 text-muted-foreground" />
+                      <SelectValue placeholder="Role" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Roles</SelectItem>
@@ -361,9 +560,9 @@ export function AddCircularModal({ isOpen, onOpenChange, onCircularCreated }: Ad
                 </Select>
                 
                 <Select value={districtFilter} onValueChange={setDistrictFilter}>
-                  <SelectTrigger className="w-[200px]">
-                    <MapPin className="mr-2 h-4 w-4" />
-                    <SelectValue placeholder="Select District" />
+                    <SelectTrigger className="h-9 text-sm">
+                      <MapPin className="mr-2 h-4 w-4 text-muted-foreground" />
+                      <SelectValue placeholder="District" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Districts</SelectItem>
@@ -374,9 +573,9 @@ export function AddCircularModal({ isOpen, onOpenChange, onCircularCreated }: Ad
                 </Select>
                 
                 <Select value={collegeFilter} onValueChange={setCollegeFilter}>
-                  <SelectTrigger className="w-[200px]">
-                    <School2 className="mr-2 h-4 w-4" />
-                    <SelectValue placeholder="Select School" />
+                    <SelectTrigger className="h-9 text-sm">
+                      <School2 className="mr-2 h-4 w-4 text-muted-foreground" />
+                      <SelectValue placeholder="School" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Schools</SelectItem>
@@ -385,79 +584,102 @@ export function AddCircularModal({ isOpen, onOpenChange, onCircularCreated }: Ad
                     ))}
                   </SelectContent>
                 </Select>
+                </div>
               </div>
               
-              {/* Recipients Table */}
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[40px]">
+              {/* Recipients List */}
+              <div className="border rounded-lg max-h-64 overflow-y-auto">
+                <div className="p-3 border-b bg-accent">
+                  <div className="flex items-center space-x-3">
                         <Checkbox 
-                          checked={isAllSelected} 
-                          // @ts-ignore - 'indeterminate' is a valid prop for Checkbox
-                          indeterminate={isIndeterminate}
+                      checked={isAllFilteredSelected}
                           onCheckedChange={handleSelectAll}
-                          aria-label="Select all recipients"
-                        />
-                      </TableHead>
-                      <TableHead>Name</TableHead>
-                      <TableHead className="hidden md:table-cell">Role</TableHead>
-                      <TableHead className="hidden md:table-cell">School</TableHead>
-                      <TableHead className="hidden md:table-cell">District</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredUsers.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center py-4">
-                          No recipients match the selected filters.
-                        </TableCell>
-                      </TableRow>
+                    />
+                    <span className="text-sm font-medium">
+                      Select All Filtered ({selectedFilteredUsers.length}/{filteredUsers.length})
+                    </span>
+                  </div>
+                </div>
+                <div className="divide-y">
+                  {loading ? (
+                    [...Array(5)].map((_, i) => (
+                      <div key={i} className="p-3 flex items-center space-x-3">
+                        <div className="h-4 w-4 bg-muted rounded animate-pulse" />
+                        <div className="h-4 w-24 bg-muted rounded animate-pulse" />
+                        <div className="h-4 w-16 bg-muted rounded animate-pulse" />
+                      </div>
+                    ))
                     ) : (
                       filteredUsers.map(user => (
-                        <TableRow key={user.id}>
-                          <TableCell>
+                      <div key={user.id} className="p-3 flex items-center space-x-3 hover:bg-accent transition-colors">
                             <Checkbox 
                               checked={selectedUserIds.includes(user.id)}
-                              onCheckedChange={(checked) => handleSelectUser(user.id, !!checked)}
-                              aria-label={`Select ${user.name}`}
-                            />
-                          </TableCell>
-                          <TableCell className="font-medium">
-                            <div>{user.name}</div>
-                            <div className="text-sm text-muted-foreground">{user.email}</div>
-                          </TableCell>
-                          <TableCell className="hidden md:table-cell">
-                            <Badge variant="outline" className="capitalize">{user.role.toLowerCase()}</Badge>
-                          </TableCell>
-                          <TableCell className="hidden md:table-cell">{user.college}</TableCell>
-                          <TableCell className="hidden md:table-cell">{user.district}</TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-              
-              <div className="text-sm text-muted-foreground">
-                {selectedUserIds.length} of {filteredUsers.length} recipient(s) selected.
+                          onCheckedChange={(checked) => handleUserSelect(user.id, checked as boolean)}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium truncate">{user.name}</div>
+                          <div className="text-xs text-muted-foreground flex items-center space-x-1">
+                            <span>{user.role}</span>
+                            <span>•</span>
+                            <span>{user.district}</span>
+                          </div>
+                        </div>
+                        <Badge variant="secondary" className="text-xs">
+                          {user.college}
+                        </Badge>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
             </div>
           </div>
-          
-          <DialogFooter className="gap-2 sm:gap-0">
+        </form>
+        
+        {/* Footer - Always at bottom */}
+        <DialogFooter className="px-6 py-4 border-t bg-accent flex-shrink-0">
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center space-x-4">
+              {files.length > 0 && (
+                <div className="flex items-center space-x-2 px-3 py-1 bg-accent rounded-full">
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium text-muted-foreground">
+                    {files.length} file{files.length !== 1 ? 's' : ''} attached
+                  </span>
+                </div>
+              )}
+              <div className="text-sm text-muted-foreground">
+                Ready to send to {selectedUserIds.length} recipient{selectedUserIds.length !== 1 ? 's' : ''}
+                {filteredUsers.length !== users.length && (
+                  <span className="ml-2 text-xs">(filtered from {users.length} total)</span>
+                )}
+              </div>
+            </div>
+            <div className="flex gap-3">
             <DialogClose asChild>
-              <Button type="button" variant="outline">Cancel</Button>
+                <Button type="button" variant="outline">
+                  Cancel
+                </Button>
             </DialogClose>
-            <div className="flex gap-2">
-              <Button variant="outline" type="button">Save as Draft</Button>
-              <Button type="submit" onClick={handleSubmit} disabled={isUploading}>
-                {isUploading ? "Sending..." : "Send Circular"}
+              <Button 
+                onClick={handleSubmit}
+                disabled={isUploading || selectedUserIds.length === 0}
+              >
+                {isUploading ? (
+                  <div className="flex items-center space-x-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Sending...</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center space-x-2">
+                    <FileText className="h-4 w-4" />
+                    <span>Send Circular</span>
+                  </div>
+                )}
               </Button>
             </div>
+            </div>
           </DialogFooter>
-        </form>
       </DialogContent>
     </Dialog>
   )
