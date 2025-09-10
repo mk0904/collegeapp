@@ -15,8 +15,8 @@ npm install uploadthing
 ### 3. Add Environment Variables
 Add to your `.env.local`:
 ```bash
-UPLOADTHING_SECRET=your_secret_key
-UPLOADTHING_APP_ID=your_app_id
+NEXT_PUBLIC_UPLOADTHING_TOKEN=your_token_here
+NEXT_PUBLIC_UPLOADTHING_SECRET=your_secret_here
 ```
 
 ### 4. Create API Route
@@ -24,9 +24,7 @@ Create `src/app/api/uploadthing/route.ts`:
 ```typescript
 import { createUploadthing, type FileRouter } from "uploadthing/next";
 
-const f = createUploadthing({
-  secret: process.env.UPLOADTHING_SECRET,
-});
+const f = createUploadthing();
 
 export const ourFileRouter = {
   circularUploader: f({ 

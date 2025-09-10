@@ -1,60 +1,30 @@
 'use client'
 
 import * as React from 'react'
-import {
-  Search,
-  ArrowDown,
-  ArrowUp,
-  ChevronDown,
-  ArrowUpDown,
-  Download,
-  Calendar,
-  Clock,
-  CheckCircle,
-  XCircle,
-  User,
-  School2,
-  MapPin,
-} from 'lucide-react'
+import { Search, ArrowDown, ArrowUp, ArrowUpDown, Download } from 'lucide-react'
 
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Checkbox } from '@/components/ui/checkbox'
 import { useToast } from "@/hooks/use-toast"
 import { Skeleton } from '@/components/ui/skeleton'
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem } from '@/components/ui/dropdown-menu'
-import { cn } from '@/lib/utils'
 import { getAttendanceRecords } from '@/lib/firebase/firestore'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 // Mock attendance data structure
 interface AttendanceRecord {
   id: string;
-  studentName: string;
-  studentEmail: string;
-  college: string;
-  district: string;
-  date: string;
-  time: string;
-  status: 'Present' | 'Absent' | 'Late';
-  subject: string;
-  teacher: string;
+  userName: string;
+  userId: string;
+  action: string;
+  method: string;
+  similarity: number | string;
+  date: string; // e.g. 2025-09-10
+  timestamp: string; // ISO string
+  checkoutTime?: string; // ISO string
+  time?: string; // derived pretty time for convenience
 }
 
 // Mock data for attendance records
@@ -130,12 +100,8 @@ export default function AttendancePage() {
     const [loading, setLoading] = React.useState(true);
     const [selectedRecordIds, setSelectedRecordIds] = React.useState<string[]>([]);
     
-    // Filtering states
+    // Filtering
     const [searchTerm, setSearchTerm] = React.useState('');
-    const [statusFilter, setStatusFilter] = React.useState('all');
-    const [collegeFilter, setCollegeFilter] = React.useState('all');
-    const [districtFilter, setDistrictFilter] = React.useState('all');
-    const [subjectFilter, setSubjectFilter] = React.useState('all');
 
     const [sortConfig, setSortConfig] = React.useState<{ key: SortableKeys; direction: SortDirection } | null>({ key: 'date', direction: 'descending'});
 
@@ -147,19 +113,23 @@ export default function AttendancePage() {
         try {
           setLoading(true)
           const records = await getAttendanceRecords()
-          // Map to local AttendanceRecord type, with sane defaults
-          const mapped: AttendanceRecord[] = records.map((r, idx) => ({
-            id: r.id || String(idx),
-            studentName: r.studentName,
-            studentEmail: r.studentEmail,
-            college: r.college,
-            district: r.district,
-            date: r.date,
-            time: r.time,
-            status: r.status,
-            subject: r.subject,
-            teacher: r.teacher,
-          }))
+          // Map Firestore attendance to the displayed shape
+          const mapped: AttendanceRecord[] = records.map((r: any, idx: number) => {
+            const ts = typeof r.timestamp === 'string' ? r.timestamp : new Date().toISOString()
+            const timePretty = new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            return {
+              id: r.id || String(idx),
+              userName: r.userName || 'Unknown',
+              userId: r.userId || 'unknown',
+              action: r.action || '-',
+              method: r.method || '-',
+              similarity: typeof r.similarity === 'number' ? r.similarity : (r.similarity ?? ''),
+              date: r.date || ts.slice(0, 10),
+              timestamp: ts,
+              checkoutTime: r.checkoutTime || undefined,
+              time: timePretty,
+            }
+          })
           setAttendanceRecords(mapped)
         } finally {
           setLoading(false)
@@ -182,11 +152,6 @@ export default function AttendancePage() {
         }
         setSortConfig({ key, direction });
     };
-
-    const uniqueStatuses = React.useMemo(() => [...new Set(attendanceRecords.map(r => r.status))], [attendanceRecords]);
-    const uniqueColleges = React.useMemo(() => [...new Set(attendanceRecords.map(r => r.college))], [attendanceRecords]);
-    const uniqueDistricts = React.useMemo(() => [...new Set(attendanceRecords.map(r => r.district))], [attendanceRecords]);
-    const uniqueSubjects = React.useMemo(() => [...new Set(attendanceRecords.map(r => r.subject))], [attendanceRecords]);
 
     const sortedRecords = React.useMemo(() => {
         let sortableRecords = [...attendanceRecords];
@@ -213,17 +178,15 @@ export default function AttendancePage() {
     
     const filteredRecords = React.useMemo(() => {
         return sortedRecords.filter(record => {
-            const matchesSearch = record.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                record.studentEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                record.subject.toLowerCase().includes(searchTerm.toLowerCase());
-            const matchesStatus = statusFilter === 'all' || record.status === statusFilter;
-            const matchesCollege = collegeFilter === 'all' || record.college === collegeFilter;
-            const matchesDistrict = districtFilter === 'all' || record.district === districtFilter;
-            const matchesSubject = subjectFilter === 'all' || record.subject === subjectFilter;
-            
-            return matchesSearch && matchesStatus && matchesCollege && matchesDistrict && matchesSubject;
+            const q = searchTerm.toLowerCase()
+            return (
+              record.userName.toLowerCase().includes(q) ||
+              record.userId.toLowerCase().includes(q) ||
+              record.action.toLowerCase().includes(q) ||
+              record.method.toLowerCase().includes(q)
+            )
         });
-    }, [sortedRecords, searchTerm, statusFilter, collegeFilter, districtFilter, subjectFilter]);
+    }, [sortedRecords, searchTerm]);
 
     // Effective dataset for current tab
     const todayIso = React.useMemo(() => new Date().toISOString().slice(0,10), [])
@@ -359,66 +322,13 @@ export default function AttendancePage() {
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Search by student name, email, or subject..."
+              placeholder="Search by name, user ID, action, or method..."
               className="pl-8 w-full"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-           <div className="flex w-full sm:w-auto gap-2">
-              <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                      <Button variant="outline" className="w-full sm:w-auto">
-                          <CheckCircle className="mr-2 h-4 w-4" />
-                          Status
-                          <ChevronDown className="ml-auto h-4 w-4" />
-                      </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                      <DropdownMenuCheckboxItem checked={statusFilter === 'all'} onCheckedChange={() => setStatusFilter('all')}>All Status</DropdownMenuCheckboxItem>
-                      {uniqueStatuses.map(status => <DropdownMenuCheckboxItem key={status} checked={statusFilter === status} onCheckedChange={() => setStatusFilter(status)} className="capitalize">{status.toLowerCase()}</DropdownMenuCheckboxItem>)}
-                  </DropdownMenuContent>
-              </DropdownMenu>
-               <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                      <Button variant="outline" className="w-full sm:w-auto">
-                          <School2 className="mr-2 h-4 w-4" />
-                          College
-                          <ChevronDown className="ml-auto h-4 w-4" />
-                      </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                      <DropdownMenuCheckboxItem checked={collegeFilter === 'all'} onCheckedChange={() => setCollegeFilter('all')}>All Colleges</DropdownMenuCheckboxItem>
-                      {uniqueColleges.map(college => <DropdownMenuCheckboxItem key={college} checked={collegeFilter === college} onCheckedChange={() => setCollegeFilter(college)}>{college}</DropdownMenuCheckboxItem>)}
-                  </DropdownMenuContent>
-              </DropdownMenu>
-               <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                      <Button variant="outline" className="w-full sm:w-auto">
-                          <MapPin className="mr-2 h-4 w-4" />
-                          District
-                          <ChevronDown className="ml-auto h-4 w-4" />
-                      </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                      <DropdownMenuCheckboxItem checked={districtFilter === 'all'} onCheckedChange={() => setDistrictFilter('all')}>All Districts</DropdownMenuCheckboxItem>
-                       {uniqueDistricts.map(district => <DropdownMenuCheckboxItem key={district} checked={districtFilter === district} onCheckedChange={() => setDistrictFilter(district)} className="capitalize">{district}</DropdownMenuCheckboxItem>)}
-                  </DropdownMenuContent>
-              </DropdownMenu>
-               <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                      <Button variant="outline" className="w-full sm:w-auto">
-                          <Calendar className="mr-2 h-4 w-4" />
-                          Subject
-                          <ChevronDown className="ml-auto h-4 w-4" />
-                      </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                      <DropdownMenuCheckboxItem checked={subjectFilter === 'all'} onCheckedChange={() => setSubjectFilter('all')}>All Subjects</DropdownMenuCheckboxItem>
-                       {uniqueSubjects.map(subject => <DropdownMenuCheckboxItem key={subject} checked={subjectFilter === subject} onCheckedChange={() => setSubjectFilter(subject)}>{subject}</DropdownMenuCheckboxItem>)}
-                  </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+           
           </div>
           <div className="rounded-md border">
               <Table>
@@ -434,25 +344,22 @@ export default function AttendancePage() {
                       />
                   </TableHead>
                   <TableHead>
-                     <SortableHeader column="studentName" label="Student" />
-                  </TableHead>
-                  <TableHead>
-                     <SortableHeader column="status" label="Status" />
-                  </TableHead>
-                  <TableHead className="hidden md:table-cell">
-                      <SortableHeader column="subject" label="Subject" />
-                  </TableHead>
-                  <TableHead className="hidden md:table-cell">
-                      <SortableHeader column="college" label="College" />
-                  </TableHead>
-                   <TableHead className="hidden md:table-cell">
-                      <SortableHeader column="district" label="District" />
+                     <SortableHeader column="userName" label="User" />
                   </TableHead>
                   <TableHead className="hidden md:table-cell">
                       <SortableHeader column="date" label="Date" />
                   </TableHead>
                   <TableHead className="hidden md:table-cell">
                       <SortableHeader column="time" label="Time" />
+                  </TableHead>
+                  <TableHead className="hidden md:table-cell">
+                      <SortableHeader column="checkoutTime" label="Checkout" />
+                  </TableHead>
+                  <TableHead className="hidden md:table-cell">
+                      <SortableHeader column="timestamp" label="Timestamp" />
+                  </TableHead>
+                  <TableHead className="hidden md:table-cell">
+                      <SortableHeader column="userId" label="User ID" />
                   </TableHead>
                   </TableRow>
               </TableHeader>
@@ -466,11 +373,10 @@ export default function AttendancePage() {
                           <Skeleton className="h-4 w-32" />
                         </TableCell>
                         <TableCell><Skeleton className="h-6 w-20" /></TableCell>
-                        <TableCell className="hidden md:table-cell"><Skeleton className="h-6 w-20" /></TableCell>
-                        <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-32" /></TableCell>
                         <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
                         <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
-                        <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-20" /></TableCell>
+                        <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-28" /></TableCell>
+                        <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-36" /></TableCell>
                       </TableRow>
                     ))
                   ) : (
@@ -480,36 +386,18 @@ export default function AttendancePage() {
                               <Checkbox 
                                 checked={selectedRecordIds.includes(record.id)}
                                 onCheckedChange={(checked) => handleSelectRecord(record.id, !!checked)}
-                                aria-label={`Select row for ${record.studentName}`}
+                                aria-label={`Select row for ${record.userName}`}
                               />
                           </TableCell>
                           <TableCell className="font-medium">
-                              <div>{record.studentName}</div>
-                              <div className="text-sm text-muted-foreground">{record.studentEmail}</div>
+                              <div>{record.userName}</div>
+                              <div className="text-sm text-muted-foreground">{record.userId}</div>
                           </TableCell>
-                          <TableCell>
-                              <Badge variant={getStatusBadgeVariant(record.status)} className="capitalize">
-                                {record.status === 'Present' && <CheckCircle className="h-3 w-3 mr-1" />}
-                                {record.status === 'Absent' && <XCircle className="h-3 w-3 mr-1" />}
-                                {record.status === 'Late' && <Clock className="h-3 w-3 mr-1" />}
-                                {record.status.toLowerCase()}
-                              </Badge>
-                          </TableCell>
-                           <TableCell className="hidden md:table-cell">
-                              {record.subject}
-                           </TableCell>
-                          <TableCell className="hidden md:table-cell">
-                              {record.college}
-                          </TableCell>
-                          <TableCell className="hidden md:table-cell">
-                              {record.district}
-                          </TableCell>
-                          <TableCell className="hidden md:table-cell">
-                              {formatDate(record.date)}
-                          </TableCell>
-                          <TableCell className="hidden md:table-cell">
-                              {record.time}
-                          </TableCell>
+                          <TableCell className="hidden md:table-cell">{formatDate(record.date)}</TableCell>
+                          <TableCell className="hidden md:table-cell">{record.time}</TableCell>
+                          <TableCell className="hidden md:table-cell">{record.checkoutTime ? new Date(record.checkoutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}</TableCell>
+                          <TableCell className="hidden md:table-cell">{new Date(record.timestamp).toLocaleString()}</TableCell>
+                          <TableCell className="hidden md:table-cell">{record.userId}</TableCell>
                       </TableRow>
                     ))
                   )}

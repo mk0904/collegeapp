@@ -19,8 +19,8 @@ Add these to your `.env.local` file:
 
 ```bash
 # UploadThing Configuration
-UPLOADTHING_SECRET=sk_your_secret_key_here
-UPLOADTHING_APP_ID=ut_your_app_id_here
+NEXT_PUBLIC_UPLOADTHING_TOKEN=your_token_here
+NEXT_PUBLIC_UPLOADTHING_SECRET=your_secret_here
 ```
 
 ### 4. Test the Upload

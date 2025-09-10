@@ -1,9 +1,7 @@
 import { createUploadthing, type FileRouter } from "uploadthing/next";
 import { createRouteHandler } from "uploadthing/next";
 
-const f = createUploadthing({
-  secret: process.env.UPLOADTHING_TOKEN,
-});
+const f = createUploadthing();
 
 export const ourFileRouter = {
   circularUploader: f({ 

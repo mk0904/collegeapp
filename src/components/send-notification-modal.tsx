@@ -15,8 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Upload, X, File as FileIcon, Loader2, Calendar as CalendarIcon, MessageSquare, Send } from 'lucide-react';
-import { uploadToCloudinary } from '@/lib/cloudinary-upload';
-import { uploadFile } from '@/lib/firebase/storage';
+import { uploadMultipleFilesToUploadThing } from '@/lib/uploadthing-client';
 import type { User } from '@/lib/mock-data';
 import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
@@ -192,39 +191,14 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers, sen
       let fileUrls: string[] = [];
       let attachments: { public_id: string; secure_url: string; format: string; resource_type: string }[] = [];
       if (filesToUpload.length > 0) {
-        const uploadPromises = filesToUpload.map((file, index) => {
-            // Try Cloudinary first; if it fails, fall back to Firebase Storage
-            return uploadToCloudinary(file, { folder: 'college-app/notifications' })
-              .catch(async (err) => {
-                console.warn('Cloudinary upload failed, falling back to Firebase Storage for this file:', err);
-                const fallbackPath = `notifications/${Date.now()}_${index}_${file.name}`;
-                const url = await uploadFile(file, fallbackPath);
-                const resourceType = file.type.startsWith('image/') ? 'image' : file.type.startsWith('video/') ? 'video' : 'raw';
-                const formatGuess = (file.type.split('/')[1] || 'raw');
-                return { public_id: fallbackPath, secure_url: url, format: formatGuess, resource_type: resourceType };
-              });
-        });
-        const results = await Promise.allSettled(uploadPromises);
-        const succeeded = results.filter(r => r.status === 'fulfilled') as PromiseFulfilledResult<{ public_id: string; secure_url: string; format: string; resource_type: string }>[];
-        const failed = results.filter(r => r.status === 'rejected') as PromiseRejectedResult[];
-        attachments = succeeded.map(r => r.value);
+        const uploaded = await uploadMultipleFilesToUploadThing(filesToUpload);
+        attachments = uploaded.map((u) => ({
+          public_id: u.key,
+          secure_url: u.url,
+          format: (u.type?.split('/')?.[1] || 'raw'),
+          resource_type: u.type?.startsWith('image/') ? 'image' : (u.type?.startsWith('video/') ? 'video' : 'raw'),
+        }));
         fileUrls = attachments.map(a => a.secure_url);
-        if (succeeded.length === 0) {
-          toast({
-            title: 'Attachment upload failed',
-            description: 'All selected attachments failed to upload. Please check your network and Cloudinary preset, then try again.',
-            variant: 'destructive',
-          });
-          throw new Error('All attachments failed to upload');
-        }
-        if (failed.length > 0) {
-          console.error('Some file uploads failed:', failed.map(f => f.reason));
-          toast({
-            title: 'Partial upload',
-            description: `${failed.length} attachment(s) failed to upload. Continuing with uploaded files.`,
-            variant: 'destructive',
-          });
-        }
       }
       
       payload.fileUrls = fileUrls;
@@ -295,7 +269,7 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers, sen
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl h-[95vh] flex flex-col p-0">
+      <DialogContent className="max-w-6xl h-[95vh] flex flex-col p-0 overflow-hidden">
         <DialogHeader className="px-6 pt-6 pb-4 border-b">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
@@ -310,17 +284,17 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers, sen
           </div>
         </DialogHeader>
         <Tabs defaultValue="push" value={currentTab} onValueChange={setCurrentTab} className="flex flex-col flex-1 min-h-0 overflow-hidden">
-          <div className="px-6 py-4 border-b">
-            <TabsList className="grid w-full grid-cols-2 bg-accent">
-              <TabsTrigger value="push" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+          <div className="px-6 py-4 border-b flex items-center justify-center">
+            <TabsList className="inline-flex bg-accent rounded-lg p-1">
+              <TabsTrigger value="push" className="px-4 py-2 rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 <Send className="mr-2 h-4 w-4" /> Push Notification
               </TabsTrigger>
-              <TabsTrigger value="invitation" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <TabsTrigger value="invitation" className="px-4 py-2 rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 <CalendarIcon className="mr-2 h-4 w-4" /> Event Invitation
               </TabsTrigger>
             </TabsList>
           </div>
-          <TabsContent value="invitation" className="flex-1 flex min-h-0 overflow-y-auto">
+          <TabsContent value="invitation" className="flex-1 min-h-0 overflow-y-auto data-[state=active]:flex data-[state=inactive]:hidden">
             {/* Left Column - Invitation Details */}
             <div className="w-1/2 p-6 border-r space-y-6">
               <div className="space-y-2">
@@ -472,7 +446,7 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers, sen
               </div>
             </div>
           </TabsContent>
-          <TabsContent value="push" className="flex-1 flex min-h-0 overflow-y-auto">
+          <TabsContent value="push" className="flex-1 min-h-0 overflow-y-auto data-[state=active]:flex data-[state=inactive]:hidden">
             {/* Left Column - Push Details */}
             <div className="w-1/2 p-6 border-r space-y-6">
               <div className="space-y-2">
