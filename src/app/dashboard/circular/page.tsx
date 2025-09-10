@@ -7,7 +7,7 @@ import {
   ChevronDown,
   PlusCircle,
   CalendarIcon,
-  College2,
+  GraduationCap,
   MapPin,
   Users,
   Download
@@ -293,7 +293,7 @@ export default function CircularPage() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className="w-full sm:w-auto">
-                    <College2 className="mr-2 h-4 w-4" />
+                    <GraduationCap className="mr-2 h-4 w-4" />
                     College
                     <ChevronDown className="ml-auto h-4 w-4" />
                   </Button>
