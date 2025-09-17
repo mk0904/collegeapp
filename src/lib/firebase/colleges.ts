@@ -22,6 +22,12 @@ export interface College {
   principalName?: string;
   principalEmail?: string;
   principalPhone?: string;
+  email?: string;
+  phone?: string;
+  latitude?: number;
+  longitude?: number;
+  projectsCount?: number;
+  usersCount?: number;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }

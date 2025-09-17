@@ -2,20 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import {
-  Home,
-  Users,
-  FolderKanban,
-  LifeBuoy,
-  UserCircle,
-  Bell,
-  ChevronDown,
-  FileText,
-  LogOut,
-  Search, // Added for search icon
-  PanelLeft,
-  CalendarDays,
-} from 'lucide-react';
+import { Home, Users, FolderKanban, LifeBuoy, UserCircle, Bell, ChevronDown, FileText, LogOut, Search, PanelLeft, CalendarDays, University } from 'lucide-react';
 import * as React from 'react';
 
 // Replaced complex sidebar with a simple icon-only rail
@@ -41,6 +28,7 @@ const navItems = [
     { href: '/dashboard/users', icon: Users, label: 'Users' },
     { href: '/dashboard/circular', icon: FileText, label: 'Circular' },
     { href: '/dashboard/attendance', icon: CalendarDays, label: 'Attendance' },
+    { href: '/dashboard/colleges', icon: University as any, label: 'Colleges' },
 ];
 
 const projectsNav = {
