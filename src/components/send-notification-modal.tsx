@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Upload, X, File as FileIcon, Loader2, Calendar as CalendarIcon, MessageSquare, Send } from 'lucide-react';
-import { uploadMultipleFilesToUploadThing } from '@/lib/uploadthing-client';
+import { uploadNotificationFiles } from '@/lib/firebase/storage';
 import type { User } from '@/lib/mock-data';
 import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
@@ -189,16 +189,17 @@ export function SendNotificationModal({ isOpen, onOpenChange, selectedUsers, sen
     setIsSending(true);
     try {
       let fileUrls: string[] = [];
-      let attachments: { public_id: string; secure_url: string; format: string; resource_type: string }[] = [];
+      let attachments: { name: string; url: string; type: string; size: number; path?: string }[] = [];
       if (filesToUpload.length > 0) {
-        const uploaded = await uploadMultipleFilesToUploadThing(filesToUpload);
+        const uploaded = await uploadNotificationFiles(filesToUpload);
         attachments = uploaded.map((u) => ({
-          public_id: u.key,
-          secure_url: u.url,
-          format: (u.type?.split('/')?.[1] || 'raw'),
-          resource_type: u.type?.startsWith('image/') ? 'image' : (u.type?.startsWith('video/') ? 'video' : 'raw'),
+          name: u.name,
+          url: u.url,
+          type: u.type,
+          size: u.size,
+          path: u.path,
         }));
-        fileUrls = attachments.map(a => a.secure_url);
+        fileUrls = attachments.map(a => a.url);
       }
       
       payload.fileUrls = fileUrls;

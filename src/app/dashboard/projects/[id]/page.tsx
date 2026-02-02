@@ -29,7 +29,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function ProjectDetailsPage({ params }: { params: { id: string } }) {
   const { id } = params;
   const [project, setProject] = React.useState<Project | null>(null);
-  const [submissions, setSubmissions] = React.useState<Submission[]>([]);
+  const [submissions, setSubmissions] = React.useState<(Submission & { percentage?: number })[]>([]);
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
@@ -81,6 +81,7 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
                 <TableRow>
                   <TableHead>User</TableHead>
                   <TableHead>Timestamp</TableHead>
+                  <TableHead>Percentage</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -90,6 +91,7 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
                   <TableRow key={i}>
                     <TableCell><Skeleton className="h-5 w-24" /></TableCell>
                     <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-20" /></TableCell>
                     <TableCell><Skeleton className="h-6 w-20" /></TableCell>
                     <TableCell className="text-right"><Skeleton className="h-9 w-20" /></TableCell>
                   </TableRow>
@@ -114,67 +116,88 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 fade-in">
       <div>
         <Button variant="ghost" asChild className="pl-0">
-          <Link href="/dashboard/projects" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+          <Link href="/dashboard/projects" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="h-4 w-4" />
             Back to Projects
           </Link>
         </Button>
       </div>
-      <Card>
-        <CardHeader>
+      <Card className="card-premium rounded-2xl border-0 shadow-lg bg-gradient-to-br from-white to-slate-50/50">
+        <CardHeader className="px-6 pt-6 pb-4">
           <div className="flex justify-between items-start">
             <div>
-              <CardTitle className="text-2xl font-headline">{project.name}</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-2xl font-bold">{project.name}</CardTitle>
+              <CardDescription className="text-sm mt-1">
                 Part of <span className="font-semibold">{project.collegeName}</span>
               </CardDescription>
             </div>
              <div className="flex items-center space-x-2">
                 <span className="text-sm text-muted-foreground">Status:</span>
-                <Badge variant={project.status === 'Completed' ? 'default' : 'outline'}>
+                <Badge variant={project.status === 'Completed' ? 'default' : 'outline'} className="shadow-sm">
                 {project.status}
                 </Badge>
             </div>
           </div>
         </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">{project.description}</p>
+        <CardContent className="px-6 pb-6">
+          <p className="text-muted-foreground leading-relaxed">{project.description}</p>
         </CardContent>
       </Card>
       
-      <Card>
-        <CardHeader>
-          <CardTitle>Submissions</CardTitle>
-          <CardDescription>
+      <Card className="card-premium rounded-2xl border-0 shadow-lg bg-gradient-to-br from-white to-slate-50/50">
+        <CardHeader className="px-6 pt-6 pb-4">
+          <CardTitle className="text-xl font-bold">Submissions</CardTitle>
+          <CardDescription className="text-sm">
             List of all submissions for this project.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-6 pb-6">
           {submissions.length > 0 ? (
+            <div className="rounded-xl border border-border/50 bg-white/80 backdrop-blur-sm overflow-hidden shadow-lg">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>User</TableHead>
                   <TableHead>Timestamp</TableHead>
+                  <TableHead>Percentage</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {submissions.map((submission) => (
-                  <TableRow key={submission.id}>
+                  <TableRow 
+                    key={submission.id}
+                    className="cursor-pointer"
+                    onClick={() => window.location.href = `/dashboard/submissions/${submission.id}`}
+                  >
                     <TableCell className="font-medium">{submission.userName}</TableCell>
-                    <TableCell>{submission.timestamp}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{submission.timestamp}</TableCell>
                     <TableCell>
-                      <Badge variant={submission.status === 'Approved' ? 'default' : submission.status === 'Rejected' ? 'destructive' : 'secondary'}>
+                      {(submission as any).percentage != null ? (
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-foreground">{(submission as any).percentage}%</span>
+                          <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-300"
+                              style={{ width: `${Math.min((submission as any).percentage || 0, 100)}%` }}
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={submission.status === 'Approved' ? 'default' : submission.status === 'Rejected' ? 'destructive' : 'secondary'} className="shadow-sm">
                         {submission.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right">
-                      <Button asChild variant="outline" size="sm">
+                    <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                      <Button asChild variant="outline" size="sm" className="rounded-xl">
                         <Link href={`/dashboard/submissions/${submission.id}`}>
                           <View className="mr-2 h-4 w-4" />
                           View
@@ -185,6 +208,7 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
                 ))}
               </TableBody>
             </Table>
+            </div>
           ) : (
             <div className="text-center text-muted-foreground py-8">
               No submissions for this project yet.

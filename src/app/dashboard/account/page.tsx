@@ -11,12 +11,11 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { auth } from "@/lib/firebase";
-import { getUserById, updateUserProfile } from "@/lib/firebase/firestore";
-import type { User } from "@/lib/mock-data";
+import { getAdminUserById, updateAdminUserProfile } from "@/lib/firebase/firestore";
 
 export default function AccountPage() {
     const { toast } = useToast();
-    const [user, setUser] = React.useState<User | null>(null);
+    const [user, setUser] = React.useState<any | null>(null);
     const [loading, setLoading] = React.useState(true);
 
     const [name, setName] = React.useState('');
@@ -34,26 +33,27 @@ export default function AccountPage() {
         const unsubscribe = auth.onAuthStateChanged(async (currentUser) => {
             if (currentUser) {
                 try {
-                    const userData = await getUserById(currentUser.uid);
+                    const userData = await getAdminUserById(currentUser.uid);
                     if (userData) {
                         setUser(userData);
                         // Set form values from user data, ensuring defaults for empty values
                         setName(userData.name || '');
                         setEmail(userData.email || '');
-                        setPhone(userData.phone || '');
+                        setPhone(userData.phoneNumber || userData.phone || '');
                         setDesignation(userData.designation || '');
                     } else {
-                        // If getUserById returns null, create basic user data from auth
+                        // If getAdminUserById returns null, create basic user data from auth
                         setUser({
                             id: currentUser.uid,
+                            uid: currentUser.uid,
                             name: currentUser.displayName || '',
                             email: currentUser.email || '',
                             phone: '',
-                            status: 'Inactive',
-                            role: 'Student',
+                            phoneNumber: '',
+                            active: true,
+                            status: 'Active',
+                            role: 'admin',
                             createdOn: new Date().toISOString(),
-                            college: '',
-                            district: ''
                         });
                         
                         // Set form values from auth user
@@ -61,7 +61,7 @@ export default function AccountPage() {
                         setEmail(currentUser.email || '');
                     }
                 } catch (error) {
-                    console.error("Error fetching user data:", error);
+                    console.error("Error fetching admin user data:", error);
                     toast({ title: "Error", description: "Failed to fetch profile data.", variant: "destructive" });
                 } finally {
                     setLoading(false);
@@ -86,10 +86,11 @@ export default function AccountPage() {
         
         setIsUpdatingProfile(true);
         try {
-            // Update user profile with current form values
-            await updateUserProfile(currentAuthUser.uid, { 
+            // Update admin user profile with current form values
+            await updateAdminUserProfile(currentAuthUser.uid, { 
                 name, 
-                phone, 
+                phoneNumber: phone, // Use phoneNumber field (primary)
+                phone: phone, // Keep legacy field for compatibility
                 designation,
                 email // Include email for new users
             });

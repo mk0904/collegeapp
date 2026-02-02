@@ -6,7 +6,7 @@ import {
   ChevronDown,
   Users,
   MapPin,
-  College2,
+  GraduationCap,
   ShieldCheck,
   Loader2,
   X,
@@ -32,8 +32,8 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 import { getAuth } from 'firebase/auth'
 import { addCircular } from '@/lib/firebase/circular'
-import { getUsers } from '@/lib/firebase/firestore'
-import { uploadMultipleFilesToUploadThing, testUploadThingUrl } from '@/lib/uploadthing-client'
+import { getUsers, getColleges } from '@/lib/firebase/firestore'
+import { uploadCircularFiles } from '@/lib/firebase/storage'
 import { 
   Select, 
   SelectContent, 
@@ -71,6 +71,8 @@ export function AddCircularModal({ isOpen, onOpenChange, onCircularCreated }: Ad
   const [loading, setLoading] = React.useState(false)
   const [isUploading, setIsUploading] = React.useState(false)
   const [users, setUsers] = React.useState<User[]>([])
+  const [colleges, setColleges] = React.useState<Array<{id: string, name: string}>>([])
+  const [collegeIdToName, setCollegeIdToName] = React.useState<Record<string, string>>({})
   
   // Filter states
   const [roleFilter, setRoleFilter] = React.useState('all')
@@ -80,19 +82,31 @@ export function AddCircularModal({ isOpen, onOpenChange, onCircularCreated }: Ad
   // Initially no filters applied, so start with empty selection
   const [selectedUserIds, setSelectedUserIds] = React.useState<string[]>([])
   
-  // Fetch users when modal opens
+  // Fetch users and colleges when modal opens
   React.useEffect(() => {
-    async function fetchUsers() {
+    async function fetchData() {
       if (isOpen) {
         setLoading(true)
         try {
-          const fetchedUsers = await getUsers()
+          const [fetchedUsers, fetchedColleges] = await Promise.all([
+            getUsers(),
+            getColleges()
+          ])
+          
           setUsers(fetchedUsers)
+          setColleges(fetchedColleges)
+          
+          // Create mapping from college ID to name
+          const idToName: Record<string, string> = {}
+          fetchedColleges.forEach(college => {
+            idToName[college.id] = college.name
+          })
+          setCollegeIdToName(idToName)
         } catch (error) {
-          console.error('Error fetching users:', error)
+          console.error('Error fetching data:', error)
           toast({
             title: "Error",
-            description: "Failed to load users. Please try again.",
+            description: "Failed to load data. Please try again.",
             variant: "destructive"
           })
         } finally {
@@ -101,7 +115,7 @@ export function AddCircularModal({ isOpen, onOpenChange, onCircularCreated }: Ad
       }
     }
     
-    fetchUsers()
+    fetchData()
   }, [isOpen, toast])
 
   // Filter users based on selected filters
@@ -109,26 +123,31 @@ export function AddCircularModal({ isOpen, onOpenChange, onCircularCreated }: Ad
     return users.filter(user => {
       const matchesRole = roleFilter === 'all' || user.role.toLowerCase() === roleFilter.toLowerCase()
       const matchesDistrict = districtFilter === 'all' || user.district === districtFilter
-      const matchesCollege = collegeFilter === 'all' || user.college === collegeFilter
+      // Compare college ID with filter (filter uses college ID)
+      const matchesCollege = collegeFilter === 'all' || user.college === collegeFilter || user.collegeId === collegeFilter
       return matchesRole && matchesDistrict && matchesCollege
     })
   }, [users, roleFilter, districtFilter, collegeFilter])
   
-  // Get unique values for filter options
+  // Get unique values for filter options (filter out empty strings, null, undefined)
   const uniqueRoles = React.useMemo(() => 
-    [...new Set(users.map(user => user.role))], 
+    [...new Set(users.map(user => user.role).filter(role => role && role.trim() !== ''))], 
     [users]
   )
   
   const uniqueDistricts = React.useMemo(() => 
-    [...new Set(users.map(user => user.district))], 
+    [...new Set(users.map(user => user.district).filter(district => district && district.trim() !== ''))], 
     [users]
   )
   
-  const uniqueColleges = React.useMemo(() => 
-    [...new Set(users.map(user => user.college))], 
-    [users]
-  )
+  // Get unique colleges - use college names for display, but store IDs for filtering
+  const uniqueColleges = React.useMemo(() => {
+    const collegeIds = [...new Set(users.map(user => user.college || user.collegeId).filter(id => id && id.trim() !== ''))]
+    return collegeIds.map(id => ({
+      id: id,
+      name: collegeIdToName[id] || id // Fallback to ID if name not found
+    }))
+  }, [users, collegeIdToName])
 
   // Select all users by default when modal opens
   React.useEffect(() => {
@@ -253,61 +272,66 @@ export function AddCircularModal({ isOpen, onOpenChange, onCircularCreated }: Ad
         throw new Error("You must be logged in to create a circular");
       }
       
-      // Upload multiple files to UploadThing
+      // Upload multiple files to Firebase Storage
       let fileObjects: Array<{
         name: string;
         type: string;
         size: number;
         url: string;
-        key?: string;
+        path?: string;
       }> = [];
-      if (files.length > 0) {
-        console.log(`Starting upload of ${files.length} files to UploadThing...`);
+      if (files && files.length > 0) {
+        console.log(`Starting upload of ${files.length} files to Firebase Storage...`);
         
         try {
-          // Upload all files to UploadThing
-          const uploadResults = await uploadMultipleFilesToUploadThing(
-            Array.from(files)
-          );
+          // Convert FileList/File[] to File[] array
+          const filesArray = Array.isArray(files) ? files : Array.from(files);
           
-          // Convert UploadThing results to the format expected by addCircular
-          fileObjects = uploadResults.map((result) => ({
-            name: result.name,
-            type: result.type,
-            size: result.size,
-            url: result.url,
-            key: result.key
-          }));
-          
-          console.log('All files uploaded successfully to UploadThing:', fileObjects);
-          
-          // Test URLs to make sure they work
-          console.log('Testing uploaded URLs...');
-          for (const file of fileObjects) {
-            const isAccessible = await testUploadThingUrl(file.url);
-            console.log(`URL for ${file.name}: ${isAccessible ? '✅ Accessible' : '❌ Not accessible'}`);
-            if (!isAccessible) {
-              console.warn(`Warning: URL for ${file.name} is not accessible: ${file.url}`);
-            }
+          if (filesArray.length === 0) {
+            throw new Error('No valid files to upload');
           }
+
+          // Upload all files to Firebase Storage
+          const uploadResults = await uploadCircularFiles(filesArray);
+          
+          if (!uploadResults || uploadResults.length === 0) {
+            throw new Error('Upload completed but no files were returned');
+          }
+          
+          // Convert Firebase Storage results to the format expected by addCircular
+          fileObjects = uploadResults.map((result) => {
+            if (!result || !result.url) {
+              throw new Error(`Invalid upload result for file: ${result?.name || 'unknown'}`);
+            }
+            return {
+              name: result.name || 'unnamed',
+              type: result.type || 'application/octet-stream',
+              size: result.size || 0,
+              url: result.url,
+              path: result.path
+            };
+          });
+          
+          console.log('All files uploaded successfully to Firebase Storage:', fileObjects);
           
           // Show success message
           toast({
             title: "Files Uploaded",
-            description: `Successfully uploaded ${files.length} file(s) to UploadThing.`,
+            description: `Successfully uploaded ${filesArray.length} file(s) to Firebase Storage.`,
           });
           
         } catch (error) {
-          console.error('UploadThing upload failed:', error);
+          console.error('Firebase Storage upload failed:', error);
           
           // Show specific error message
           const errorMessage = error instanceof Error ? error.message : 'Unknown error';
           toast({
             title: "Upload Failed",
-            description: `Failed to upload files to UploadThing: ${errorMessage}`,
+            description: `Failed to upload files to Firebase Storage: ${errorMessage}`,
             variant: "destructive",
           });
           
+          setIsUploading(false);
           throw new Error(`File upload failed: ${errorMessage}`);
         }
       }
@@ -338,8 +362,8 @@ export function AddCircularModal({ isOpen, onOpenChange, onCircularCreated }: Ad
             size: file.size || 0
           };
           
-          // Only add UploadThing metadata if they exist
-          if (file.key && file.key !== undefined) attachment.key = file.key;
+          // Only add Firebase Storage metadata if they exist
+          if (file.path && file.path !== undefined) attachment.path = file.path;
           
           return attachment;
         }),
@@ -553,7 +577,7 @@ export function AddCircularModal({ isOpen, onOpenChange, onCircularCreated }: Ad
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Roles</SelectItem>
-                    {uniqueRoles.map(role => (
+                    {uniqueRoles.filter(role => role && role.trim() !== '').map(role => (
                       <SelectItem key={role} value={role}>{role}</SelectItem>
                     ))}
                   </SelectContent>
@@ -566,7 +590,7 @@ export function AddCircularModal({ isOpen, onOpenChange, onCircularCreated }: Ad
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Districts</SelectItem>
-                    {uniqueDistricts.map(district => (
+                    {uniqueDistricts.filter(district => district && district.trim() !== '').map(district => (
                       <SelectItem key={district} value={district}>{district}</SelectItem>
                     ))}
                   </SelectContent>
@@ -574,13 +598,13 @@ export function AddCircularModal({ isOpen, onOpenChange, onCircularCreated }: Ad
                 
                 <Select value={collegeFilter} onValueChange={setCollegeFilter}>
                     <SelectTrigger className="h-9 text-sm">
-                      <College2 className="mr-2 h-4 w-4 text-muted-foreground" />
+                      <GraduationCap className="mr-2 h-4 w-4 text-muted-foreground" />
                       <SelectValue placeholder="College" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Colleges</SelectItem>
                     {uniqueColleges.map(college => (
-                      <SelectItem key={college} value={college}>{college}</SelectItem>
+                      <SelectItem key={college.id} value={college.id}>{college.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -617,15 +641,15 @@ export function AddCircularModal({ isOpen, onOpenChange, onCircularCreated }: Ad
                           onCheckedChange={(checked) => handleUserSelect(user.id, checked as boolean)}
                         />
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium truncate">{user.name}</div>
+                          <div className="text-sm font-medium truncate">{user.name || user.email || 'Unknown'}</div>
                           <div className="text-xs text-muted-foreground flex items-center space-x-1">
                             <span>{user.role}</span>
                             <span>•</span>
-                            <span>{user.district}</span>
+                            <span>{user.district || '—'}</span>
                           </div>
                         </div>
                         <Badge variant="secondary" className="text-xs">
-                          {user.college}
+                          {collegeIdToName[user.college || user.collegeId || ''] || user.college || '—'}
                         </Badge>
                       </div>
                     ))

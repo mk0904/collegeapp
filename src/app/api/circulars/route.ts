@@ -18,7 +18,7 @@ export async function POST(request: Request) {
         recipients: JSON.parse(formData.get('recipients') as string || '[]'),
       };
       
-      // Note: In this implementation, files should already be uploaded to Cloudinary
+      // Note: In this implementation, files should already be uploaded to Firebase Storage
       // and only the URLs/metadata should be passed here
       
       // Extract file metadata from form data

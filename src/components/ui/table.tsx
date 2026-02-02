@@ -6,10 +6,10 @@ const Table = React.forwardRef<
   HTMLTableElement,
   React.HTMLAttributes<HTMLTableElement>
 >(({ className, ...props }, ref) => (
-  <div className="relative w-full overflow-auto">
+  <div className="relative w-full overflow-auto scrollbar-premium">
     <table
       ref={ref}
-      className={cn("w-full caption-bottom text-sm", className)}
+      className={cn("w-full caption-bottom text-sm border-collapse", className)}
       {...props}
     />
   </div>
@@ -20,7 +20,14 @@ const TableHeader = React.forwardRef<
   HTMLTableSectionElement,
   React.HTMLAttributes<HTMLTableSectionElement>
 >(({ className, ...props }, ref) => (
-  <thead ref={ref} className={cn("[&_tr]:border-b", className)} {...props} />
+  <thead 
+    ref={ref} 
+    className={cn(
+      "[&_tr]:border-b [&_tr]:border-border/50",
+      className
+    )} 
+    {...props} 
+  />
 ))
 TableHeader.displayName = "TableHeader"
 
@@ -30,7 +37,10 @@ const TableBody = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <tbody
     ref={ref}
-    className={cn("[&_tr:last-child]:border-0", className)}
+    className={cn(
+      "[&_tr:last-child]:border-0 [&_tr]:border-b [&_tr]:border-border/30",
+      className
+    )}
     {...props}
   />
 ))
@@ -58,7 +68,10 @@ const TableRow = React.forwardRef<
   <tr
     ref={ref}
     className={cn(
-      "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted",
+      "border-b border-border/30 transition-all duration-200",
+      "hover:bg-gradient-to-r hover:from-primary/5 hover:to-transparent",
+      "data-[state=selected]:bg-primary/10",
+      "group",
       className
     )}
     {...props}
@@ -73,7 +86,11 @@ const TableHead = React.forwardRef<
   <th
     ref={ref}
     className={cn(
-      "h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 border-r border-border last:border-r-0",
+      "h-14 px-6 text-left align-middle font-semibold text-xs uppercase tracking-wider",
+      "text-muted-foreground/80 bg-gradient-to-b from-slate-50/80 to-white/50",
+      "border-r border-border/30 last:border-r-0",
+      "[&:has([role=checkbox])]:pr-0",
+      "first:pl-6 last:pr-6",
       className
     )}
     {...props}
@@ -87,7 +104,14 @@ const TableCell = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <td
     ref={ref}
-    className={cn("p-4 align-middle [&:has([role=checkbox])]:pr-0 border-r border-border last:border-r-0", className)}
+    className={cn(
+      "px-6 py-4 align-middle text-sm",
+      "border-r border-border/20 last:border-r-0",
+      "[&:has([role=checkbox])]:pr-0",
+      "first:pl-6 last:pr-6",
+      "group-hover:text-foreground transition-colors duration-200",
+      className
+    )}
     {...props}
   />
 ))

@@ -1,15 +1,32 @@
 
 export type User = {
   id: string;
+  uid?: string; // User UID (same as id)
   name: string;
   email: string;
-  phone: string;
-  status: 'Active' | 'Inactive';
-  role: 'Admin' | 'Teacher' | 'Student';
-  createdOn: string;
-  college: string;
-  district: string;
+  phone?: string; // Legacy field
+  phoneNumber?: string; // Primary phone field
+  status?: 'Active' | 'Inactive'; // Legacy field - use 'active' instead
+  active?: boolean; // Primary status field (true = active, false = inactive)
+  role: 'Admin' | 'Teacher' | 'Student' | 'principal' | 'employee' | string;
+  createdOn?: string; // ISO 8601 string
+  updatedAt?: any; // Firestore Timestamp
+  college: string; // College ID (string)
+  collegeId?: string; // Alias for college
+  district?: string;
   designation?: string;
+  profileCompleted?: boolean; // Whether profile is complete (requires phoneNumber, payBand)
+  photoUrl?: string | null; // Profile picture URL
+  employmentType?: string; // e.g., 'Contractual'
+  payBand?: string; // e.g., 'Pay3' (required for profile completion)
+  dateOfAppointment?: string; // ISO 8601 string
+  dateOfBirth?: string; // ISO 8601 string
+  dateOfConfirmation?: string; // ISO 8601 string
+  dateOfRetirement?: string; // ISO 8601 string
+  govtQuarter?: boolean; // Government quarter allocation
+  faceRegistered?: boolean; // Whether face is registered for attendance
+  faceRegisteredAt?: string; // ISO 8601 string - when face was registered
+  faceEmbedding?: number[]; // Face recognition embedding (read-only, don't edit)
 };
 
 export type College = {
@@ -22,6 +39,9 @@ export type College = {
   district?: string;
   latitude?: number;
   longitude?: number;
+  startTime?: number;
+  endTime?: number;
+  maxDistance?: number;
 };
 
 export type Project = {

@@ -8,8 +8,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Logo from '@/components/logo';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff } from 'lucide-react';
 
@@ -25,7 +26,37 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      // Authenticate with Firebase Auth
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      
+      // Verify user exists in adminusers collection
+      const adminUserDoc = await getDoc(doc(db, 'adminusers', user.uid));
+      
+      if (!adminUserDoc.exists()) {
+        // User is authenticated but not in adminusers collection
+        await auth.signOut(); // Sign them out
+        toast({
+          title: 'Access Denied',
+          description: 'You do not have admin access. Please contact your administrator.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      // Check if admin user is active
+      const adminUserData = adminUserDoc.data();
+      if (adminUserData?.active === false) {
+        await auth.signOut();
+        toast({
+          title: 'Account Inactive',
+          description: 'Your admin account has been deactivated. Please contact your administrator.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      // Success - redirect to dashboard
       router.push('/dashboard');
     } catch (error: any) {
       toast({
@@ -114,34 +145,43 @@ export default function LoginPage() {
       </div>
       
       {/* Right side login form */}
-      <div className="w-full md:w-1/2 flex items-center justify-center p-4 relative">
+      <div className="w-full md:w-1/2 flex items-center justify-center p-4 relative bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
         {/* Enhanced decorative elements */}
-        <div className="absolute top-[10%] right-[10%] w-[40%] h-[40%] rounded-full bg-gradient-to-r from-blue-100/40 to-blue-50/30 opacity-70 blur-3xl"></div>
+        <div className="absolute top-[10%] right-[10%] w-[40%] h-[40%] rounded-full bg-gradient-to-r from-primary/5 via-blue-100/20 to-primary/10 opacity-70 blur-3xl"></div>
         <div className="absolute bottom-[10%] left-[10%] w-[40%] h-[40%] rounded-full bg-gradient-to-r from-blue-50/30 to-primary/10 opacity-60 blur-3xl"></div>
         <div className="absolute top-[40%] left-[30%] w-[15%] h-[15%] rounded-full bg-primary/10 opacity-60 blur-2xl"></div>
         
         <div className="w-full max-w-md relative z-10 px-4">
-          <Card className="shadow-xl border border-gray-100 bg-white/80 backdrop-blur-md relative overflow-hidden rounded-2xl">
-            <div className="absolute top-[-80px] right-[-80px] w-48 h-48 rounded-full bg-blue-400/10 blur-xl"></div>
-            <div className="absolute bottom-[-60px] left-[-60px] w-40 h-40 rounded-full bg-primary/10 blur-xl"></div>
-            <div className="absolute top-[20%] right-[15%] w-24 h-24 rounded-full bg-primary/5 blur-sm"></div>
-            <div className="absolute bottom-[20%] left-[10%] w-20 h-20 rounded-full bg-blue-300/5 blur-sm"></div>
+          <Card className="card-premium shadow-2xl border-0 bg-gradient-to-br from-white via-white to-blue-50/30 relative overflow-hidden rounded-2xl">
+            {/* Animated gradient overlay */}
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-blue-500 to-primary opacity-60"></div>
+            <div className="absolute top-[-80px] right-[-80px] w-48 h-48 rounded-full bg-primary/5 blur-xl"></div>
+            <div className="absolute bottom-[-60px] left-[-60px] w-40 h-40 rounded-full bg-primary/5 blur-xl"></div>
+            <div className="absolute top-[20%] right-[15%] w-24 h-24 rounded-full bg-blue-200/10 blur-sm"></div>
+            <div className="absolute bottom-[20%] left-[10%] w-20 h-20 rounded-full bg-primary/5 blur-sm"></div>
             
-            <CardHeader className="space-y-3 pb-3 relative z-10">
+            <CardHeader className="space-y-4 pb-4 relative z-10 pt-8">
               <div className="md:hidden mb-3 flex justify-center">
                 <Logo onDarkBg={false} />
               </div>
-              <CardTitle className="text-2xl font-bold text-center text-gray-800">Welcome Back</CardTitle>
-              <CardDescription className="text-center text-sm">Enter your credentials to access your account</CardDescription>
+              <div className="flex items-center justify-center mb-2">
+                <div className="p-3 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 backdrop-blur-sm">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </div>
+              </div>
+              <CardTitle className="text-3xl font-bold text-center bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 bg-clip-text text-transparent">Welcome Back</CardTitle>
+              <CardDescription className="text-center text-sm text-gray-600">Enter your credentials to access your account</CardDescription>
             </CardHeader>
             
-            <CardContent className="space-y-4 relative z-10 px-6 backdrop-blur-sm">
-              <form onSubmit={handleLogin} className="space-y-3.5">
-                <div className="space-y-1.5">
-                  <Label htmlFor="email" className="text-sm font-medium">Email address</Label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <CardContent className="space-y-5 relative z-10 px-8 pb-8">
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-sm font-semibold text-gray-700">Email address</Label>
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 group-focus-within:text-primary transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
                       </svg>
                     </div>
@@ -152,21 +192,21 @@ export default function LoginPage() {
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="pl-10 bg-white/80 backdrop-blur-sm border border-gray-200/80 hover:border-primary focus:border-primary focus-visible:ring-1 focus-visible:ring-primary h-11 shadow-md rounded-lg"
+                      className="pl-12 h-12 bg-white/90 backdrop-blur-sm border-2 border-gray-200/60 hover:border-primary/50 focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 shadow-sm rounded-xl transition-all"
                     />
                   </div>
                 </div>
                 
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="password" className="text-sm font-medium">Password</Label>
-                    <Link href="#" className="text-xs text-primary hover:underline font-medium">
+                    <Label htmlFor="password" className="text-sm font-semibold text-gray-700">Password</Label>
+                    <Link href="#" className="text-xs text-primary hover:text-primary/80 hover:underline font-medium transition-colors">
                       Forgot password?
                     </Link>
                   </div>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 group-focus-within:text-primary transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                       </svg>
                     </div>
@@ -176,22 +216,22 @@ export default function LoginPage() {
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="pl-10 pr-10 bg-white/80 backdrop-blur-sm border border-gray-200/80 hover:border-primary focus:border-primary focus-visible:ring-1 focus-visible:ring-primary h-11 shadow-md rounded-lg"
+                      className="pl-12 pr-12 h-12 bg-white/90 backdrop-blur-sm border-2 border-gray-200/60 hover:border-primary/50 focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 shadow-sm rounded-xl transition-all"
                     />
                     <button
                       type="button"
                       onClick={togglePasswordVisibility}
-                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 cursor-pointer"
+                      className="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400 hover:text-primary transition-colors cursor-pointer"
                     >
                       {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                     </button>
                   </div>
                 </div>
                 
-                <div className="pt-2">
+                <div className="pt-3">
                   <Button 
                     type="submit" 
-                    className="w-full h-11 bg-primary hover:bg-primary/90 active:bg-primary/80 text-white font-medium text-base transition-all shadow-lg hover:shadow-xl rounded-xl backdrop-blur-sm"
+                    className="w-full h-12 bg-gradient-to-r from-primary via-primary/95 to-primary hover:from-primary/90 hover:via-primary/85 hover:to-primary/90 text-white font-semibold text-base transition-all shadow-lg hover:shadow-xl rounded-xl btn-premium"
                     disabled={loading}
                   >
                     {loading ? (
@@ -203,7 +243,12 @@ export default function LoginPage() {
                         Logging in...
                       </div>
                     ) : (
-                      'Login'
+                      <span className="flex items-center justify-center gap-2">
+                        Sign In
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                        </svg>
+                      </span>
                     )}
                   </Button>
                 </div>
@@ -211,7 +256,7 @@ export default function LoginPage() {
               
               <div className="text-center text-sm text-gray-600 pt-2">
                 Don&apos;t have an account?{' '}
-                <Link href="/signup" className="text-primary font-medium hover:underline hover:text-primary/80 active:text-primary/70 cursor-pointer">
+                <Link href="/signup" className="text-primary font-semibold hover:underline hover:text-primary/80 transition-colors">
                   Create account
                 </Link>
               </div>
@@ -220,8 +265,8 @@ export default function LoginPage() {
           
           <p className="text-center mt-6 text-xs text-gray-500">
             By signing in, you agree to our{' '}
-            <Link href="#" className="text-primary hover:underline">Terms of Service</Link> and{' '}
-            <Link href="#" className="text-primary hover:underline">Privacy Policy</Link>
+            <Link href="#" className="text-primary hover:underline font-medium">Terms of Service</Link> and{' '}
+            <Link href="#" className="text-primary hover:underline font-medium">Privacy Policy</Link>
           </p>
         </div>
       </div>

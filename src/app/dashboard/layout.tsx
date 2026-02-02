@@ -2,26 +2,19 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, Users, FolderKanban, LifeBuoy, UserCircle, Bell, ChevronDown, FileText, LogOut, Search, PanelLeft, CalendarDays, University, BarChart3 } from 'lucide-react';
+import { Home, Users, FolderKanban, LifeBuoy, UserCircle, FileText, LogOut, PanelLeft, CalendarDays, University, BarChart3, ChevronRight } from 'lucide-react';
 import * as React from 'react';
 
-// Replaced complex sidebar with a simple icon-only rail
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuItem,
-} from '@/components/ui/dropdown-menu';
 import Logo from '@/components/logo';
-import { NotificationBell } from '@/components/notification-bell';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 import { auth } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 const navItems = [
     { href: '/dashboard', icon: Home, label: 'Home' },
@@ -49,21 +42,9 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const router = useRouter();
   const { toast } = useToast();
-  const [currentUser, setCurrentUser] = React.useState<any>(null);
-  const [expanded, setExpanded] = React.useState<boolean>(() => {
-    if (typeof window !== 'undefined') {
-      const v = localStorage.getItem('sidebar_expanded');
-      return v === 'true';
-    }
-    return false;
-  });
-  const [activeSection, setActiveSection] = React.useState<string>(() => {
-    if (typeof window !== 'undefined') {
-      const section = localStorage.getItem('activeSection');
-      return section || 'dashboard';
-    }
-    return 'dashboard';
-  });
+  const [mounted, setMounted] = React.useState(false);
+  const [expanded, setExpanded] = React.useState<boolean>(false);
+  const [hoverExpanded, setHoverExpanded] = React.useState<boolean>(false);
 
   const handleLogout = async () => {
     try {
@@ -76,129 +57,222 @@ export default function DashboardLayout({
     }
   };
 
-  // Set active section based on pathname
+  // Initialize from localStorage after mount to prevent hydration mismatch
   React.useEffect(() => {
-    const section = pathname.split('/')[2] || 'dashboard';
-    setActiveSection(section);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('activeSection', section);
+    setMounted(true);
+    // Load sidebar expanded state from localStorage
+    const savedExpanded = localStorage.getItem('sidebar_expanded');
+    if (savedExpanded === 'true') {
+      setExpanded(true);
     }
-  }, [pathname]);
-
-  // Get current user
-  React.useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      setCurrentUser(user);
-    });
-    return () => unsubscribe();
   }, []);
 
   const toggleExpanded = () => {
     setExpanded((prev) => {
       const next = !prev;
-      if (typeof window !== 'undefined') localStorage.setItem('sidebar_expanded', String(next));
+      if (mounted) {
+        localStorage.setItem('sidebar_expanded', String(next));
+      }
       return next;
     });
   };
 
+  // Determine if sidebar should be shown as expanded (either by toggle or hover)
+  const isSidebarExpanded = expanded || hoverExpanded;
+
   return (
-    <div className="bg-gradient-to-br from-blue-50/50 via-green-50/50 to-blue-100/50 min-h-screen">
-        {/* Collapsible icon rail */}
-        <aside className={cn("fixed inset-y-0 left-0 z-20 border-r bg-white flex flex-col py-4 gap-2 transition-[width] duration-200 ease-linear", expanded ? "w-64" : "w-16")}> 
-          <div className={cn("px-3 flex items-center", expanded ? "justify-between" : "justify-center")}> 
-            {expanded && (
-              <div className="h-10 flex items-center">
-                <Logo onDarkBg={false} />
-              </div>
+    <TooltipProvider delayDuration={0}>
+      <div className="bg-gradient-to-br from-slate-50 via-blue-50/30 to-emerald-50/40 min-h-screen">
+          {/* Enhanced Premium Sidebar */}
+          <aside 
+            className={cn(
+              "fixed inset-y-0 left-0 z-20 border-r border-border/40 bg-gradient-to-b from-white via-white/95 to-slate-50/80 backdrop-blur-xl flex flex-col py-5 gap-3 transition-[width] duration-300 ease-out shadow-2xl",
+              "before:absolute before:inset-0 before:bg-gradient-to-b before:from-primary/5 before:via-transparent before:to-transparent before:pointer-events-none",
+              isSidebarExpanded ? "w-64" : "w-16"
             )}
-            <button onClick={toggleExpanded} className="h-8 w-8 flex items-center justify-center rounded-md border bg-white hover:bg-slate-50">
-              <PanelLeft className="h-4 w-4" />
-            </button>
-          </div>
-          <nav className="flex-1 flex flex-col mt-2">
-            {[...navItems, { href: projectsNav.href, icon: projectsNav.icon, label: projectsNav.label }, { href: helpdeskNavItem.href, icon: helpdeskNavItem.icon, label: helpdeskNavItem.label }].map((item) => {
-              const active = item.href === '/dashboard' ? pathname === item.href : pathname.startsWith(item.href);
-              const Icon = item.icon as any;
-              return (
-                <Link key={item.href} href={item.href} className={cn("mx-3 my-1 h-10 rounded-xl flex items-center gap-3 px-2 transition-colors", active ? "bg-primary text-white" : "text-primary hover:bg-primary/10")}> 
-                  <span className="h-10 w-10 flex items-center justify-center"><Icon className="h-5 w-5" /></span>
-                  <span className={cn("text-sm font-medium whitespace-nowrap", !expanded && "hidden")}>{item.label}</span>
-                </Link>
-              );
-            })}
-          </nav>
-          <div className="flex flex-col gap-2 px-3 mb-2">
-            <Link href={accountNavItem.href} className={cn("h-10 rounded-xl flex items-center gap-3 px-2 transition-colors", pathname.startsWith(accountNavItem.href) ? "bg-primary text-white" : "text-primary hover:bg-primary/10")}> 
-              <span className="h-10 w-10 flex items-center justify-center"><accountNavItem.icon className="h-5 w-5" /></span>
-              <span className={cn("text-sm font-medium whitespace-nowrap", !expanded && "hidden")}>{accountNavItem.label}</span>
-            </Link>
-            <button onClick={handleLogout} className="h-10 rounded-xl flex items-center gap-3 px-2 text-red-500 hover:bg-red-50">
-              <span className="h-10 w-10 flex items-center justify-center"><LogOut className="h-5 w-5" /></span>
-              <span className={cn("text-sm font-medium whitespace-nowrap", !expanded && "hidden")}>Logout</span>
-            </button>
-          </div>
-        </aside>
+            onMouseEnter={() => setHoverExpanded(true)}
+            onMouseLeave={() => setHoverExpanded(false)}
+          > 
+            {/* Header Section */}
+            <div className={cn("px-4 flex items-center relative z-10", isSidebarExpanded ? "justify-between" : "justify-center")}> 
+              {mounted && isSidebarExpanded && (
+                <div className="h-10 flex items-center animate-in fade-in slide-in-from-left-2 duration-300">
+                  <Logo onDarkBg={false} />
+                </div>
+              )}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button 
+                    onClick={toggleExpanded} 
+                    className="h-9 w-9 flex items-center justify-center rounded-xl border-2 border-primary/20 bg-gradient-to-br from-white to-slate-50 hover:from-primary/10 hover:to-primary/5 hover:border-primary/40 transition-all duration-200 shadow-sm hover:shadow-md group"
+                  >
+                    <PanelLeft className={cn("h-4 w-4 text-primary transition-transform duration-200", expanded && "rotate-180")} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="right" className="bg-primary text-white border-0">
+                  {expanded ? 'Collapse sidebar' : 'Expand sidebar'}
+                </TooltipContent>
+              </Tooltip>
+            </div>
+
+            {/* Navigation Section */}
+            <nav className="flex-1 flex flex-col mt-2 overflow-y-auto overflow-x-hidden scrollbar-premium">
+              <div className={cn("space-y-1", isSidebarExpanded ? "px-2" : "px-2")}>
+                {[...navItems, { href: projectsNav.href, icon: projectsNav.icon, label: projectsNav.label }, { href: helpdeskNavItem.href, icon: helpdeskNavItem.icon, label: helpdeskNavItem.label }].map((item) => {
+                  const active = item.href === '/dashboard' ? pathname === item.href : pathname.startsWith(item.href);
+                  const Icon = item.icon as any;
+                  
+                  const linkElement = (
+                    <Link 
+                      key={item.href} 
+                      href={item.href}
+                      prefetch={true}
+                      className={cn(
+                        "group relative flex items-center transition-all duration-200",
+                        "hover:scale-[1.02] active:scale-[0.98]",
+                        isSidebarExpanded 
+                          ? "mx-2 my-1 h-11 rounded-xl gap-3 px-3" 
+                          : "mx-auto my-1 h-11 w-11 rounded-xl justify-center",
+                        active 
+                          ? "bg-gradient-to-r from-primary via-primary/95 to-primary/90 text-white shadow-lg shadow-primary/30" 
+                          : "text-muted-foreground hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 hover:text-foreground"
+                      )}
+                    > 
+                      {/* Active indicator bar - only show when expanded */}
+                      {active && isSidebarExpanded && (
+                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-r-full shadow-sm" />
+                      )}
+                      
+                      {/* Icon container */}
+                      <span className={cn(
+                        "flex items-center justify-center rounded-lg transition-all duration-200 shrink-0",
+                        isSidebarExpanded ? "h-9 w-9" : "h-9 w-9",
+                        active 
+                          ? "bg-white/20 backdrop-blur-sm" 
+                          : "bg-transparent group-hover:bg-primary/10"
+                      )}>
+                        <Icon className={cn(
+                          "transition-all duration-200",
+                          isSidebarExpanded ? "h-5 w-5" : "h-5 w-5",
+                          active ? "text-white" : "text-muted-foreground group-hover:text-primary"
+                        )} />
+                      </span>
+                      
+                      {/* Label */}
+                      {isSidebarExpanded && (
+                        <span className="text-sm font-semibold whitespace-nowrap transition-all duration-300">
+                          {item.label}
+                        </span>
+                      )}
+                      
+                      {/* Chevron for active items */}
+                      {active && isSidebarExpanded && (
+                        <ChevronRight className="h-4 w-4 ml-auto text-white/80 animate-in slide-in-from-right-2" />
+                      )}
+                    </Link>
+                  );
+
+                  if (!isSidebarExpanded) {
+                    return (
+                      <Tooltip key={item.href}>
+                        <TooltipTrigger asChild>
+                          {linkElement}
+                        </TooltipTrigger>
+                        <TooltipContent side="right" className="bg-primary text-white border-0">
+                          {item.label}
+                        </TooltipContent>
+                      </Tooltip>
+                    );
+                  }
+
+                  return linkElement;
+                })}
+              </div>
+            </nav>
+
+            {/* Footer Section */}
+            <div className="flex flex-col gap-2 mt-auto border-t border-border/30 pt-3">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link 
+                    href={accountNavItem.href} 
+                    className={cn(
+                      "group relative flex items-center transition-all duration-200",
+                      "hover:scale-[1.02] active:scale-[0.98]",
+                      isSidebarExpanded 
+                        ? "mx-2 h-11 rounded-xl gap-3 px-3" 
+                        : "mx-auto h-11 w-11 rounded-xl justify-center",
+                      pathname.startsWith(accountNavItem.href) 
+                        ? "bg-gradient-to-r from-primary to-primary/90 text-white shadow-md shadow-primary/20" 
+                        : "text-primary hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5"
+                    )}
+                  > 
+                    <span className={cn(
+                      "flex items-center justify-center rounded-lg transition-all duration-200 shrink-0",
+                      isSidebarExpanded ? "h-9 w-9" : "h-9 w-9",
+                      pathname.startsWith(accountNavItem.href)
+                        ? "bg-white/20 backdrop-blur-sm"
+                        : "bg-primary/10 group-hover:bg-primary/20"
+                    )}>
+                      <accountNavItem.icon className="h-5 w-5" />
+                    </span>
+                    {isSidebarExpanded && (
+                      <span className="text-sm font-semibold whitespace-nowrap transition-all duration-300">
+                        {accountNavItem.label}
+                      </span>
+                    )}
+                  </Link>
+                </TooltipTrigger>
+                {!isSidebarExpanded && (
+                  <TooltipContent side="right" className="bg-primary text-white border-0">
+                    {accountNavItem.label}
+                  </TooltipContent>
+                )}
+              </Tooltip>
+              
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button 
+                    onClick={handleLogout} 
+                    className={cn(
+                      "flex items-center transition-all duration-200 text-red-500 hover:bg-gradient-to-r hover:from-red-50 hover:to-red-50/50 hover:scale-[1.02] active:scale-[0.98] group",
+                      isSidebarExpanded 
+                        ? "mx-2 h-11 rounded-xl gap-3 px-3" 
+                        : "mx-auto h-11 w-11 rounded-xl justify-center"
+                    )}
+                  >
+                    <span className={cn(
+                      "flex items-center justify-center rounded-lg bg-red-50 group-hover:bg-red-100 transition-all duration-200 shrink-0",
+                      isSidebarExpanded ? "h-9 w-9" : "h-9 w-9"
+                    )}>
+                      <LogOut className="h-5 w-5" />
+                    </span>
+                    {isSidebarExpanded && (
+                      <span className="text-sm font-semibold whitespace-nowrap transition-all duration-300">
+                        Logout
+                      </span>
+                    )}
+                  </button>
+                </TooltipTrigger>
+                {!isSidebarExpanded && (
+                  <TooltipContent side="right" className="bg-red-500 text-white border-0">
+                    Logout
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </div>
+          </aside>
 
         {/* Main area with left margin equal to rail width */}
-        <div className={cn(expanded ? "ml-64" : "ml-16")}> 
+        <div className={cn(isSidebarExpanded ? "ml-64" : "ml-16")}> 
             <div className="flex flex-col">
-            <header className="flex h-16 items-center gap-4 border-b bg-white px-4 lg:px-6 sticky top-0 z-30 shadow-sm">
-                <div className="w-full flex-1">
-                  <nav className="flex items-center">
-                    <div className="flex items-center">
-                      <div className="h-8 w-1 bg-primary rounded-full mr-3 hidden md:block"></div>
-                      <div>
-                        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Dashboard</p>
-                        <h1 className="text-xl font-bold capitalize text-gray-800 dark:text-gray-100">{activeSection}</h1>
-                      </div>
-                    </div>
-                  </nav>
-                </div>
-                
-                {/* Actions */}
-                <div className="flex items-center gap-3">
-                  {currentUser && <NotificationBell userId={currentUser.uid} />}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 overflow-hidden p-0 bg-white/90 shadow-sm hover:bg-white">
-                        <UserCircle className="h-6 w-6 text-primary" />
-                        <span className="sr-only">User menu</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-56">
-                      <div className="flex items-center gap-3 p-2">
-                        <div className="bg-primary/10 p-1 rounded-full">
-                          <UserCircle className="h-8 w-8 text-primary" />
-                        </div>
-                        <div>
-                          <p className="font-medium">Admin User</p>
-                          <p className="text-xs text-muted-foreground">admin@example.com</p>
-                        </div>
-                      </div>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem asChild>
-                        <Link href="/dashboard/account" className="flex items-center cursor-pointer">
-                          <UserCircle className="h-4 w-4 mr-2" />Profile
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href="/dashboard/helpdesk" className="flex items-center cursor-pointer">
-                          <LifeBuoy className="h-4 w-4 mr-2" />Support
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onSelect={handleLogout} className="text-red-500 cursor-pointer flex items-center">
-                        <LogOut className="h-4 w-4 mr-2" />Logout
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-            </header>
+            {/* Header removed - user menu moved to sidebar */}
             <main className="flex-1 p-4 lg:p-6 bg-transparent">
                 {children}
             </main>
             </div>
         </div>
-    </div>
+      </div>
+    </TooltipProvider>
   );
 }

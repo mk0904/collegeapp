@@ -38,6 +38,7 @@ import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { AddCircularModal } from '@/components/add-circular-modal'
 import { getAllCirculars } from '@/lib/firebase/circular'
+import { getColleges, getUsers } from '@/lib/firebase/firestore'
 
 // Add this type definition for circulars
 type Circular = {
@@ -86,6 +87,8 @@ export default function CircularPage() {
   const [circulars, setCirculars] = React.useState<Circular[]>([])
   const [loading, setLoading] = React.useState(true)
   const [isModalOpen, setIsModalOpen] = React.useState(false)
+  const [collegeIdToName, setCollegeIdToName] = React.useState<Record<string, string>>({})
+  const [userIdToName, setUserIdToName] = React.useState<Record<string, string>>({})
   
   // Filtering states
   const [searchTerm, setSearchTerm] = React.useState('')
@@ -97,7 +100,25 @@ export default function CircularPage() {
   const fetchCirculars = React.useCallback(async () => {
     setLoading(true);
     try {
-      const fetchedCirculars = await getAllCirculars();
+      // Fetch circulars, colleges, and users in parallel
+      const [fetchedCirculars, fetchedColleges, fetchedUsers] = await Promise.all([
+        getAllCirculars(),
+        getColleges(),
+        getUsers()
+      ]);
+      
+      // Create mappings
+      const collegeMap: Record<string, string> = {};
+      fetchedColleges.forEach(college => {
+        collegeMap[college.id] = college.name;
+      });
+      setCollegeIdToName(collegeMap);
+      
+      const userMap: Record<string, string> = {};
+      fetchedUsers.forEach(user => {
+        userMap[user.id] = user.name || user.email || 'Unknown';
+      });
+      setUserIdToName(userMap);
       
       // Convert Firestore data to the Circular type
       const formattedCirculars = fetchedCirculars.map(doc => {
@@ -144,14 +165,52 @@ export default function CircularPage() {
           }
         }
         
+        // Get recipient info - if recipients array exists, get unique colleges from recipients
+        let district = data.district || 'All Districts';
+        let school = data.school || 'All Colleges';
+        
+        // If recipients exist, try to determine college/district from recipient users
+        if (data.recipients && Array.isArray(data.recipients) && data.recipients.length > 0) {
+          const recipientColleges = new Set<string>();
+          const recipientDistricts = new Set<string>();
+          
+          data.recipients.forEach((userId: string) => {
+            const user = fetchedUsers.find(u => u.id === userId);
+            if (user) {
+              if (user.college || user.collegeId) {
+                const collegeId = user.college || user.collegeId || '';
+                const collegeName = collegeMap[collegeId] || collegeId;
+                if (collegeName && collegeName !== collegeId) {
+                  recipientColleges.add(collegeName);
+                }
+              }
+              if (user.district) {
+                recipientDistricts.add(user.district);
+              }
+            }
+          });
+          
+          if (recipientColleges.size > 0) {
+            school = recipientColleges.size === 1 
+              ? Array.from(recipientColleges)[0]
+              : `${recipientColleges.size} Colleges`;
+          }
+          
+          if (recipientDistricts.size > 0) {
+            district = recipientDistricts.size === 1
+              ? Array.from(recipientDistricts)[0]
+              : `${recipientDistricts.size} Districts`;
+          }
+        }
+        
         return {
           id: data.id,
           title: data.title || 'Untitled',
           sentDate: sentDate,
           status: data.status || 'Draft',
-          recipientCount: data.recipientCount || 0,
-          district: data.district || 'All Districts',
-          school: data.school || 'All Colleges'
+          recipientCount: data.recipientCount || (data.recipients?.length || 0),
+          district: district,
+          school: school
         };
       });
       
@@ -209,37 +268,37 @@ export default function CircularPage() {
   }
 
   return (
-    <>
+    <div className="fade-in">
       <AddCircularModal isOpen={isModalOpen} onOpenChange={setIsModalOpen} onCircularCreated={fetchCirculars} />
-      <Card>
-        <CardHeader>
+      <Card className="card-premium rounded-2xl border-0 shadow-lg bg-gradient-to-br from-white to-slate-50/50">
+        <CardHeader className="px-6 pt-6 pb-4">
           <div className="flex items-start justify-between">
             <div>
-              {/* Removed title to avoid duplication with dashboard header */}
-              <CardDescription>
+              <h2 className="text-xl font-bold mb-1">Circular Management</h2>
+              <CardDescription className="text-sm">
                 Create and manage circulars for your organization.
               </CardDescription>
             </div>
             <div className="flex gap-2">
-              <Button onClick={handleExport}>
+              <Button onClick={handleExport} className="btn-premium bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-md hover:shadow-lg transition-all duration-300">
                 <Download className="mr-2 h-4 w-4" />
                 Export
               </Button>
-              <Button onClick={() => setIsModalOpen(true)}>
+              <Button onClick={() => setIsModalOpen(true)} className="btn-premium bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-md hover:shadow-lg transition-all duration-300">
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Add Circular
               </Button>
             </div>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="flex flex-col sm:flex-row items-center gap-2 mb-4">
+        <CardContent className="px-6 pb-6">
+          <div className="flex flex-col sm:flex-row items-center gap-3 mb-6">
             <div className="relative flex-1 w-full">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
                 placeholder="Search circulars by title..."
-                className="pl-8 w-full"
+                className="pl-10 w-full h-10 rounded-xl border-border/50 bg-white/50 backdrop-blur-sm focus:bg-white transition-all duration-200"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -247,13 +306,13 @@ export default function CircularPage() {
             <div className="flex w-full sm:w-auto gap-2">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="w-full sm:w-auto">
+                  <Button variant="outline" className="w-full sm:w-auto h-10 rounded-xl border-border/50 bg-white/50 backdrop-blur-sm hover:bg-white transition-all duration-200">
                     <FileText className="mr-2 h-4 w-4" />
                     Status
                     <ChevronDown className="ml-auto h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent align="end" className="rounded-xl border-border/50 shadow-lg">
                   <DropdownMenuCheckboxItem checked={statusFilter === 'all'} onCheckedChange={() => setStatusFilter('all')}>
                     All Status
                   </DropdownMenuCheckboxItem>
@@ -268,13 +327,13 @@ export default function CircularPage() {
               
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="w-full sm:w-auto">
+                  <Button variant="outline" className="w-full sm:w-auto h-10 rounded-xl border-border/50 bg-white/50 backdrop-blur-sm hover:bg-white transition-all duration-200">
                     <MapPin className="mr-2 h-4 w-4" />
                     District
                     <ChevronDown className="ml-auto h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent align="end" className="rounded-xl border-border/50 shadow-lg">
                   <DropdownMenuCheckboxItem checked={districtFilter === 'all'} onCheckedChange={() => setDistrictFilter('all')}>
                     All Districts
                   </DropdownMenuCheckboxItem>
@@ -292,7 +351,7 @@ export default function CircularPage() {
               
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="w-full sm:w-auto">
+                  <Button variant="outline" className="w-full sm:w-auto h-10 rounded-xl border-border/50 bg-white/50 backdrop-blur-sm hover:bg-white transition-all duration-200">
                     <GraduationCap className="mr-2 h-4 w-4" />
                     College
                     <ChevronDown className="ml-auto h-4 w-4" />
@@ -316,7 +375,7 @@ export default function CircularPage() {
             </div>
           </div>
           
-          <div className="rounded-md border">
+          <div className="rounded-xl border border-border/50 bg-white/80 backdrop-blur-sm overflow-hidden shadow-lg">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -389,6 +448,6 @@ export default function CircularPage() {
           </div>
         </CardContent>
       </Card>
-    </>
+    </div>
   )
 }

@@ -18,7 +18,8 @@ export interface College {
   id: string;
   name: string;
   district: string;
-  address: string;
+  address?: string;
+  location?: string;
   principalName?: string;
   principalEmail?: string;
   principalPhone?: string;
@@ -26,6 +27,9 @@ export interface College {
   phone?: string;
   latitude?: number;
   longitude?: number;
+  startTime?: number;
+  endTime?: number;
+  maxDistance?: number;
   projectsCount?: number;
   usersCount?: number;
   createdAt: Timestamp;

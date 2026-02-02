@@ -122,23 +122,23 @@ export default function HelpdeskPage() {
 
 
   return (
-    <>
+    <div className="fade-in">
       {selectedTicket && <TicketDetailsModal isOpen={isModalOpen} onOpenChange={setIsModalOpen} ticket={selectedTicket} />}
-      <Card>
-        <CardHeader>
-            {/* Removed title to avoid duplication with dashboard header */}
-            <CardDescription>
+      <Card className="card-premium rounded-2xl border-0 shadow-lg bg-gradient-to-br from-white to-slate-50/50">
+        <CardHeader className="px-6 pt-6 pb-4">
+            <h2 className="text-xl font-bold mb-1">Helpdesk Management</h2>
+            <CardDescription className="text-sm">
                 Manage user support tickets.
             </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="flex flex-col sm:flex-row items-center gap-2 mb-4">
+        <CardContent className="px-6 pb-6">
+          <div className="flex flex-col sm:flex-row items-center gap-3 mb-6">
               <div className="relative w-full sm:w-auto flex-1">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   type="search"
                   placeholder="Search by subject, user, or ID..."
-                  className="pl-8 w-full"
+                  className="pl-10 w-full h-10 rounded-xl border-border/50 bg-white/50 backdrop-blur-sm focus:bg-white transition-all duration-200"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -146,11 +146,11 @@ export default function HelpdeskPage() {
               <div className="flex w-full sm:w-auto gap-2">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="w-full sm:w-auto">
+                    <Button variant="outline" className="w-full sm:w-auto h-10 rounded-xl border-border/50 bg-white/50 backdrop-blur-sm hover:bg-white transition-all duration-200">
                       Status <ChevronDown className="ml-2 h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
+                  <DropdownMenuContent align="end" className="rounded-xl border-border/50 shadow-lg">
                     <DropdownMenuCheckboxItem checked={statusFilter === 'all'} onCheckedChange={() => setStatusFilter('all')}>All</DropdownMenuCheckboxItem>
                     <DropdownMenuCheckboxItem checked={statusFilter === 'Open'} onCheckedChange={() => setStatusFilter('Open')}>Open</DropdownMenuCheckboxItem>
                     <DropdownMenuCheckboxItem checked={statusFilter === 'Resolved'} onCheckedChange={() => setStatusFilter('Resolved')}>Resolved</DropdownMenuCheckboxItem>
@@ -159,11 +159,11 @@ export default function HelpdeskPage() {
 
                  <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="w-full sm:w-auto">
+                    <Button variant="outline" className="w-full sm:w-auto h-10 rounded-xl border-border/50 bg-white/50 backdrop-blur-sm hover:bg-white transition-all duration-200">
                       Issue Type <ChevronDown className="ml-2 h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
+                  <DropdownMenuContent align="end" className="rounded-xl border-border/50 shadow-lg">
                     <DropdownMenuCheckboxItem checked={issueTypeFilter === 'all'} onCheckedChange={() => setIssueTypeFilter('all')}>All</DropdownMenuCheckboxItem>
                     <DropdownMenuCheckboxItem checked={issueTypeFilter === 'Support'} onCheckedChange={() => setIssueTypeFilter('Support')}>Support</DropdownMenuCheckboxItem>
                     <DropdownMenuCheckboxItem checked={issueTypeFilter === 'Feedback'} onCheckedChange={() => setIssueTypeFilter('Feedback')}>Feedback</DropdownMenuCheckboxItem>
@@ -183,7 +183,7 @@ export default function HelpdeskPage() {
                 </Popover>
               </div>
           </div>
-          <div className="rounded-md border">
+          <div className="rounded-xl border border-border/50 bg-white/80 backdrop-blur-sm overflow-hidden shadow-lg">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -255,6 +255,6 @@ export default function HelpdeskPage() {
           </div>
         </CardContent>
       </Card>
-    </>
+    </div>
   )
 }

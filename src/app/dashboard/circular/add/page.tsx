@@ -169,13 +169,13 @@ export default function AddCircularPage() {
       // Upload files to Firebase Storage if there are any
       let fileObjects = [];
       if (uploadedFiles.length > 0) {
-        // Files are already uploaded to Cloudinary, just use their data
+        // Files are already uploaded to Firebase Storage, just use their data
         fileObjects = uploadedFiles.map((file) => ({
           name: file.name,
           type: file.type,
-          size: 0, // Cloudinary doesn't provide size in this format
+          size: 0, // Size not stored in this format
           url: file.url,
-          path: file.id // Use Cloudinary public_id as path
+          path: file.id // Use Firebase Storage path
         }));
       }
       
@@ -337,7 +337,7 @@ export default function AddCircularPage() {
               </div>
               
               {/* Recipients Table */}
-              <div className="rounded-md border">
+              <div className="rounded-xl border border-border/50 bg-white/80 backdrop-blur-sm overflow-hidden shadow-lg">
                 <Table>
                   <TableHeader>
                     <TableRow>

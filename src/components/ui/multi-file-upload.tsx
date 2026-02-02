@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { X, Upload, File, Image, FileIcon } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { CloudinaryResult, CloudinaryUploadWidget } from '@/lib/cloudinary';
+import { uploadMultipleFiles, type FirebaseStorageFile } from '@/lib/firebase/storage';
+import { useToast } from '@/hooks/use-toast';
 
 export type UploadedFile = {
   id: string;
@@ -26,28 +27,58 @@ export function MultiFileUpload({
   value = [],
   maxFiles = 5,
 }: MultiFileUploadProps) {
+  const { toast } = useToast();
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>(value);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleUpload = (result: CloudinaryResult) => {
-    if (uploadedFiles.length >= maxFiles) {
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = event.target.files;
+    if (!selectedFiles || selectedFiles.length === 0) return;
+
+    if (uploadedFiles.length + selectedFiles.length > maxFiles) {
+      toast({
+        title: "Too many files",
+        description: `You can only upload up to ${maxFiles} files.`,
+        variant: "destructive",
+      });
       return;
     }
-    
-    const { public_id, secure_url, resource_type } = result.info;
-    
-    // Extract file name from the public_id (last part after the last slash)
-    const name = public_id.split('/').pop() || 'file';
-    
-    const newFile: UploadedFile = {
-      id: public_id,
-      url: secure_url,
-      name,
-      type: resource_type,
-    };
-    
-    const updatedFiles = [...uploadedFiles, newFile];
-    setUploadedFiles(updatedFiles);
-    onFilesChange(updatedFiles);
+
+    setIsUploading(true);
+    try {
+      const filesArray = Array.from(selectedFiles);
+      const uploadResults = await uploadMultipleFiles(filesArray, 'uploads', 'general');
+      
+      const newFiles: UploadedFile[] = uploadResults.map((result) => ({
+        id: result.path,
+        url: result.url,
+        name: result.name,
+        type: result.type,
+      }));
+
+      const updatedFiles = [...uploadedFiles, ...newFiles];
+      setUploadedFiles(updatedFiles);
+      onFilesChange(updatedFiles);
+
+      toast({
+        title: "Files uploaded",
+        description: `Successfully uploaded ${filesArray.length} file(s).`,
+      });
+    } catch (error) {
+      console.error('File upload error:', error);
+      toast({
+        title: "Upload failed",
+        description: error instanceof Error ? error.message : 'Failed to upload files.',
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+      // Reset input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
   };
 
   const removeFile = (id: string) => {
@@ -96,28 +127,44 @@ export function MultiFileUpload({
         )}
 
         {uploadedFiles.length < maxFiles && (
-          <CloudinaryUploadWidget onUpload={handleUpload}>
-            {({ open }) => (
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full border-dashed py-8 flex flex-col items-center justify-center gap-1 h-auto"
-                onClick={() => open()}
-              >
-                <Upload className="h-8 w-8 mb-2" />
-                <div className="font-medium">Upload Files</div>
-                <div className="text-sm text-muted-foreground mt-1">
-                  Drag & drop or click to browse
-                </div>
-                <div className="text-xs text-muted-foreground mt-2">
-                  {uploadedFiles.length} / {maxFiles} files
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  Supports images, PDFs, Word docs, Excel files
-                </div>
-              </Button>
-            )}
-          </CloudinaryUploadWidget>
+          <div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              className="hidden"
+              onChange={handleFileSelect}
+              accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full border-dashed py-8 flex flex-col items-center justify-center gap-1 h-auto"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploading}
+            >
+              {isUploading ? (
+                <>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-2"></div>
+                  <div className="font-medium">Uploading...</div>
+                </>
+              ) : (
+                <>
+                  <Upload className="h-8 w-8 mb-2" />
+                  <div className="font-medium">Upload Files</div>
+                  <div className="text-sm text-muted-foreground mt-1">
+                    Click to browse files
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-2">
+                    {uploadedFiles.length} / {maxFiles} files
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Supports images, PDFs, Word docs, Excel files
+                  </div>
+                </>
+              )}
+            </Button>
+          </div>
         )}
       </div>
     </div>

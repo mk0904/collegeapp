@@ -24,8 +24,10 @@ interface AttendanceRecordLocal {
   college?: string;
   date: string; // e.g. 2025-09-10
   timestamp: string; // ISO string
-  checkinTime?: string; // ISO string
-  checkoutTime?: string; // ISO string
+  checkinTime?: string; // ISO string (first check-in for display)
+  checkoutTime?: string; // ISO string (last check-out for display)
+  checkinTimes?: string[]; // All check-ins
+  checkoutTimes?: string[]; // All check-outs
   workingHours: number;
   latitude?: number;
   longitude?: number;
@@ -81,6 +83,8 @@ export default function AttendancePage() {
               timestamp: ts,
               checkinTime: r.checkinTime || undefined,
               checkoutTime: r.checkoutTime || undefined,
+              checkinTimes: r.checkinTimes || (r.checkinTime ? [r.checkinTime] : undefined),
+              checkoutTimes: r.checkoutTimes || (r.checkoutTime ? [r.checkoutTime] : undefined),
               workingHours: r.workingHours || 0,
               latitude: r.latitude || undefined,
               longitude: r.longitude || undefined,
@@ -114,8 +118,20 @@ export default function AttendancePage() {
         let sortableRecords = [...attendanceRecords];
         if (sortConfig !== null) {
             sortableRecords.sort((a, b) => {
-                const aValue = a[sortConfig.key] || '';
-                const bValue = b[sortConfig.key] || '';
+                let aValue: any = '';
+                let bValue: any = '';
+                
+                // Handle special cases for sorting
+                if (sortConfig.key === 'checkinTime') {
+                    aValue = a.checkinTime || a.checkinTimes?.[0] || '';
+                    bValue = b.checkinTime || b.checkinTimes?.[0] || '';
+                } else if (sortConfig.key === 'checkoutTime') {
+                    aValue = a.checkoutTime || a.checkoutTimes?.[a.checkoutTimes?.length - 1] || '';
+                    bValue = b.checkoutTime || b.checkoutTimes?.[b.checkoutTimes?.length - 1] || '';
+                } else {
+                    aValue = a[sortConfig.key] || '';
+                    bValue = b[sortConfig.key] || '';
+                }
 
                 if (typeof aValue === 'string' && typeof bValue === 'string') {
                   return sortConfig.direction === 'ascending' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
@@ -133,8 +149,146 @@ export default function AttendancePage() {
         return sortableRecords;
     }, [attendanceRecords, sortConfig]);
     
-    const filteredRecords = React.useMemo(() => {
-        return sortedRecords.filter(record => {
+    // Transform records into pairs (check-in/check-out pairs)
+  const pairedRecords = React.useMemo(() => {
+    const pairs: any[] = [];
+    
+    sortedRecords.forEach(record => {
+      // Get events from record - handle both array format and undefined
+      const events = record.events || [];
+      
+      // If no events but has checkinTimes/checkoutTimes, create pairs from those
+      if (events.length === 0) {
+        // Fallback: use checkinTimes and checkoutTimes if events array is empty
+        const checkinTimes = record.checkinTimes || (record.checkinTime ? [record.checkinTime] : []);
+        const checkoutTimes = record.checkoutTimes || (record.checkoutTime ? [record.checkoutTime] : []);
+        
+        if (checkinTimes.length === 0 && checkoutTimes.length === 0) {
+          // No data at all, skip
+          return;
+        }
+        
+        // Create pairs from times
+        let ci = 0, co = 0;
+        while (ci < checkinTimes.length || co < checkoutTimes.length) {
+          const checkInTime = checkinTimes[ci];
+          const checkoutTime = checkoutTimes[co];
+          
+          if (checkInTime && checkoutTime) {
+            const checkInTimeMs = new Date(checkInTime).getTime();
+            const checkoutTimeMs = new Date(checkoutTime).getTime();
+            const workingHours = !isNaN(checkInTimeMs) && !isNaN(checkoutTimeMs) 
+              ? Math.max(0, (checkoutTimeMs - checkInTimeMs) / (1000 * 60 * 60))
+              : 0;
+            
+            pairs.push({
+              ...record,
+              id: `${record.id}_pair_${ci}_${co}`,
+              checkinTime: checkInTime,
+              checkoutTime: checkoutTime,
+              workingHours: workingHours,
+              latitude: record.latitude,
+              longitude: record.longitude,
+            });
+            ci++;
+            co++;
+          } else if (checkInTime && !checkoutTime) {
+            pairs.push({
+              ...record,
+              id: `${record.id}_pair_${ci}_pending`,
+              checkinTime: checkInTime,
+              checkoutTime: null,
+              workingHours: 0,
+              latitude: record.latitude,
+              longitude: record.longitude,
+              isPending: true,
+            });
+            ci++;
+          } else {
+            co++;
+          }
+        }
+        return;
+      }
+      
+      // Pair check-ins with check-outs from events array
+      let checkInIndex = 0;
+      let checkoutIndex = 0;
+      const checkIns = events.filter((e: any) => e.type === 'check_in' || e.type === 'checkIn');
+      const checkOuts = events.filter((e: any) => e.type === 'check_out' || e.type === 'checkout');
+      
+      // Create pairs
+      while (checkInIndex < checkIns.length || checkoutIndex < checkOuts.length) {
+        const checkIn = checkIns[checkInIndex];
+        const checkOut = checkOuts[checkoutIndex];
+        
+        if (checkIn && checkOut) {
+          // Both exist - create a pair
+          try {
+            const checkInTime = new Date(checkIn.time || checkIn.checkInTime).getTime();
+            const checkoutTime = new Date(checkOut.time || checkOut.checkoutTime).getTime();
+            
+            if (!isNaN(checkInTime) && !isNaN(checkoutTime) && checkoutTime >= checkInTime) {
+              // Valid pair
+              const workingHours = Math.max(0, (checkoutTime - checkInTime) / (1000 * 60 * 60));
+              pairs.push({
+                ...record,
+                id: `${record.id}_pair_${checkInIndex}_${checkoutIndex}`,
+                checkinTime: checkIn.time || checkIn.checkInTime,
+                checkoutTime: checkOut.time || checkOut.checkoutTime,
+                checkinConfidence: checkIn.confidence,
+                checkoutConfidence: checkOut.confidence,
+                workingHours: workingHours,
+                latitude: checkOut.latitude || checkIn.latitude || record.latitude,
+                longitude: checkOut.longitude || checkIn.longitude || record.longitude,
+                pairIndex: checkInIndex,
+              });
+              checkInIndex++;
+              checkoutIndex++;
+            } else {
+              // Invalid pair, try to advance
+              if (checkoutTime < checkInTime) {
+                checkoutIndex++;
+              } else {
+                checkInIndex++;
+              }
+            }
+          } catch (e) {
+            // Error parsing dates, skip this pair
+            checkInIndex++;
+            checkoutIndex++;
+          }
+        } else if (checkIn && !checkOut) {
+          // Unmatched check-in (no checkout yet)
+          pairs.push({
+            ...record,
+            id: `${record.id}_pair_${checkInIndex}_pending`,
+            checkinTime: checkIn.time || checkIn.checkInTime,
+            checkoutTime: null,
+            checkinConfidence: checkIn.confidence,
+            checkoutConfidence: null,
+            workingHours: 0,
+            latitude: checkIn.latitude || record.latitude,
+            longitude: checkIn.longitude || record.longitude,
+            pairIndex: checkInIndex,
+            isPending: true,
+          });
+          checkInIndex++;
+        } else if (!checkIn && checkOut) {
+          // Orphaned checkout (shouldn't happen, but handle it)
+          checkoutIndex++;
+        } else {
+          // No more pairs
+          break;
+        }
+      }
+    });
+    
+    return pairs;
+  }, [sortedRecords]);
+
+  const filteredRecords = React.useMemo(() => {
+        return pairedRecords.filter(record => {
             const q = searchTerm.toLowerCase()
             const matchesText = (
               record.userName.toLowerCase().includes(q) ||
@@ -159,7 +313,7 @@ export default function AttendancePage() {
 
             return matchesText && matchesCollege && withinDateFilter
         });
-    }, [sortedRecords, searchTerm, selectedCollege, filterMonth, filterYear, todayOnly]);
+    }, [pairedRecords, searchTerm, selectedCollege, filterMonth, filterYear, todayOnly]);
 
     // Effective dataset for current tab
     const todayIso = React.useMemo(() => new Date().toISOString().slice(0,10), [])
@@ -189,6 +343,15 @@ export default function AttendancePage() {
         setSelectedRecordIds(allIds)
     }, [filteredRecords])
     
+    // Get original record IDs for export (group pairs back to original records)
+    const getOriginalRecordIds = React.useCallback((pairIds: string[]) => {
+        return Array.from(new Set(pairIds.map(id => {
+            // Extract original record ID from pair ID (format: recordId_pair_index1_index2)
+            const match = id.match(/^(.+?)_pair_/);
+            return match ? match[1] : id;
+        })));
+    }, []);
+    
     const handleSelectAll = (checked: boolean) => {
         if (checked) {
             setSelectedRecordIds(filteredRecords.map(record => record.id));
@@ -204,26 +367,30 @@ export default function AttendancePage() {
         }
 
         // Build monthly data per user for current month selection
-        // Limit export to selected rows only
+        // Limit export to selected rows only - use original records (not pairs)
         const selectedRowRecords = filteredRecords.filter(r => selectedRecordIds.includes(r.id))
         if (selectedRowRecords.length === 0) {
           toast({ title: 'Nothing selected', description: 'Select at least one row to export.' })
           return
         }
 
-        const recordsForMonth: AttendanceRecord[] = attendanceRecords.map(record => ({
-          id: record.id,
-          userName: record.userName,
-          userId: record.userId,
-          date: record.date,
-          checkinTime: record.checkinTime,
-          checkoutTime: record.checkoutTime,
-          workingHours: record.workingHours,
-          latitude: record.latitude,
-          longitude: record.longitude,
-          method: record.method,
-          similarity: record.similarity,
-        }))
+        // Get original record IDs from selected pairs
+        const originalIds = getOriginalRecordIds(selectedRowRecords.map(r => r.id))
+        const recordsForMonth: AttendanceRecord[] = attendanceRecords
+          .filter(r => originalIds.includes(r.id))
+          .map(record => ({
+            id: record.id,
+            userName: record.userName,
+            userId: record.userId,
+            date: record.date,
+            checkinTime: record.checkinTime,
+            checkoutTime: record.checkoutTime,
+            workingHours: record.workingHours,
+            latitude: record.latitude,
+            longitude: record.longitude,
+            method: record.method,
+            similarity: record.similarity,
+          }))
         const grouped = groupAttendanceByUserAndMonth(recordsForMonth)
 
         const monthName = new Date().toLocaleDateString('en-US', { month: 'long' })
@@ -276,12 +443,12 @@ export default function AttendancePage() {
     const isAscending = sortConfig?.direction === 'ascending';
     
     return (
-      <div className="flex items-center gap-2 cursor-pointer" onClick={() => requestSort(column)}>
+      <div className="flex items-center gap-2 cursor-pointer group hover:text-primary transition-colors duration-200" onClick={() => requestSort(column)}>
         {label}
         {isSorted ? (
-          isAscending ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+          isAscending ? <ArrowUp className="h-4 w-4 text-primary" /> : <ArrowDown className="h-4 w-4 text-primary" />
         ) : (
-          <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+          <ArrowUpDown className="h-4 w-4 text-muted-foreground group-hover:text-primary/60 transition-colors" />
         )}
       </div>
     );
@@ -303,25 +470,26 @@ export default function AttendancePage() {
   }
   
   return (
-    <Card>
-        <CardHeader>
+    <Card className="card-premium rounded-2xl border-0 shadow-lg bg-gradient-to-br from-white to-slate-50/50">
+        <CardHeader className="px-6 pt-6 pb-4">
             <div className="flex items-start justify-between gap-3">
-                <div className="space-y-1">
-                    <CardDescription>
+                <div className="space-y-2">
+                    <h2 className="text-xl font-bold">Attendance Management</h2>
+                    <CardDescription className="text-sm">
                         Manage attendance records and view detailed reports.
                     </CardDescription>
-                    <div className="inline-flex items-center gap-2 text-sm">
-                      <span className="text-muted-foreground">Today</span>
-                      <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">{todaysCount}</span>
+                    <div className="inline-flex items-center gap-2 text-sm mt-2">
+                      <span className="text-muted-foreground font-medium">Today's Check-ins</span>
+                      <span className="px-3 py-1 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-semibold shadow-md shadow-emerald-500/30">{todaysCount}</span>
                     </div>
                 </div>
-                <Button onClick={handleExport}>
+                <Button onClick={handleExport} className="btn-premium bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-md hover:shadow-lg transition-all duration-300">
                     <Download className="mr-2 h-4 w-4" />
                     Export
                 </Button>
             </div>
         </CardHeader>
-      <CardContent>
+      <CardContent className="px-6 pb-6">
         <Tabs defaultValue="all" value={tab} onValueChange={(v)=>setTab(v as 'all'|'monthly')} className="w-full mb-2">
           <TabsList className="bg-muted/60">
             <TabsTrigger value="all">All Records</TabsTrigger>
@@ -331,11 +499,11 @@ export default function AttendancePage() {
         {tab === 'monthly' ? (
           <div className="flex flex-col sm:flex-wrap sm:flex-row items-center gap-2 mb-4">
             <div className="relative flex-1 w-full min-w-[240px]">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
                 placeholder="Search by name or college..."
-                className="pl-8 w-full"
+                className="pl-10 w-full h-10 rounded-xl border-border/50 bg-white/50 backdrop-blur-sm focus:bg-white transition-all duration-200"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -378,11 +546,11 @@ export default function AttendancePage() {
         ) : (
           <div className="flex flex-col sm:flex-wrap sm:flex-row items-center gap-2 mb-4">
             <div className="relative flex-1 w-full min-w-[240px]">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
                 placeholder="Search by name, user ID, or method..."
-                className="pl-8 w-full"
+                className="pl-10 w-full h-10 rounded-xl border-border/50 bg-white/50 backdrop-blur-sm focus:bg-white transition-all duration-200"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -432,11 +600,11 @@ export default function AttendancePage() {
             selectedYear={selectedYear}
           />
         ) : (
-          <div className="rounded-md border">
+          <div className="rounded-xl border border-border/50 bg-white/80 backdrop-blur-sm overflow-hidden shadow-lg">
               <Table>
               <TableHeader>
                   <TableRow>
-                  <TableHead className="w-[40px]">
+                  <TableHead className="w-[40px] h-12 py-3">
                       <Checkbox
                         checked={isAllSelected}
                         onCheckedChange={handleSelectAll}
@@ -445,23 +613,23 @@ export default function AttendancePage() {
                         indeterminate={isIndeterminate.toString()}
                       />
                   </TableHead>
-                  <TableHead>
+                  <TableHead className="h-12 py-3">
                      <SortableHeader column="userName" label="User" />
                   </TableHead>
-                  <TableHead className="hidden md:table-cell">
+                  <TableHead className="h-12 py-3">
                       <SortableHeader column="date" label="Date" />
                   </TableHead>
-                  <TableHead className="hidden lg:table-cell">College</TableHead>
-                  <TableHead className="hidden md:table-cell">
+                  <TableHead className="h-12 py-3">College</TableHead>
+                  <TableHead className="h-12 py-3">
                       <SortableHeader column="checkinTime" label="Check-in" />
                   </TableHead>
-                  <TableHead className="hidden md:table-cell">
+                  <TableHead className="h-12 py-3">
                       <SortableHeader column="checkoutTime" label="Check-out" />
                   </TableHead>
-                  <TableHead className="hidden md:table-cell">
+                  <TableHead className="h-12 py-3">
                       <SortableHeader column="workingHours" label="Working Hours" />
                   </TableHead>
-                  <TableHead className="hidden md:table-cell">
+                  <TableHead className="h-12 py-3">
                       Location
                   </TableHead>
                   </TableRow>
@@ -470,50 +638,62 @@ export default function AttendancePage() {
                   {loading ? (
                     [...Array(5)].map((_, i) => (
                       <TableRow key={i}>
-                        <TableCell><Skeleton className="h-4 w-4" /></TableCell>
-                        <TableCell>
+                        <TableCell className="py-3"><Skeleton className="h-4 w-4" /></TableCell>
+                        <TableCell className="py-3">
                           <Skeleton className="h-5 w-24 mb-1" />
                           <Skeleton className="h-4 w-32" />
                         </TableCell>
-                        <TableCell><Skeleton className="h-6 w-20" /></TableCell>
-                        <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
-                        <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
-                        <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-20" /></TableCell>
-                        <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-8" /></TableCell>
+                        <TableCell className="py-3"><Skeleton className="h-6 w-20" /></TableCell>
+                        <TableCell className="py-3"><Skeleton className="h-5 w-24" /></TableCell>
+                        <TableCell className="py-3"><Skeleton className="h-5 w-24" /></TableCell>
+                        <TableCell className="py-3"><Skeleton className="h-5 w-24" /></TableCell>
+                        <TableCell className="py-3"><Skeleton className="h-5 w-20" /></TableCell>
+                        <TableCell className="py-3"><Skeleton className="h-5 w-8" /></TableCell>
                       </TableRow>
                     ))
                   ) : (
                     tabRecords.map(record => (
                       <TableRow key={record.id} data-state={selectedRecordIds.includes(record.id) ? 'selected' : ''}>
-                          <TableCell>
+                          <TableCell className="py-3">
                               <Checkbox 
                                 checked={selectedRecordIds.includes(record.id)}
                                 onCheckedChange={(checked) => handleSelectRecord(record.id, !!checked)}
                                 aria-label={`Select row for ${record.userName}`}
                               />
                           </TableCell>
-                          <TableCell className="font-medium">{record.userName}</TableCell>
-                          <TableCell className="hidden md:table-cell">{formatDate(record.date)}</TableCell>
-                          <TableCell className="hidden lg:table-cell">{record.college || '-'}</TableCell>
-                          <TableCell className="hidden md:table-cell">
-                            {record.checkinTime ? new Date(record.checkinTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
+                          <TableCell className="font-medium py-3">{record.userName}</TableCell>
+                          <TableCell className="py-3">{formatDate(record.date)}</TableCell>
+                          <TableCell className="py-3">{record.college || '-'}</TableCell>
+                          <TableCell className="py-3">
+                            {record.checkinTime ? (
+                              new Date(record.checkinTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                            ) : '-'}
                           </TableCell>
-                          <TableCell className="hidden md:table-cell">
-                            {record.checkoutTime ? new Date(record.checkoutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
+                          <TableCell className="py-3">
+                            {record.checkoutTime ? (
+                              new Date(record.checkoutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                            ) : (
+                              <span className="text-muted-foreground italic">Pending</span>
+                            )}
                           </TableCell>
-                          <TableCell className="hidden md:table-cell">
+                          <TableCell className="py-3">
                             {formatHours(record.workingHours)}
                           </TableCell>
-                          <TableCell className="hidden md:table-cell">
+                          <TableCell className="py-3">
                             {record.latitude && record.longitude ? (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleLocationClick(record)}
-                                className="h-6 w-6 p-0"
+                              <a
+                                href={`https://www.google.com/maps?q=${record.latitude},${record.longitude}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleLocationClick(record);
+                                }}
+                                className="inline-flex items-center gap-1.5 text-primary hover:text-primary/80 hover:underline transition-colors text-sm"
                               >
-                                <MapPin className="h-3 w-3" />
-                              </Button>
+                                <MapPin className="h-3.5 w-3.5" />
+                                <span className="text-xs">{record.latitude.toFixed(4)}, {record.longitude.toFixed(4)}</span>
+                              </a>
                             ) : (
                               <span className="text-xs text-muted-foreground">--</span>
                             )}

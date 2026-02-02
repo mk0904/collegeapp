@@ -51,6 +51,8 @@ export default function UsersPage() {
     const { toast } = useToast()
     const [users, setUsers] = React.useState<User[]>([])
     const [colleges, setColleges] = React.useState<College[]>([]);
+    const [collegeIdToName, setCollegeIdToName] = React.useState<Record<string, string>>({})
+    const [collegeIdToDistrict, setCollegeIdToDistrict] = React.useState<Record<string, string>>({})
     const [loading, setLoading] = React.useState(true);
     const [currentUser, setCurrentUser] = React.useState<any>(null);
     const [isModalOpen, setIsModalOpen] = React.useState(false);
@@ -62,31 +64,62 @@ export default function UsersPage() {
     const [collegeFilter, setCollegeFilter] = React.useState('all');
     const [districtFilter, setDistrictFilter] = React.useState('all');
 
-    const [sortConfig, setSortConfig] = React.useState<{ key: SortableKeys; direction: SortDirection } | null>({ key: 'status', direction: 'ascending'});
+    const [sortConfig, setSortConfig] = React.useState<{ key: SortableKeys; direction: SortDirection } | null>({ key: 'active', direction: 'descending'});
 
     const selectedUsers = users.filter(user => selectedUserIds.includes(user.id));
 
     React.useEffect(() => {
+      let cancelled = false;
       async function fetchData() {
         try {
+          // Show cached data immediately if available
+          const cachedUsers = await getUsers();
+          const cachedColleges = await getColleges();
+          
+          if (!cancelled) {
+            setUsers(cachedUsers);
+            setColleges(cachedColleges);
+          }
+          
+          // Fetch fresh data in background
           const [fetchedUsers, fetchedColleges] = await Promise.all([
             getUsers(),
             getColleges(),
           ]);
-          setUsers(fetchedUsers);
-          setColleges(fetchedColleges);
+          
+          if (!cancelled) {
+            setUsers(fetchedUsers);
+            setColleges(fetchedColleges);
+          
+            // Create mapping from college ID to name and district
+            const idToName: Record<string, string> = {};
+            const idToDistrict: Record<string, string> = {};
+            fetchedColleges.forEach(college => {
+              idToName[college.id] = college.name;
+              if (college.district) {
+                idToDistrict[college.id] = college.district;
+              }
+            });
+            setCollegeIdToName(idToName);
+            setCollegeIdToDistrict(idToDistrict);
+          }
         } catch (error) {
-          console.error("Error fetching data:", error);
-          toast({
+          if (!cancelled) {
+            console.error("Error fetching data:", error);
+            toast({
             title: "Error",
             description: "Failed to fetch user or college data.",
             variant: "destructive",
           })
+          }
         } finally {
-          setLoading(false);
+          if (!cancelled) {
+            setLoading(false);
+          }
         }
       }
       fetchData();
+      return () => { cancelled = true; };
     }, [toast]);
 
     // Get current user
@@ -97,14 +130,18 @@ export default function UsersPage() {
       return () => unsubscribe();
     }, []);
 
-    const handleStatusToggle = async (userId: string, currentStatus: 'Active' | 'Inactive') => {
-        const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
+    const handleStatusToggle = async (userId: string, currentActive: boolean) => {
+        const newActive = !currentActive;
         try {
-            await updateUserStatus(userId, newStatus);
-            setUsers(users.map(u => u.id === userId ? { ...u, status: newStatus } : u));
+            await updateUserStatus(userId, newActive ? 'Active' : 'Inactive');
+            setUsers(users.map(u => u.id === userId ? { 
+                ...u, 
+                active: newActive,
+                status: newActive ? 'Active' : 'Inactive' // Update legacy field too
+            } : u));
             toast({
                 title: "User Status Updated",
-                description: `User has been set to ${newStatus}.`,
+                description: `User has been ${newActive ? 'activated' : 'deactivated'}.`,
             })
         } catch (error) {
             console.error("Error updating user status:", error);
@@ -133,21 +170,42 @@ export default function UsersPage() {
     };
 
     const uniqueRoles = React.useMemo(() => [...new Set(users.map(u => u.role))], [users]);
-    const uniqueDistricts = React.useMemo(() => [...new Set(users.map(u => u.district))], [users]);
+    // Get unique districts from both user data and college data
+    const uniqueDistricts = React.useMemo(() => {
+      const districts = new Set<string>();
+      users.forEach(user => {
+        // Prefer college district, fallback to user district
+        const district = collegeIdToDistrict[user.college || user.collegeId || ''] || user.district;
+        if (district && district.trim() !== '') {
+          districts.add(district);
+        }
+      });
+      return Array.from(districts).sort();
+    }, [users, collegeIdToDistrict]);
 
 
     const sortedUsers = React.useMemo(() => {
         let sortableUsers = [...users];
         if (sortConfig !== null) {
             sortableUsers.sort((a, b) => {
-                // Default sort by status: Active first
+                // Handle active field (boolean)
+                if (sortConfig.key === 'active') {
+                    const aActive = a.active ?? (a.status === 'Active');
+                    const bActive = b.active ?? (b.status === 'Active');
+                    if (aActive && !bActive) return sortConfig.direction === 'ascending' ? -1 : 1;
+                    if (!aActive && bActive) return sortConfig.direction === 'ascending' ? 1 : -1;
+                }
+                
+                // Handle status field (legacy)
                 if (sortConfig.key === 'status') {
-                    if (a.status === 'Active' && b.status === 'Inactive') return sortConfig.direction === 'ascending' ? -1 : 1;
-                    if (a.status === 'Inactive' && b.status === 'Active') return sortConfig.direction === 'ascending' ? 1 : -1;
+                    const aStatus = a.status || (a.active ? 'Active' : 'Inactive');
+                    const bStatus = b.status || (b.active ? 'Active' : 'Inactive');
+                    if (aStatus === 'Active' && bStatus === 'Inactive') return sortConfig.direction === 'ascending' ? -1 : 1;
+                    if (aStatus === 'Inactive' && bStatus === 'Active') return sortConfig.direction === 'ascending' ? 1 : -1;
                 }
 
-                const aValue = a[sortConfig.key] || '';
-                const bValue = b[sortConfig.key] || '';
+                const aValue = a[sortConfig.key] ?? '';
+                const bValue = b[sortConfig.key] ?? '';
 
                 if (typeof aValue === 'string' && typeof bValue === 'string') {
                   return sortConfig.direction === 'ascending' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
@@ -170,8 +228,11 @@ export default function UsersPage() {
             const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                                 user.email.toLowerCase().includes(searchTerm.toLowerCase());
             const matchesRole = roleFilter === 'all' || user.role === roleFilter;
-            const matchesCollege = collegeFilter === 'all' || user.college === collegeFilter;
-            const matchesDistrict = districtFilter === 'all' || user.district === districtFilter;
+            // Filter by college ID (collegeFilter stores college ID, not name)
+            const matchesCollege = collegeFilter === 'all' || user.college === collegeFilter || user.collegeId === collegeFilter;
+            // Filter by district - prefer college district, fallback to user district
+            const userDistrict = collegeIdToDistrict[user.college || user.collegeId || ''] || user.district;
+            const matchesDistrict = districtFilter === 'all' || userDistrict === districtFilter;
             
             return matchesSearch && matchesRole && matchesCollege && matchesDistrict;
         });
@@ -203,18 +264,25 @@ export default function UsersPage() {
             return;
         }
 
-        const csvHeader = "ID,Name,Email,Phone,Status,Role,College,District,Designation\n";
+        const csvHeader = "ID,Name,Email,Phone,Status,Active,Profile Completed,Role,College,District,Designation,Pay Band,Employment Type\n";
         const csvRows = filteredUsers.map(user => {
+            const isActive = user.active ?? (user.status === 'Active');
+            const collegeName = collegeIdToName[user.college || user.collegeId || ''] || user.college || '';
+            const district = collegeIdToDistrict[user.college || user.collegeId || ''] || user.district || '';
             const row = [
                 user.id,
                 `"${user.name}"`,
                 user.email,
-                user.phone,
-                user.status,
+                user.phoneNumber || user.phone || '',
+                user.status || (isActive ? 'Active' : 'Inactive'),
+                isActive ? 'Yes' : 'No',
+                user.profileCompleted ? 'Yes' : 'No',
                 user.role,
-                `"${user.college}"`,
-                `"${user.district}"`,
-                `"${user.designation || ''}"`
+                `"${collegeName}"`,
+                `"${district}"`,
+                `"${user.designation || ''}"`,
+                `"${user.payBand || ''}"`,
+                `"${user.employmentType || ''}"`
             ];
             return row.join(',');
         }).join('\n');
@@ -248,12 +316,12 @@ export default function UsersPage() {
     const isAscending = sortConfig?.direction === 'ascending';
     
     return (
-      <div className="flex items-center gap-2 cursor-pointer" onClick={() => requestSort(column)}>
+      <div className="flex items-center gap-2 cursor-pointer group hover:text-primary transition-colors duration-200" onClick={() => requestSort(column)}>
         {label}
         {isSorted ? (
-          isAscending ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+          isAscending ? <ArrowUp className="h-4 w-4 text-primary" /> : <ArrowDown className="h-4 w-4 text-primary" />
         ) : (
-          <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+          <ArrowUpDown className="h-4 w-4 text-muted-foreground group-hover:text-primary/60 transition-colors" />
         )}
       </div>
     );
@@ -271,28 +339,29 @@ export default function UsersPage() {
   return (
     <>
       <SendNotificationModal isOpen={isModalOpen} onOpenChange={setIsModalOpen} selectedUsers={selectedUsers} senderId={currentUser?.uid} />
-      <Card>
-        <CardHeader>
+      <Card className="card-premium rounded-2xl border-0 shadow-lg bg-gradient-to-br from-white to-slate-50/50">
+        <CardHeader className="px-6 pt-6 pb-4">
             <div className="flex items-start justify-between">
                 <div>
-                    <CardDescription>
+                    <CardTitle className="text-xl font-bold mb-1">User Management</CardTitle>
+                    <CardDescription className="text-sm">
                         Manage your users and view their details.
                     </CardDescription>
                 </div>
-                <Button onClick={handleExport}>
+                <Button onClick={handleExport} className="btn-premium bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-md hover:shadow-lg transition-all duration-300">
                     <Download className="mr-2 h-4 w-4" />
                     Export
                 </Button>
             </div>
         </CardHeader>
-        <CardContent>
-          <div className="flex flex-col sm:flex-row items-center gap-2 mb-4">
+        <CardContent className="px-6 pb-6">
+          <div className="flex flex-col sm:flex-row items-center gap-3 mb-6">
             <div className="relative flex-1 w-full">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
                 placeholder="Search users by name or email..."
-                className="pl-8 w-full"
+                className="pl-10 w-full h-10 rounded-xl border-border/50 bg-white/50 backdrop-blur-sm focus:bg-white transition-all duration-200"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -300,7 +369,7 @@ export default function UsersPage() {
              <div className="flex w-full sm:w-auto gap-2">
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="w-full sm:w-auto">
+                        <Button variant="outline" className="w-full sm:w-auto h-10 rounded-xl border-border/50 bg-white/50 backdrop-blur-sm hover:bg-white transition-all duration-200">
                             <ShieldCheck className="mr-2 h-4 w-4" />
                             Role
                             <ChevronDown className="ml-auto h-4 w-4" />
@@ -313,20 +382,20 @@ export default function UsersPage() {
                 </DropdownMenu>
                  <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="w-full sm:w-auto">
+                        <Button variant="outline" className="w-full sm:w-auto h-10 rounded-xl border-border/50 bg-white/50 backdrop-blur-sm hover:bg-white transition-all duration-200">
                             <GraduationCap className="mr-2 h-4 w-4" />
                             College
                             <ChevronDown className="ml-auto h-4 w-4" />
                         </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
+                    <DropdownMenuContent align="end" className="rounded-xl border-border/50 shadow-lg">
                         <DropdownMenuCheckboxItem checked={collegeFilter === 'all'} onCheckedChange={() => setCollegeFilter('all')}>All Colleges</DropdownMenuCheckboxItem>
-                        {colleges.map(college => <DropdownMenuCheckboxItem key={college.id} checked={collegeFilter === college.name} onCheckedChange={() => setCollegeFilter(college.name)}>{college.name}</DropdownMenuCheckboxItem>)}
+                        {colleges.map(college => <DropdownMenuCheckboxItem key={college.id} checked={collegeFilter === college.id} onCheckedChange={() => setCollegeFilter(college.id)}>{college.name}</DropdownMenuCheckboxItem>)}
                     </DropdownMenuContent>
                 </DropdownMenu>
                  <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="w-full sm:w-auto">
+                        <Button variant="outline" className="w-full sm:w-auto h-10 rounded-xl border-border/50 bg-white/50 backdrop-blur-sm hover:bg-white transition-all duration-200">
                             <MapPin className="mr-2 h-4 w-4" />
                             District
                             <ChevronDown className="ml-auto h-4 w-4" />
@@ -337,13 +406,13 @@ export default function UsersPage() {
                          {uniqueDistricts.map(district => <DropdownMenuCheckboxItem key={district} checked={districtFilter === district} onCheckedChange={() => setDistrictFilter(district)} className="capitalize">{district}</DropdownMenuCheckboxItem>)}
                     </DropdownMenuContent>
                 </DropdownMenu>
-              <Button size="sm" variant="outline" onClick={() => setIsModalOpen(true)} disabled={selectedUserIds.length === 0} className="w-full sm:w-auto">
+              <Button size="sm" variant="outline" onClick={() => setIsModalOpen(true)} disabled={selectedUserIds.length === 0} className="w-full sm:w-auto h-10 rounded-xl border-border/50 bg-white/50 backdrop-blur-sm hover:bg-white transition-all duration-200 disabled:opacity-50">
                 <Mail className="mr-2 h-4 w-4" />
                 Send ({selectedUserIds.length})
               </Button>
             </div>
           </div>
-          <div className="rounded-md border">
+          <div className="rounded-xl border border-border/50 bg-white/80 backdrop-blur-sm overflow-hidden shadow-lg">
               <Table>
               <TableHeader>
                   <TableRow>
@@ -360,7 +429,10 @@ export default function UsersPage() {
                      <SortableHeader column="name" label="Name" />
                   </TableHead>
                   <TableHead>
-                     <SortableHeader column="status" label="Status" />
+                     <SortableHeader column="active" label="Status" />
+                  </TableHead>
+                  <TableHead className="hidden md:table-cell">
+                     <SortableHeader column="profileCompleted" label="Profile" />
                   </TableHead>
                   <TableHead className="hidden md:table-cell">
                       <SortableHeader column="role" label="Role" />
@@ -410,21 +482,28 @@ export default function UsersPage() {
                               <div className="flex items-center gap-2">
                                   <Switch 
                                       id={`status-${user.id}`} 
-                                      checked={user.status === 'Active'}
-                                      onCheckedChange={() => handleStatusToggle(user.id, user.status)}
+                                      checked={user.active ?? (user.status === 'Active')}
+                                      onCheckedChange={() => handleStatusToggle(user.id, user.active ?? (user.status === 'Active'))}
                                       aria-label="Toggle user status"
                                   />
-                                  <Badge variant={user.status === 'Active' ? 'default' : 'destructive'}>{user.status}</Badge>
+                                  <Badge variant={(user.active ?? (user.status === 'Active')) ? 'default' : 'destructive'}>
+                                      {user.active ?? (user.status === 'Active') ? 'Active' : 'Inactive'}
+                                  </Badge>
                               </div>
+                          </TableCell>
+                          <TableCell className="hidden md:table-cell">
+                              <Badge variant={user.profileCompleted ? 'default' : 'secondary'}>
+                                  {user.profileCompleted ? 'Complete' : 'Incomplete'}
+                              </Badge>
                           </TableCell>
                            <TableCell className="hidden md:table-cell">
                               <Badge variant={getRoleBadgeVariant(user.role)} className="capitalize">{user.role.toLowerCase()}</Badge>
                            </TableCell>
                           <TableCell className="hidden md:table-cell">
-                              {user.college}
+                              {collegeIdToName[user.college || user.collegeId || ''] || user.college || '—'}
                           </TableCell>
                           <TableCell className="hidden md:table-cell">
-                              {user.district}
+                              {collegeIdToDistrict[user.college || user.collegeId || ''] || user.district || '—'}
                           </TableCell>
                           <TableCell className="hidden md:table-cell">
                               {user.phone}

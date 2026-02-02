@@ -96,23 +96,24 @@ export function MonthlyAttendanceTable({ records, selectedMonth, selectedYear }:
   return (
     <div className="space-y-6">
       {currentMonthData.map((userData) => (
-        <Card key={userData.userId}>
-          <CardHeader>
+        <Card key={userData.userId} className="card-premium rounded-2xl border-0 shadow-lg bg-gradient-to-br from-white to-slate-50/50">
+          <CardHeader className="px-6 pt-6 pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-lg">{userData.userName}</CardTitle>
-                <p className="text-sm text-muted-foreground">ID: {userData.userId}</p>
+                <CardTitle className="text-lg font-bold">{userData.userName}</CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">ID: {userData.userId}</p>
               </div>
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
-                  <Badge variant="default">Present: {userData.summary.present}</Badge>
-                  <Badge variant="destructive">Absent: {userData.summary.absent}</Badge>
-                  <Badge variant="secondary">Total Hours: {formatHours(userData.summary.totalWorkingHours)}</Badge>
+                  <Badge variant="default" className="shadow-sm">Present: {userData.summary.present}</Badge>
+                  <Badge variant="destructive" className="shadow-sm">Absent: {userData.summary.absent}</Badge>
+                  <Badge variant="secondary" className="shadow-sm">Total Hours: {formatHours(userData.summary.totalWorkingHours)}</Badge>
                 </div>
                 <Button 
                   onClick={() => handleDownloadPDF(userData)}
                   size="sm"
                   variant="outline"
+                  className="btn-premium rounded-xl border-border/50 bg-white/50 backdrop-blur-sm hover:bg-white transition-all duration-200"
                 >
                   <Download className="h-4 w-4 mr-2" />
                   Download PDF
@@ -120,8 +121,9 @@ export function MonthlyAttendanceTable({ records, selectedMonth, selectedYear }:
               </div>
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
+          <CardContent className="px-6 pb-6">
+            <div className="overflow-x-auto scrollbar-premium">
+              <div className="rounded-xl border border-border/50 bg-white/80 backdrop-blur-sm overflow-hidden shadow-lg">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -219,6 +221,7 @@ export function MonthlyAttendanceTable({ records, selectedMonth, selectedYear }:
                   </TableRow>
                 </TableBody>
               </Table>
+              </div>
             </div>
           </CardContent>
         </Card>

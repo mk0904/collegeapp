@@ -11,7 +11,7 @@ import {
   Search,
   ChevronDown,
 } from 'lucide-react'
-import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import * as React from 'react'
 import { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
@@ -55,6 +55,7 @@ type ProjectStatus = 'Ongoing' | 'Completed' | 'Pending';
 
 function ProjectsContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const { toast } = useToast();
   const [projects, setProjects] = React.useState<Project[]>([]);
   const [colleges, setColleges] = React.useState<College[]>([]);
@@ -131,28 +132,28 @@ function ProjectsContent() {
               <Download className="mr-2 h-4 w-4" />
               Export
             </Button>
-              <Button size="sm" onClick={() => setIsAddProjectModalOpen(true)}>
+              <Button size="sm" onClick={() => setIsAddProjectModalOpen(true)} className="btn-premium bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-md hover:shadow-lg transition-all duration-300">
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Add Project
               </Button>
           </div>
         </div>
         <TabsContent value="projects">
-          <Card>
-            <CardHeader>
-              {/* Removed title to avoid duplication with dashboard header */}
-              <CardDescription>
+          <Card className="card-premium rounded-2xl border-0 shadow-lg bg-gradient-to-br from-white to-slate-50/50">
+            <CardHeader className="px-6 pt-6 pb-4">
+              <h2 className="text-xl font-bold mb-1">Project Management</h2>
+              <CardDescription className="text-sm">
                 Manage all ongoing and completed projects.
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="flex flex-col sm:flex-row items-center gap-2 mb-4">
+            <CardContent className="px-6 pb-6">
+              <div className="flex flex-col sm:flex-row items-center gap-3 mb-6">
                   <div className="relative flex-1 w-full">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       type="search"
                       placeholder="Search projects by name..."
-                      className="pl-8 w-full"
+                      className="pl-10 w-full h-10 rounded-xl border-border/50 bg-white/50 backdrop-blur-sm focus:bg-white transition-all duration-200"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                     />
@@ -160,11 +161,11 @@ function ProjectsContent() {
                   <div className="flex w-full sm:w-auto gap-2">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="w-full sm:w-auto">
+                        <Button variant="outline" className="w-full sm:w-auto h-10 rounded-xl border-border/50 bg-white/50 backdrop-blur-sm hover:bg-white transition-all duration-200">
                           Status <ChevronDown className="ml-2 h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
+                      <DropdownMenuContent align="end" className="rounded-xl border-border/50 shadow-lg">
                         <DropdownMenuCheckboxItem checked={statusFilter === 'all'} onCheckedChange={() => setStatusFilter('all')}>All</DropdownMenuCheckboxItem>
                         <DropdownMenuCheckboxItem checked={statusFilter === 'Ongoing'} onCheckedChange={() => setStatusFilter('Ongoing')}>Ongoing</DropdownMenuCheckboxItem>
                         <DropdownMenuCheckboxItem checked={statusFilter === 'Completed'} onCheckedChange={() => setStatusFilter('Completed')}>Completed</DropdownMenuCheckboxItem>
@@ -174,7 +175,7 @@ function ProjectsContent() {
 
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="w-full sm:w-auto">
+                        <Button variant="outline" className="w-full sm:w-auto h-10 rounded-xl border-border/50 bg-white/50 backdrop-blur-sm hover:bg-white transition-all duration-200">
                           College <ChevronDown className="ml-2 h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
@@ -189,9 +190,10 @@ function ProjectsContent() {
                     </DropdownMenu>
                   </div>
                 </div>
+              <div className="rounded-xl border border-border/50 bg-white/80 backdrop-blur-sm overflow-hidden shadow-lg">
               <Table className="text-sm">
                 <TableHeader>
-                <TableRow className="h-10 [&>th]:py-2">
+                <TableRow>
                     <TableHead>Project Name</TableHead>
                     <TableHead className="hidden md:table-cell">College</TableHead>
                     <TableHead className="hidden md:table-cell">Submissions</TableHead>
@@ -212,26 +214,31 @@ function ProjectsContent() {
                     ))
                   ) : (
                     filteredProjects.map((project) => (
-                      <TableRow key={project.id} className="h-12 min-h-12 [&>td]:py-2">
+                      <TableRow 
+                        key={project.id} 
+                        className="h-12 min-h-12 [&>td]:py-2 cursor-pointer"
+                        onClick={() => router.push(`/dashboard/projects/${project.id}`)}
+                      >
                         <TableCell className="font-medium">
-                          <Link href={`/dashboard/projects/${project.id}`} className="hover:underline">
-                            {project.name}
-                          </Link>
+                          {project.name}
                         </TableCell>
                         <TableCell className="hidden md:table-cell">{project.collegeName}</TableCell>
                         <TableCell className="hidden md:table-cell">{project.submissionsCount}</TableCell>
                         <TableCell>
-                          <Badge variant={project.status === 'Completed' ? 'default' : 'outline'}>
+                          <Badge variant={project.status === 'Completed' ? 'default' : 'outline'} className="shadow-sm">
                             {project.status}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                           {project.status === 'Ongoing' ? (
                             <Button 
                               size="icon" 
                               variant="ghost"
                               className="bg-primary/10 hover:bg-primary/20"
-                              onClick={(e) => { e.stopPropagation(); handleCompleteProject(project.id); }}
+                              onClick={(e) => { 
+                                e.stopPropagation(); 
+                                handleCompleteProject(project.id); 
+                              }}
                               title="Mark as Completed"
                             >
                               <Check className="h-4 w-4 text-primary" />
@@ -246,6 +253,7 @@ function ProjectsContent() {
                   )}
                 </TableBody>
               </Table>
+              </div>
                {filteredProjects.length === 0 && !loading && (
                 <div className="text-center py-12 text-muted-foreground">
                   No projects found.

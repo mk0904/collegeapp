@@ -33,7 +33,8 @@ export default function DeleteAccountPage() {
       await reauthenticateWithCredential(user, credential);
 
       try {
-        await deleteDoc(doc(db, 'users', user.uid));
+        // Delete from adminusers collection
+        await deleteDoc(doc(db, 'adminusers', user.uid));
       } catch (_) {}
 
       await deleteUser(user);
